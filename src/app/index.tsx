@@ -1,98 +1,143 @@
-import * as Device from 'expo-device';
-import { Platform, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
+import {
+  BackHandler,
+  Image,
+  ImageBackground,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
-import { AnimatedIcon } from '@/components/animated-icon';
-import { HintRow } from '@/components/hint-row';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { WebBadge } from '@/components/web-badge';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+export default function MainMenuScreen() {
+  const router = useRouter();
 
-function getDevMenuHint() {
-  if (Platform.OS === 'web') {
-    return <ThemedText type="small">use browser devtools</ThemedText>;
-  }
-  if (Device.isDevice) {
-    return (
-      <ThemedText type="small">
-        shake device or press <ThemedText type="code">m</ThemedText> in terminal
-      </ThemedText>
-    );
-  }
-  const shortcut = Platform.OS === 'android' ? 'cmd+m (or ctrl+m)' : 'cmd+d';
+  const handlePlay = () => {
+    // Navigates to a game screen (e.g., src/app/game.tsx)
+    router.push('/game');
+  };
+
+  const handleSettings = () => {
+    // Navigates to a settings screen (e.g., src/app/settings.tsx)
+    router.push('/settings');
+  };
+
+  const handleExit = () => {
+    BackHandler.exitApp();
+  };
+
   return (
-    <ThemedText type="small">
-      press <ThemedText type="code">{shortcut}</ThemedText>
-    </ThemedText>
-  );
-}
-
-export default function HomeScreen() {
-  return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ThemedView style={styles.heroSection}>
-          <AnimatedIcon />
-          <ThemedText type="title" style={styles.title}>
-            Welcome to&nbsp;Expo
-          </ThemedText>
-        </ThemedView>
-
-        <ThemedText type="code" style={styles.code}>
-          get started
-        </ThemedText>
-
-        <ThemedView type="backgroundElement" style={styles.stepContainer}>
-          <HintRow
-            title="Try editing"
-            hint={<ThemedText type="code">src/app/index.tsx</ThemedText>}
+    <ImageBackground
+      source={require('../../assets/images/library.jpg')}
+      style={styles.background}
+      resizeMode="cover"
+    >
+      <SafeAreaView style={styles.container}>
+        {/* Logo */}
+        <View style={styles.logoContainer}>
+          <Image
+            source={require('../../assets/images/snake.png')}
+            style={styles.logo}
+            resizeMode="contain"
           />
-          <HintRow title="Dev tools" hint={getDevMenuHint()} />
-          <HintRow
-            title="Fresh start"
-            hint={<ThemedText type="code">npm run reset-project</ThemedText>}
-          />
-        </ThemedView>
+        </View>
 
-        {Platform.OS === 'web' && <WebBadge />}
+        {/* Play Button (Book) */}
+        <View style={styles.playContainer}>
+          <TouchableOpacity
+            style={styles.playButton}
+            onPress={handlePlay}
+            activeOpacity={0.8}
+          >
+            <ImageBackground
+              source={require('../../assets/images/book.png')}
+              style={styles.bookImage}
+              resizeMode="contain"
+            >
+              <Text style={styles.playText}>PLAY</Text>
+            </ImageBackground>
+          </TouchableOpacity>
+        </View>
+
+        {/* Bottom Options (Settings & Exit) */}
+        <View style={styles.bottomRow}>
+          <TouchableOpacity style={styles.iconButton} onPress={handleSettings}>
+            <Image
+              source={require('../../assets/images/settings.png')}
+              style={styles.icon}
+            />
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.iconButton} onPress={handleExit}>
+            <Image
+              source={require('../../assets/images/door.png')}
+              style={styles.icon}
+            />
+          </TouchableOpacity>
+        </View>
       </SafeAreaView>
-    </ThemedView>
+    </ImageBackground>
   );
 }
 
+{/* Styles for the main menu screen */}
 const styles = StyleSheet.create({
+  background: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
+  },
   container: {
     flex: 1,
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  logoContainer: {
+    marginTop: 20,
+    alignItems: 'center',
+  },
+  logo: {
+    width: 260,
+    height: 100,
+  },
+  playContainer: {
+    alignItems: 'center',
     justifyContent: 'center',
+  },
+  playButton: {
+    width: 250,
+    height: 200,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  bookImage: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  playText: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#FFD700',
+    textShadowColor: 'rgba(0, 0, 0, 0.75)',
+    textShadowOffset: { width: 1, height: 2 },
+    textShadowRadius: 4,
+  },
+  bottomRow: {
     flexDirection: 'row',
+    justifyContent: 'space-around',
+    width: '60%',
+    marginBottom: 20,
   },
-  safeArea: {
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    alignItems: 'center',
-    gap: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.three,
-    maxWidth: MaxContentWidth,
+  iconButton: {
+    padding: 10,
   },
-  heroSection: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.four,
-  },
-  title: {
-    textAlign: 'center',
-  },
-  code: {
-    textTransform: 'uppercase',
-  },
-  stepContainer: {
-    gap: Spacing.three,
-    alignSelf: 'stretch',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.four,
-    borderRadius: Spacing.four,
+  icon: {
+    width: 50,
+    height: 50,
+    resizeMode: 'contain',
   },
 });
