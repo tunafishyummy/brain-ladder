@@ -33,7 +33,7 @@ export default function MainMenuScreen() {
 
   return (
     <ImageBackground
-      source={require('../../assets/images/library.jpg')}
+      source={require('../../assets/images/bookcase.png')}
       style={styles.background}
       resizeMode="cover"
     >
@@ -102,8 +102,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   logo: {
-    width: 260,
-    height: 100,
+    width: 500,
+    height: 200,
   },
   playContainer: {
     alignItems: 'center',
