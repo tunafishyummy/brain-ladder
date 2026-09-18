@@ -1,9 +1,13 @@
-import { Text, View } from 'react-native';
+import { useRouter } from 'expo-router';
+// @ts-ignore
+import SettingsScreen from '../components/SettingsScreen';
 
-export default function Screen() {
+export default function SettingsRoute() {
+  const router = useRouter();
+
   return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-      <Text>Screen Placeholder</Text>
-    </View>
+    <SettingsScreen 
+      onReturnToMenu={() => router.replace('/')} 
+    />
   );
 }
