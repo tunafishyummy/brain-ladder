@@ -3,6 +3,7 @@ import {
   BackHandler,
   Image,
   ImageBackground,
+  Platform,
   SafeAreaView,
   StyleSheet,
   Text,
@@ -22,6 +23,11 @@ export default function MainMenuScreen() {
   };
 
   const handleExit = () => {
+    if (Platform.OS === 'web'){
+      window.close();
+    } else if (Platform.OS === 'android') {
+      
+    }
     BackHandler.exitApp();
   };
 
