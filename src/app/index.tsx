@@ -101,7 +101,7 @@ const styles = StyleSheet.create({
     paddingVertical: 20,            // ← was 40
   },
   logoContainer: {
-    marginBottom: 10,              // ← was marginTop: 20
+    marginBottom: -120,              // ← was marginTop: 20
     alignItems: 'center',
   },
   logo: {
