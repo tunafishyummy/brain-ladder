@@ -41,7 +41,7 @@ export default function MainMenuScreen() {
         {/* Logo */}
         <View style={styles.logoContainer}>
           <Image
-            source={require('../../assets/images/snake.png')}
+            source={require('../../assets/images/MainLogo.png')}
             style={styles.logo}
             resizeMode="contain"
           />
