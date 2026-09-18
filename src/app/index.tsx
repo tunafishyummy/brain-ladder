@@ -37,6 +37,7 @@ export default function MainMenuScreen() {
       style={styles.background}
       resizeMode="cover"
     >
+      <View pointerEvents="none" style={styles.overlay} />
       <SafeAreaView style={styles.container}>
         {/* Logo */}
         <View style={styles.logoContainer}>
@@ -91,8 +92,10 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
+  overlay: { position: 'absolute', inset: 0, zIndex: 1, backgroundColor: 'rgba(0,0,0,0.3)' },
   container: {
     flex: 1,
+    zIndex: 2,
     justifyContent: 'center',       // ← was 'space-between'
     alignItems: 'center',
     paddingVertical: 20,            // ← was 40
@@ -102,8 +105,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   logo: {
-    width: 500,
-    height: 200,
+    width: 600,
   },
   playContainer: {
     alignItems: 'center',
