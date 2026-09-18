@@ -19,7 +19,7 @@ export default function SettingsScreen({ onReturnToMenu }) {
 
   return (
     <ImageBackground 
-      source={require('@/assets/images/library.jpg')} 
+      source={require('@/assets/images/bookcase.png')} 
       style={styles.bg} 
       resizeMode="cover"
     >
