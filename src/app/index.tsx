@@ -19,7 +19,8 @@ export default function MainMenuScreen() {
   };
 
   const handleSettings = () => {
-    router.push('/settings');
+    console.log('Navigating to settings...');
+    router.replace('/settings');
   };
 
   const handleExit = () => {
@@ -33,7 +34,7 @@ export default function MainMenuScreen() {
 
   return (
     <ImageBackground
-      source={require('../../assets/images/bookcase.png')}
+      source={require('@/assets/images/library.jpg')}
       style={styles.background}
       resizeMode="cover"
     >
@@ -48,7 +49,7 @@ export default function MainMenuScreen() {
           />
         </View>
 
-        {/* Play Button (Book) */}
+        {/* Play Button */}
         <View style={styles.playContainer}>
           <TouchableOpacity
             style={styles.playButton}
@@ -56,7 +57,7 @@ export default function MainMenuScreen() {
             activeOpacity={0.8}
           >
             <ImageBackground
-              source={require('../../assets/images/book.png')}
+              source={require('@/assets/images/book.png')}
               style={styles.bookImage}
               resizeMode="contain"
             >
@@ -65,18 +66,26 @@ export default function MainMenuScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Bottom Options (Settings & Exit) */}
+        {/* Bottom Options */}
         <View style={styles.bottomRow}>
-          <TouchableOpacity style={styles.iconButton} onPress={handleSettings}>
+          <TouchableOpacity 
+            style={styles.iconButton} 
+            onPress={handleSettings}
+            activeOpacity={0.6}
+          >
             <Image
-              source={require('../../assets/images/settings.png')}
+              source={require('@/assets/images/settings.png')}
               style={styles.icon}
             />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.iconButton} onPress={handleExit}>
+          <TouchableOpacity 
+            style={styles.iconButton} 
+            onPress={handleExit}
+            activeOpacity={0.6}
+          >
             <Image
-              source={require('../../assets/images/door.png')}
+              source={require('@/assets/images/door.png')}
               style={styles.icon}
             />
           </TouchableOpacity>
@@ -113,8 +122,8 @@ const styles = StyleSheet.create({
     marginBottom: 10,              // ← added small gap before icons
   },
   playButton: {
-    width: 250,
-    height: 200,
+    width: 200,
+    height: 160,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -125,7 +134,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   playText: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: 'bold',
     color: '#FFD700',
     textShadowColor: 'rgba(0, 0, 0, 0.75)',
@@ -140,10 +149,16 @@ const styles = StyleSheet.create({
   },
   iconButton: {
     padding: 10,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    borderRadius: 12,
+    minWidth: 60,
+    minHeight: 60,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   icon: {
-    width: 50,
-    height: 50,
+    width: 48,
+    height: 48,
     resizeMode: 'contain',
   },
 });   
