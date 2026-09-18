@@ -34,7 +34,7 @@ export default function MainMenuScreen() {
 
   return (
     <ImageBackground
-      source={require('@/assets/images/library.jpg')}
+      source={require('@/assets/images/bookcase.jpg')}
       style={styles.background}
       resizeMode="cover"
     >
