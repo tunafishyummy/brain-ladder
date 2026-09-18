@@ -3,6 +3,7 @@ import {
   BackHandler,
   Image,
   ImageBackground,
+  Platform,
   SafeAreaView,
   StyleSheet,
   Text,
@@ -14,16 +15,19 @@ export default function MainMenuScreen() {
   const router = useRouter();
 
   const handlePlay = () => {
-    // Navigates to a game screen (e.g., src/app/game.tsx)
     router.push('/game');
   };
 
   const handleSettings = () => {
-    // Navigates to a settings screen (e.g., src/app/settings.tsx)
     router.push('/settings');
   };
 
   const handleExit = () => {
+    if (Platform.OS === 'web'){
+      window.close();
+    } else if (Platform.OS === 'android') {
+      
+    }
     BackHandler.exitApp();
   };
 
@@ -81,7 +85,6 @@ export default function MainMenuScreen() {
   );
 }
 
-{/* Styles for the main menu screen */}
 const styles = StyleSheet.create({
   background: {
     flex: 1,
@@ -90,12 +93,12 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    justifyContent: 'space-between',
+    justifyContent: 'center',       // ← was 'space-between'
     alignItems: 'center',
-    paddingVertical: 40,
+    paddingVertical: 20,            // ← was 40
   },
   logoContainer: {
-    marginTop: 20,
+    marginBottom: 10,              // ← was marginTop: 20
     alignItems: 'center',
   },
   logo: {
@@ -105,6 +108,7 @@ const styles = StyleSheet.create({
   playContainer: {
     alignItems: 'center',
     justifyContent: 'center',
+    marginBottom: 10,              // ← added small gap before icons
   },
   playButton: {
     width: 250,
@@ -128,8 +132,8 @@ const styles = StyleSheet.create({
   },
   bottomRow: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    width: '60%',
+    justifyContent: 'center',      // ← was 'space-around'
+    gap: 40,                       // ← fixed gap between icons
     marginBottom: 20,
   },
   iconButton: {
@@ -140,4 +144,4 @@ const styles = StyleSheet.create({
     height: 50,
     resizeMode: 'contain',
   },
-});
+});   
