@@ -51,7 +51,7 @@ export default function MainMenuScreen() {
   });
 
   const handlePlay = () => {
-    router.push('/game');
+    router.push('/level-select');
   };
 
   const handleSettings = () => {
