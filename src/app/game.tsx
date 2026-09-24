@@ -37,12 +37,12 @@ const DICE_IMAGES: { [key: number]: any } = {
 const getCharacterAssetForColor = (color: string) => {
   switch (color) {
     case '#ef4444': // Red
-      return require('../../assets/images/character-red.png');
+      return require('../../assets/images/Playerred.png');
     case '#22c55e': // Green
-      return require('../../assets/images/character-green.png');
+      return require('../../assets/images/Playergreen.png');
     case '#3b82f6': // Blue
     default:
-      return require('../../assets/images/character-blue.png');
+      return require('../../assets/images/Playerblue.png');
   }
 };
 
