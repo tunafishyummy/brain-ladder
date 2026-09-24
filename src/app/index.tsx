@@ -1,38 +1,60 @@
 import { useRouter } from 'expo-router';
+import { useEffect, useRef } from 'react';
 import {
-  BackHandler,
-  Image,
+  Animated,
   ImageBackground,
-  Platform,
-  SafeAreaView,
   StyleSheet,
   Text,
-  TouchableOpacity,
-  View,
+  TouchableWithoutFeedback,
+  View
 } from 'react-native';
+import { useAudio } from '../AudioContext';
 
-export default function MainMenuScreen() {
+export default function SplashScreen() {
   const router = useRouter();
+  const { startAudio } = useAudio();
+  const fadeAnim = useRef(new Animated.Value(0.1)).current;
+  const rotateAnim = useRef(new Animated.Value(0)).current;
 
-  const handlePlay = () => {
-    router.push('/game');
-  };
+  useEffect(() => {
+    const rotate = Animated.loop(
+      Animated.sequence([
+        Animated.timing(rotateAnim, {
+          toValue: 0.2, //Strongness of the rotation to the right
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(rotateAnim, {
+          toValue: -0.2, //Strongness of the rotation to the left
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(rotateAnim, {
+          toValue: 0, //Reset rotation to the center
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    rotate.start();
 
-  const handleSettings = () => {
-    console.log('Navigating to settings...');
-    router.replace('/settings');
-  };
+    return () => {
+      rotate.stop();
+    };
+  }, [fadeAnim, rotateAnim]);
 
-  const handleExit = () => {
-    if (Platform.OS === 'web'){
-      window.close();
-    } else if (Platform.OS === 'android') {
-      
-    }
-    BackHandler.exitApp();
+  const logoRotation = rotateAnim.interpolate({
+    inputRange: [-1, 0, 1],
+    outputRange: ['-10deg', '0deg', '10deg'],
+  });
+
+  const handlePress = () => {
+    startAudio();
+    router.replace('/mainmenu');
   };
 
   return (
+<<<<<<< HEAD
     <ImageBackground
       source={require('@/assets/images/bookcase.png')}
       style={styles.background}
@@ -48,117 +70,83 @@ export default function MainMenuScreen() {
             resizeMode="contain"
           />
         </View>
+=======
+    <TouchableWithoutFeedback onPress={handlePress}>
+      <View style={styles.screenWrapper}>
+        <ImageBackground
+          source={require('@/assets/images/bookcase.png')}
+          style={styles.background}
+          resizeMode="cover"
+        >
+          <View style={styles.overlay} />
+>>>>>>> 02569cac2c0e7807c524c171b8136144cc1d261e
 
-        {/* Play Button */}
-        <View style={styles.playContainer}>
-          <TouchableOpacity
-            style={styles.playButton}
-            onPress={handlePlay}
-            activeOpacity={0.8}
-          >
-            <ImageBackground
-              source={require('@/assets/images/book.png')}
-              style={styles.bookImage}
-              resizeMode="contain"
-            >
-              <Text style={styles.playText}>PLAY</Text>
-            </ImageBackground>
-          </TouchableOpacity>
-        </View>
-
-        {/* Bottom Options */}
-        <View style={styles.bottomRow}>
-          <TouchableOpacity 
-            style={styles.iconButton} 
-            onPress={handleSettings}
-            activeOpacity={0.6}
-          >
-            <Image
-              source={require('@/assets/images/settings.png')}
-              style={styles.icon}
-            />
-          </TouchableOpacity>
-
-          <TouchableOpacity 
-            style={styles.iconButton} 
-            onPress={handleExit}
-            activeOpacity={0.6}
-          >
-            <Image
-              source={require('@/assets/images/door.png')}
-              style={styles.icon}
-            />
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
-    </ImageBackground>
+          <View style={styles.contentContainer}>
+            <View style={styles.logoContainer}>
+              <Animated.Image
+                source={require('@/assets/images/MainLogo.png')}
+                style={[
+                  styles.logo,
+                  {
+                    transform: [{ rotate: logoRotation }],
+                  },
+                ]}
+                resizeMode="contain"
+              />
+            </View>
+            <View style={styles.promptContainer}>
+              <Text style={styles.promptText}>Press the screen to continue.</Text>
+            </View>
+          </View>
+        </ImageBackground>
+      </View>
+    </TouchableWithoutFeedback>
   );
 }
 
 const styles = StyleSheet.create({
+  screenWrapper: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
+  },
   background: {
     flex: 1,
     width: '100%',
     height: '100%',
   },
-  overlay: { position: 'absolute', inset: 0, zIndex: 1, backgroundColor: 'rgba(0,0,0,0.3)' },
-  container: {
+  overlay: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+  },
+  contentContainer: {
     flex: 1,
-    zIndex: 2,
-    justifyContent: 'center',       // ← was 'space-between'
+    justifyContent: 'space-around',
     alignItems: 'center',
-    paddingVertical: 20,            // ← was 40
+    paddingVertical: 60,
   },
   logoContainer: {
-    marginBottom: -120,              // ← was marginTop: 20
+    marginBottom: -120,
     alignItems: 'center',
+    width: '50%',
   },
   logo: {
-    width: 600,
-  },
-  playContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 10,              // ← added small gap before icons
-  },
-  playButton: {
-    width: 200,
-    height: 160,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  bookImage: {
-    width: '100%',
-    height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  playText: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#FFD700',
-    textShadowColor: 'rgba(0, 0, 0, 0.75)',
-    textShadowOffset: { width: 1, height: 2 },
-    textShadowRadius: 4,
-  },
-  bottomRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',      // ← was 'space-around'
-    gap: 40,                       // ← fixed gap between icons
-    marginBottom: 20,
-  },
-  iconButton: {
-    padding: 10,
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
-    borderRadius: 12,
-    minWidth: 60,
-    minHeight: 60,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  icon: {
-    width: 48,
-    height: 48,
+    width: '50%',
+    height: undefined,
+    aspectRatio: 2,
     resizeMode: 'contain',
   },
-});   
+  promptContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  promptText: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: 'rgb(187, 187, 187)',
+    letterSpacing: 2,
+    textShadowColor: 'rgba(0, 0, 0, 0.9)',
+    textShadowOffset: { width: 1, height: 2 },
+    textShadowRadius: 6,
+  },
+});

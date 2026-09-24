@@ -5,6 +5,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 const BACKGROUND_MUSIC = require('../assets/ost/Placeholder.mp3');
 
 type AudioContextType = {
+  startAudio: () => void;
   masterVol: number;
   setMasterVol: (val: number) => void;
   masterMute: boolean;
@@ -34,10 +35,19 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
   // Auto-play and loop background music
   useEffect(() => {
     if (player) {
-      player.play();
       player.loop = true;
     }
   }, [player]);
+
+  const startAudio = () => {
+    try {
+      if (player && !player.playing) {
+        player.play();
+      }
+    } catch (error) {
+      console.error('Error starting audio:', error);
+    }
+  };
 
   // Update volume  whenever any slider/mute state changes
   useEffect(() => {
@@ -53,6 +63,7 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
   return (
     <AudioContext.Provider
       value={{
+        startAudio,
         masterVol, setMasterVol,
         masterMute, setMasterMute,
         musicVol, setMusicVol,
