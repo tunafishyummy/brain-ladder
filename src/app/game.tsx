@@ -287,7 +287,7 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   indicatorActive: {
-    height: 95, // Increased height so it stretches all the way up to your red line mark
+    height: 100, 
     borderTopWidth: 4,
     borderTopColor: '#fff',
   },
