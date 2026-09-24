@@ -50,27 +50,14 @@ export default function SplashScreen() {
 
   const handlePress = () => {
     startAudio();
-    router.replace('/mainmenu');
+    router.replace('/mainmenu')
+  };
+
+  const handlePlay = () => {
+    router.push('/game')
   };
 
   return (
-<<<<<<< HEAD
-    <ImageBackground
-      source={require('@/assets/images/bookcase.png')}
-      style={styles.background}
-      resizeMode="cover"
-    >
-      <View pointerEvents="none" style={styles.overlay} />
-      <SafeAreaView style={styles.container}>
-        {/* Logo */}
-        <View style={styles.logoContainer}>
-          <Image
-            source={require('../../assets/images/MainLogo.png')}
-            style={styles.logo}
-            resizeMode="contain"
-          />
-        </View>
-=======
     <TouchableWithoutFeedback onPress={handlePress}>
       <View style={styles.screenWrapper}>
         <ImageBackground
@@ -79,7 +66,6 @@ export default function SplashScreen() {
           resizeMode="cover"
         >
           <View style={styles.overlay} />
->>>>>>> 02569cac2c0e7807c524c171b8136144cc1d261e
 
           <View style={styles.contentContainer}>
             <View style={styles.logoContainer}>
