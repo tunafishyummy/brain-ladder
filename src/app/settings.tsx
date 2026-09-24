@@ -7,7 +7,7 @@ export default function SettingsRoute() {
 
   return (
     <SettingsScreen 
-      onReturnToMenu={() => router.replace('/')} 
+      onReturnToMenu={() => router.replace('/mainmenu')} 
     />
   );
 }
