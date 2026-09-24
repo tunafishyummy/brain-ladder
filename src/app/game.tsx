@@ -137,7 +137,6 @@ export default function GameScreen() {
     >
       <View style={styles.overlay} />
 
-      {/* Main Container keeping Turn Banner, Board, and Dice stacked correctly */}
       <View style={styles.mainContainer}>
         {/* UPPER BOX: Turn Header Banner */}
         <View style={[styles.turnBanner, { backgroundColor: activePlayer.color }]}>
@@ -287,7 +286,7 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   indicatorActive: {
-    height: 100, 
+    height: 95,
     borderTopWidth: 4,
     borderTopColor: '#fff',
   },
