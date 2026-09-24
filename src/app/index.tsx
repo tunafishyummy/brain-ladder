@@ -50,7 +50,11 @@ export default function SplashScreen() {
 
   const handlePress = () => {
     startAudio();
-    router.replace('/mainmenu');
+    router.replace('/mainmenu')
+  };
+
+  const handlePlay = () => {
+    router.push('/game')
   };
 
   return (
