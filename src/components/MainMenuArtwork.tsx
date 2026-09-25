@@ -5,11 +5,11 @@ const MENU_ART = require('../../assets/images/mainmenuart.png');
 const MENU_LAD = require('../../assets/images/mainmenulad.png');
 const MENU_ARM = require('../../assets/images/mainmenuladarm.png');
 const ART_SIZE = { width: 1350, height: 3000 };
-const ARM_SIZE = { width: 940, height: 940 };
+const ARM_SIZE = { width: 2600, height: 1200 };
 const PAGE_ASPECT = 9 / 20;
 
 const ARM_PIVOT = { x: 159, y: 910 };
-const ARM_HINGE_ON_CANVAS = { x: 400, y: 2600 };
+const ARM_HINGE_ON_CANVAS = { x: -400, y: 1300 };
 
 export default function MainMenuArtwork({ children }: { children: React.ReactNode }) {
   const [screenSize, setScreenSize] = useState({ width: 0, height: 0 });
