@@ -2,7 +2,6 @@ import { useRouter } from 'expo-router';
 import { useEffect, useRef } from 'react';
 import {
   Animated,
-  ImageBackground,
   StyleSheet,
   Text,
   TouchableWithoutFeedback,
@@ -10,6 +9,7 @@ import {
 } from 'react-native';
 import { useAudio } from '../AudioContext';
 import { LOGO_LAYOUT } from '../constants/logoLayout';
+import BookcaseBackground from '../components/BookcaseBackground';
 
 export default function SplashScreen() {
   const router = useRouter();
@@ -84,11 +84,7 @@ export default function SplashScreen() {
   return (
     <TouchableWithoutFeedback onPress={handlePress}>
       <View style={styles.screenWrapper}>
-        <ImageBackground
-          source={require('@/assets/images/bookcase.png')}
-          style={styles.background}
-          resizeMode="cover"
-        >
+        <BookcaseBackground>
           <View style={styles.overlay} />
 
           <View style={styles.contentContainer}>
@@ -127,7 +123,7 @@ export default function SplashScreen() {
               <Text style={styles.promptText}>Press the screen to continue.</Text>
             </View>
           </View>
-        </ImageBackground>
+        </BookcaseBackground>
       </View>
     </TouchableWithoutFeedback>
   );

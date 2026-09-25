@@ -1,7 +1,8 @@
 import Slider from '@react-native-community/slider';
 import { useState } from 'react';
-import { Image, ImageBackground, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
+import { Image, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
 import { useAudio } from '../AudioContext';
+import BookcaseBackground from './BookcaseBackground';
 
 export default function SettingsScreen({ onReturnToMenu }) {
   const {
@@ -11,6 +12,7 @@ export default function SettingsScreen({ onReturnToMenu }) {
     musicMute, setMusicMute,
     sfxVol, setSfxVol,
     sfxMute, setSfxMute,
+    backgroundSpeed, setBackgroundSpeed,
   } = useAudio();
 
   const times = ['15s', '30s', '45s', '60s', '90s', '∞'];
@@ -18,11 +20,7 @@ export default function SettingsScreen({ onReturnToMenu }) {
   const [showHelp, setShowHelp] = useState(false);
 
   return (
-    <ImageBackground 
-      source={require('@/assets/images/bookcase.png')} 
-      style={styles.bg} 
-      resizeMode="cover"
-    >
+    <BookcaseBackground>
       <View style={styles.overlay} />
       
       <View style={styles.container}>
@@ -33,6 +31,24 @@ export default function SettingsScreen({ onReturnToMenu }) {
           </TouchableOpacity>
           <Text style={styles.title}>SETTINGS</Text>
           <View style={{ width: 30 }} />
+        </View>
+
+        <View style={styles.panel}>
+          <View style={styles.row}>
+            <Text style={styles.label}>BOOKCASE MOTION ({backgroundSpeed === 0 ? 'OFF' : `${backgroundSpeed}s / cycle`})</Text>
+          </View>
+          <Slider
+            style={styles.slider}
+            minimumValue={0}
+            maximumValue={120}
+            step={5}
+            value={backgroundSpeed}
+            onValueChange={setBackgroundSpeed}
+            minimumTrackTintColor="#6366f1"
+            maximumTrackTintColor="#1f283d"
+            thumbTintColor="#818cf8"
+          />
+          <Text style={styles.rulesText}>0 turns motion off; larger values move more slowly.</Text>
         </View>
 
         {/* Audio Mixer */}
@@ -159,7 +175,7 @@ export default function SettingsScreen({ onReturnToMenu }) {
           <Text style={styles.returnText}>RETURN TO MENU</Text>
         </TouchableOpacity>
       </View>
-    </ImageBackground>
+    </BookcaseBackground>
   );
 }
 

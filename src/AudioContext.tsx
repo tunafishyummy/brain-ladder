@@ -18,6 +18,8 @@ type AudioContextType = {
   setSfxVol: (val: number) => void;
   sfxMute: boolean;
   setSfxMute: (val: boolean) => void;
+  backgroundSpeed: number;
+  setBackgroundSpeed: (val: number) => void;
 };
 
 const AudioContext = createContext<AudioContextType | null>(null);
@@ -29,6 +31,7 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
   const [musicMute, setMusicMute] = useState(false);
   const [sfxVol, setSfxVol] = useState(90);
   const [sfxMute, setSfxMute] = useState(false);
+  const [backgroundSpeed, setBackgroundSpeed] = useState(45);
 
   const player = useAudioPlayer(BACKGROUND_MUSIC);
 
@@ -70,6 +73,7 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
         musicMute, setMusicMute,
         sfxVol, setSfxVol,
         sfxMute, setSfxMute,
+        backgroundSpeed, setBackgroundSpeed,
       }}
     >
       {children}

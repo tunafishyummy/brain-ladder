@@ -10,6 +10,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import BookcaseBackground from '../components/BookcaseBackground';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const BOARD_SIZE = Math.min(SCREEN_WIDTH * 0.90, 360);
@@ -244,11 +245,7 @@ export default function GameScreen() {
   };
 
   return (
-    <ImageBackground
-      source={require('../../assets/images/bookcase.png')}
-      style={styles.bg}
-      resizeMode="cover"
-    >
+    <BookcaseBackground>
       <View style={styles.overlay} />
 
       <View style={styles.mainContainer}>
@@ -407,7 +404,7 @@ export default function GameScreen() {
           </ImageBackground>
         </TouchableOpacity>
       )}
-    </ImageBackground>
+    </BookcaseBackground>
   );
 }
 

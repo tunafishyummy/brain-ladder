@@ -13,6 +13,7 @@ import {
   View
 } from 'react-native';
 import { LOGO_LAYOUT } from '../constants/logoLayout';
+import BookcaseBackground from '../components/BookcaseBackground';
 
 export default function MainMenuScreen() {
   const router = useRouter();
@@ -91,11 +92,7 @@ export default function MainMenuScreen() {
   };
 
   return (
-    <ImageBackground
-      source={require('@/assets/images/bookcase.png')}
-      style={styles.background}
-      resizeMode="cover"
-    >
+    <BookcaseBackground>
       <View pointerEvents="none" style={styles.overlay} />
       <SafeAreaView style={styles.container}>
         <View style={styles.logoContainer}>
@@ -170,7 +167,7 @@ export default function MainMenuScreen() {
           </TouchableOpacity>
         </View>
       </SafeAreaView>
-    </ImageBackground>
+    </BookcaseBackground>
   );
 }
 
