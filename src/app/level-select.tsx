@@ -54,6 +54,7 @@ export default function LevelSelectScreen() {
     setDifficultyIndex((prev) => (prev < DIFFICULTIES.length - 1 ? prev + 1 : 0));
   };
 
+  
   const handleContinue = () => {
     router.push({
       pathname: '/playerselection',
