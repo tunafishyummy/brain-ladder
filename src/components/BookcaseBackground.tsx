@@ -4,7 +4,7 @@ import { useAudio } from '../AudioContext';
 
 const BOOKCASE = require('../../assets/images/bookcase.png');
 const BOOKCASE_SIZE = Image.resolveAssetSource(BOOKCASE);
-const BACKGROUND_ZOOM = 1.35;
+const BACKGROUND_ZOOM = 2.5;
 
 /** Shared, gently scrolling bookcase backdrop for every app route. */
 export default function BookcaseBackground({ children }: { children: React.ReactNode }) {
