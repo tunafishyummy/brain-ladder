@@ -1,15 +1,15 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
-    BackHandler,
-    Image,
-    Modal,
-    Platform,
-    SafeAreaView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
+  BackHandler,
+  Image,
+  Modal,
+  Platform,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import MainMenuArtwork from '../components/MainMenuArtwork';
 // @ts-ignore SettingsScreen is maintained as JSX.
@@ -19,6 +19,7 @@ export default function MainMenuScreen() {
   const router = useRouter();
   const [settingsVisible, setSettingsVisible] = useState(false);
   const [exitPromptVisible, setExitPromptVisible] = useState(false);
+
   const handlePlay = () => {
     router.push('/level-select');
   };
@@ -135,12 +136,11 @@ const styles = StyleSheet.create({
     zIndex: 2,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 20,
   },
   debugButton: {
     position: 'absolute',
-    top: 150,
-    left: 10,
+    top: 60,
+    left: 20,
     zIndex: 3,
     backgroundColor: '#fff',
     borderWidth: 2,
@@ -158,7 +158,7 @@ const styles = StyleSheet.create({
   playContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 550,
+    marginBottom: 400, // Adjusted from 550 so it stays safely within view on mobile
     marginLeft: 100,
   },
   playButton: {
@@ -177,12 +177,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     gap: 40,
-    marginBottom: -100,
-    marginLeft:200,
-    transform: [{ translateY: 100 }],
+    marginLeft: 200,
+    transform: [{ translateY: 60 }], // Reduced from 100 so it doesn't get clipped past the bottom edge
   },
   iconDivider: {
-    width: 4,
+    width: 2,
     height: 70,
     alignSelf: 'center',
     backgroundColor: 'rgba(255,255,255,0.75)',
@@ -245,4 +244,5 @@ const styles = StyleSheet.create({
     borderColor: '#3b4b73',
     backgroundColor: '#252d42',
   },
-  exitButtonText: { color: '#fff', fontWeight: 'bold' },});
+  exitButtonText: { color: '#fff', fontWeight: 'bold' },
+});
