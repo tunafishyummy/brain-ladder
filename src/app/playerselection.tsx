@@ -45,8 +45,8 @@ export default function PlayerSelectionScreen() {
             <View style={styles.avatarRow}>
               {/* Player 1 */}
               <View style={styles.avatarWrapper}>
-                <Image
-                  source={require('../../assets/images/player.jpg')}
+                  <Image
+                    source={require('../../assets/images/Playerblue.png')}
                   style={styles.avatarImage}
                   resizeMode="contain"
                 />
@@ -58,8 +58,8 @@ export default function PlayerSelectionScreen() {
               {/* Player 2 */}
               {playerCount >= 2 && (
                 <View style={styles.avatarWrapper}>
-                  <Image
-                    source={require('../../assets/images/player.jpg')}
+                    <Image
+                      source={require('../../assets/images/Playerblue.png')}
                     style={styles.avatarImage}
                     resizeMode="contain"
                   />
@@ -72,8 +72,8 @@ export default function PlayerSelectionScreen() {
               {/* Player 3 */}
               {playerCount === 3 && (
                 <View style={styles.avatarWrapper}>
-                  <Image
-                    source={require('../../assets/images/player.jpg')}
+                    <Image
+                      source={require('../../assets/images/Playerblue.png')}
                     style={styles.avatarImage}
                     resizeMode="contain"
                   />
