@@ -1,8 +1,7 @@
 import Slider from '@react-native-community/slider';
 import { useState } from 'react';
-import { Image, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
+import { Image, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
 import { useAudio } from '../AudioContext';
-import BookcaseBackground from './BookcaseBackground';
 
 export default function SettingsScreen({ onReturnToMenu }) {
   const {
@@ -20,8 +19,7 @@ export default function SettingsScreen({ onReturnToMenu }) {
   const [showHelp, setShowHelp] = useState(false);
 
   return (
-    <BookcaseBackground>
-      <View style={styles.container}>
+    <ScrollView style={styles.scroll} contentContainerStyle={styles.container}>
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={onReturnToMenu} style={styles.backBtn}>
@@ -172,15 +170,17 @@ export default function SettingsScreen({ onReturnToMenu }) {
           <TouchableOpacity onPress={onReturnToMenu} style={styles.returnBtn}>
             <Text style={styles.returnText}>RETURN TO MENU</Text>
         </TouchableOpacity>
-      </View>
-    </BookcaseBackground>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
+  scroll: { width: '100%' },
   container: {
-    width: '90%',
-    maxWidth: 360,
+    width: '100%',
+    maxWidth: 380,
+    alignSelf: 'center',
+    padding: 10,
     gap: 10,
   },
   header: {

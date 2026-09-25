@@ -1,7 +1,9 @@
 import { useRouter } from 'expo-router';
+import { useState } from 'react';
 import {
   BackHandler,
   Image,
+  Modal,
   Platform,
   SafeAreaView,
   StyleSheet,
@@ -10,15 +12,19 @@ import {
   View
 } from 'react-native';
 import MainMenuArtwork from '../components/MainMenuArtwork';
+// @ts-ignore SettingsScreen is maintained as JSX.
+import SettingsScreen from '../components/SettingsScreen';
 
 export default function MainMenuScreen() {
   const router = useRouter();
+  const [settingsVisible, setSettingsVisible] = useState(false);
+  const [exitPromptVisible, setExitPromptVisible] = useState(false);
   const handlePlay = () => {
     router.push('/level-select');
   };
 
   const handleSettings = () => {
-    router.push('/settings');
+    setSettingsVisible(true);
   };
 
   const handleReturnToSplash = () => {
@@ -26,6 +32,11 @@ export default function MainMenuScreen() {
   };
 
   const handleExit = () => {
+    setExitPromptVisible(true);
+  };
+
+  const confirmExit = () => {
+    setExitPromptVisible(false);
     if (Platform.OS === 'web') {
       window.close();
     } else if (Platform.OS === 'android') {
@@ -80,6 +91,40 @@ export default function MainMenuScreen() {
           </TouchableOpacity>
         </View>
       </SafeAreaView>
+
+      <Modal
+        visible={settingsVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setSettingsVisible(false)}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.settingsModal}>
+            <SettingsScreen onReturnToMenu={() => setSettingsVisible(false)} />
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={exitPromptVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setExitPromptVisible(false)}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.exitModal}>
+            <Text style={styles.exitTitle}>Really Exit?</Text>
+            <View style={styles.exitActions}>
+              <TouchableOpacity style={styles.exitButton} onPress={confirmExit} activeOpacity={0.8}>
+                <Text style={styles.exitButtonText}>YES</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.exitButton} onPress={() => setExitPromptVisible(false)} activeOpacity={0.8}>
+                <Text style={styles.exitButtonText}>NO</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </MainMenuArtwork>
   );
 }
@@ -137,8 +182,8 @@ const styles = StyleSheet.create({
     transform: [{ translateY: 100 }],
   },
   iconDivider: {
-    width: 2,
-    height: 56,
+    width: 4,
+    height: 70,
     alignSelf: 'center',
     backgroundColor: 'rgba(255,255,255,0.75)',
   },
@@ -152,4 +197,52 @@ const styles = StyleSheet.create({
     height: 48,
     resizeMode: 'contain',
   },
-});
+  modalBackdrop: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+    backgroundColor: 'rgba(0,0,0,0.72)',
+  },
+  settingsModal: {
+    width: '100%',
+    maxWidth: 400,
+    maxHeight: '90%',
+    overflow: 'hidden',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#3b4b73',
+    backgroundColor: 'rgba(17,22,37,0.98)',
+  },
+  exitModal: {
+    width: '100%',
+    maxWidth: 360,
+    padding: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#252f47',
+    backgroundColor: 'rgba(24,31,48,0.98)',
+    gap: 16,
+  },
+  exitTitle: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  exitActions: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 12,
+  },
+  exitButton: {
+    minWidth: 90,
+    alignItems: 'center',
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#3b4b73',
+    backgroundColor: '#252d42',
+  },
+  exitButtonText: { color: '#fff', fontWeight: 'bold' },});
