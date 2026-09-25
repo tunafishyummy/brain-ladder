@@ -1,12 +1,12 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
-  Image,
-  SafeAreaView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Image,
+    SafeAreaView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import BookcaseBackground from '../components/BookcaseBackground';
 
@@ -37,6 +37,15 @@ export default function CustomizeCharacterScreen() {
 
   const currentPlayerNum = activePlayerIndex + 1;
   const currentSelection = selectedColors[activePlayerIndex];
+
+  // Back action: Goes to previous player's turn, or back to player selection screen if on P1
+  const handleBack = () => {
+    if (activePlayerIndex > 0) {
+      setActivePlayerIndex((prev) => prev - 1);
+    } else {
+      router.back();
+    }
+  };
 
   // Handle color click for current active player
   const handleSelectColor = (hex: string) => {
@@ -74,19 +83,29 @@ export default function CustomizeCharacterScreen() {
       <SafeAreaView style={styles.container}>
         <View style={styles.content}>
 
-          {/* Header Banner */}
-          <View style={styles.bannerContainer}>
-            <Text style={styles.bannerTitle}>CUSTOMIZE CHARACTER</Text>
-            <Text style={styles.bannerSubtitle}>
-              PLAYER {currentPlayerNum} OF {totalPlayers} TURN
-            </Text>
+          {/* Header Banner with Back Button */}
+          <View style={styles.headerRow}>
+            <TouchableOpacity 
+              style={styles.backButton} 
+              onPress={handleBack}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.backArrow}>‹</Text>
+            </TouchableOpacity>
+
+            <View style={styles.bannerContainer}>
+              <Text style={styles.bannerTitle}>CUSTOMIZE CHARACTER</Text>
+              <Text style={styles.bannerSubtitle}>
+                PLAYER {currentPlayerNum} OF {totalPlayers} TURN
+              </Text>
+            </View>
           </View>
 
           {/* Character Preview */}
           <View style={styles.previewCard}>
             <View style={styles.avatarWrapper}>
               <Image
-                source={require('../../assets/images/book.png')}
+                source={require('../../assets/images/Playergreen.png')}
                 style={styles.avatarImage}
                 resizeMode="contain"
               />
@@ -174,24 +193,46 @@ const styles = StyleSheet.create({
     padding: PADDING,
     justifyContent: 'space-between',
   },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  backButton: {
+    width: 48,
+    height: 48,
+    borderRadius: CARD_RADIUS,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  backArrow: {
+    color: '#ffffff',
+    fontSize: 28,
+    fontWeight: '300',
+    marginTop: -2,
+  },
   bannerContainer: {
+    flex: 1,
     backgroundColor: 'rgba(255, 255, 255, 0.08)',
     borderRadius: CARD_RADIUS,
-    padding: PADDING,
+    paddingVertical: 10,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.15)',
     alignItems: 'center',
-    gap: 4,
+    gap: 2,
   },
   bannerTitle: {
     color: '#ffffff',
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '800',
     letterSpacing: 1.5,
   },
   bannerSubtitle: {
     color: '#a0a5b5',
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
     letterSpacing: 1,
   },

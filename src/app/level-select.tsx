@@ -1,4 +1,4 @@
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
   ImageBackground,
@@ -43,7 +43,6 @@ const DIFFICULTIES = ['Easy', 'Normal', 'Hard'];
 
 export default function LevelSelectScreen() {
   const router = useRouter();
-  const { players = '3' } = useLocalSearchParams<{ players?: string }>();
   const [selectedLevel, setSelectedLevel] = useState('collections');
   const [difficultyIndex, setDifficultyIndex] = useState(1);
 
@@ -110,10 +109,6 @@ export default function LevelSelectScreen() {
                 </TouchableOpacity>
               </View>
             </View>
-
-            <TouchableOpacity style={styles.backButton} onPress={() => router.back()} activeOpacity={0.9}>
-              <Text style={styles.backText}>BACK</Text>
-            </TouchableOpacity>
 
             <TouchableOpacity style={styles.continueButton} onPress={handleContinue} activeOpacity={0.9}>
               <Text style={styles.continueText}>NEXT</Text>
@@ -230,20 +225,6 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 20,
     fontWeight: '700',
-  },
-  backButton: {
-    backgroundColor: 'rgba(255, 255, 255, 0.16)',
-    paddingVertical: 14,
-    borderRadius: CARD_RADIUS,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-  },
-  backText: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: '800',
-    letterSpacing: 1,
   },
   continueButton: {
     backgroundColor: '#ffffff',

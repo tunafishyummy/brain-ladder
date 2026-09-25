@@ -13,8 +13,6 @@ import BookcaseBackground from '../components/BookcaseBackground';
 const PADDING = 16;
 const CARD_RADIUS = 16;
 
-
-
 export default function PlayerSelectionScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
@@ -35,9 +33,19 @@ export default function PlayerSelectionScreen() {
       <SafeAreaView style={styles.container}>
         <View style={styles.content}>
           
-          {/* Header */}
-          <View style={styles.bannerContainer}>
-            <Text style={styles.bannerTitle}>PLAYER COUNT</Text>
+          {/* Header with Back Button */}
+          <View style={styles.headerRow}>
+            <TouchableOpacity 
+              style={styles.backButton} 
+              onPress={() => router.back()}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.backArrow}>‹</Text>
+            </TouchableOpacity>
+
+            <View style={styles.bannerContainer}>
+              <Text style={styles.bannerTitle}>PLAYER COUNT</Text>
+            </View>
           </View>
 
           {/* Character Preview Container */}
@@ -45,8 +53,8 @@ export default function PlayerSelectionScreen() {
             <View style={styles.avatarRow}>
               {/* Player 1 */}
               <View style={styles.avatarWrapper}>
-                  <Image
-                    source={require('../../assets/images/Playerblue.png')}
+                <Image
+                  source={require('../../assets/images/Playerblue.png')}
                   style={styles.avatarImage}
                   resizeMode="contain"
                 />
@@ -58,8 +66,8 @@ export default function PlayerSelectionScreen() {
               {/* Player 2 */}
               {playerCount >= 2 && (
                 <View style={styles.avatarWrapper}>
-                    <Image
-                      source={require('../../assets/images/Playerblue.png')}
+                  <Image
+                    source={require('../../assets/images/Playerblue.png')}
                     style={styles.avatarImage}
                     resizeMode="contain"
                   />
@@ -72,8 +80,8 @@ export default function PlayerSelectionScreen() {
               {/* Player 3 */}
               {playerCount === 3 && (
                 <View style={styles.avatarWrapper}>
-                    <Image
-                      source={require('../../assets/images/Playerblue.png')}
+                  <Image
+                    source={require('../../assets/images/Playerblue.png')}
                     style={styles.avatarImage}
                     resizeMode="contain"
                   />
@@ -122,13 +130,13 @@ export default function PlayerSelectionScreen() {
             </TouchableOpacity>
           </View>
 
-          {/* Start Game Button */}
+          {/* Next Button */}
           <TouchableOpacity
             style={styles.startButton}
             onPress={handleStartGame}
             activeOpacity={0.9}
           >
-            <Text style={styles.startText}>START GAME</Text>
+            <Text style={styles.startText}>NEXT</Text>
           </TouchableOpacity>
 
         </View>
@@ -146,10 +154,32 @@ const styles = StyleSheet.create({
     padding: PADDING,
     justifyContent: 'space-between',
   },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  backButton: {
+    width: 48,
+    height: 48,
+    borderRadius: CARD_RADIUS,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  backArrow: {
+    color: '#ffffff',
+    fontSize: 28,
+    fontWeight: '300',
+    marginTop: -2,
+  },
   bannerContainer: {
+    flex: 1,
     backgroundColor: 'rgba(255, 255, 255, 0.08)',
     borderRadius: CARD_RADIUS,
-    padding: PADDING,
+    paddingVertical: 12,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.15)',
     alignItems: 'center',
