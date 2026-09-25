@@ -10,256 +10,57 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import BookcaseBackground from '../components/BookcaseBackground';
 
-const SCREEN_WIDTH = Dimensions.get('window').width;
-const BOARD_SIZE = Math.min(SCREEN_WIDTH * 0.90, 360);
-const CELL_SIZE = BOARD_SIZE / 10;
+// Constants
+const PADDING = 16;
+const CARD_RADIUS = 16;
 
-// Ladders (Going Up): landing tile -> top tile
-const LADDERS: { [key: number]: number } = {
-  2: 33,
-  8: 34,
-  20: 77,
-  32: 68,
-  41: 79,
-  74: 88,
-  82: 100,
-  85: 95,
-};
 
-// Snakes (Going Down): landing tile (head) -> tail tile
-const SNAKES: { [key: number]: number } = {
-  29: 9,
-  38: 15,
-  47: 5,
-  53: 33,
-  62: 37,
-  86: 54,
-  92: 70,
-  97: 25,
-};
+{/*dito yung mga levels */}
+const LEVELS = [
+  {
+    id: 'reading',
+    title: 'The Reading Wing',
+    subtitle: 'Language',
+    color: '#a3e635',
+    image: require('../../assets/images/english.jpg'),
+  },
+  {
+    id: 'research',
+    title: 'The Research Corner',
+    subtitle: 'Science & Technology',
+    color: '#60a5fa',
+    image: require('../../assets/images/science.jpg'),
+  },
+  {
+    id: 'collections',
+    title: 'The Old Collections',
+    subtitle: 'World History',
+    color: '#f87171',
+    image: require('../../assets/images/history.jpg'),
+  },
+];
 
-const DICE_IMAGES: { [key: number]: any } = {
-  1: require('../../assets/images/dice1.png'),
-  2: require('../../assets/images/dice2.png'),
-  3: require('../../assets/images/dice3.png'),
-  4: require('../../assets/images/dice4.png'),
-  5: require('../../assets/images/dice5.png'),
-  6: require('../../assets/images/dice6.png'),
-};
-
-const COLOR_NAMES: { [key: string]: string } = {
-  '#dc2626': 'Red',
-  '#16a34a': 'Green',
-  '#2563eb': 'Blue',
-  '#fed330': 'Yellow',
-  '#ff5252': 'Red',
-  '#26de81': 'Green',
-  '#4b7bec': 'Blue',
-};
-
-const getCharacterAssetForColor = (color: string) => {
-  switch (color) {
-    case '#dc2626':
-    case '#ff5252':
-      return require('../../assets/images/Playerred.png');
-    case '#16a34a':
-    case '#26de81':
-      return require('../../assets/images/Playergreen.png');
-    case '#fed330':
-    case '#2563eb':
-    case '#4b7bec':
-    default:
-      return require('../../assets/images/Playerblue.png');
-  }
-};
-
-type Player = {
-  id: string;
-  name: string;
-  color: string;
-  position: number;
-};
-
-type EventType = 'ladder' | 'snake';
-
-type PendingEvent = {
-  type: EventType;
-  landedPos: number;
-  target: number;
-};
-
-type Question = {
-  prompt: string;
-  options: string[];
-  correctIndex: number;
-};
-
-const getPlaceholderQuestion = (type: EventType): Question => {
-  if (type === 'ladder') {
-    return {
-      prompt: 'Placeholder question — answer correctly to climb the ladder!',
-      options: ['Option A', 'Option B', 'Option C', 'Option D'],
-      correctIndex: 0,
-    };
-  }
-  return {
-    prompt: 'Placeholder question — answer correctly to dodge the snake!',
-    options: ['Option A', 'Option B', 'Option C', 'Option D'],
-    correctIndex: 0,
-  };
-};
+const DIFFICULTIES = ['Easy', 'Normal', 'Hard'];
 
 export default function GameScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ players?: string; playerColors?: string }>();
-  
-  const playerCount = Math.min(3, Math.max(1, Number(params.players) || 3));
-  const parsedColors: string[] = params.playerColors
-    ? JSON.parse(params.playerColors as string)
-    : ['#16a34a', '#dc2626', '#2563eb'];
+  const [selectedLevel, setSelectedLevel] = useState('collections');
+  const [difficultyIndex, setDifficultyIndex] = useState(1);
 
-  const [players, setPlayers] = useState<Player[]>(() => {
-    return Array.from({ length: playerCount }, (_, index) => {
-      const color = parsedColors[index] || '#2563eb';
-      return {
-        id: String(index + 1),
-        name: COLOR_NAMES[color] || `Player ${index + 1}`,
-        color: color,
-        position: 1,
-      };
+  const handlePrevDifficulty = () => {
+    setDifficultyIndex((prev) => (prev > 0 ? prev - 1 : DIFFICULTIES.length - 1));
+  };
+
+  const handleNextDifficulty = () => {
+    setDifficultyIndex((prev) => (prev < DIFFICULTIES.length - 1 ? prev + 1 : 0));
+  };
+
+  const handleContinue = () => {
+    router.push({
+      pathname: '/game',
+      params: { level: selectedLevel, difficulty: DIFFICULTIES[difficultyIndex] },
     });
-  });
-
-  const [turnIndex, setTurnIndex] = useState(0);
-  const [diceValue, setDiceValue] = useState<number>(1);
-  const [isRolling, setIsRolling] = useState(false);
-  const [winner, setWinner] = useState<Player | null>(null);
-
-  const [pendingEvent, setPendingEvent] = useState<PendingEvent | null>(null);
-  const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null);
-  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
-  const [isAnswerCorrect, setIsAnswerCorrect] = useState<boolean | null>(null);
-
-  const activePlayer = players[turnIndex] || players[0];
-  const isModalVisible = pendingEvent !== null;
-
-  const getCoordinatesForPosition = (pos: number) => {
-    const zeroBased = pos - 1;
-    const row = Math.floor(zeroBased / 10);
-    let col = zeroBased % 10;
-    if (row % 2 === 1) {
-      col = 9 - col;
-    }
-    const x = col * CELL_SIZE;
-    const y = (9 - row) * CELL_SIZE;
-    return { x, y };
-  };
-
-  const rollDice = () => {
-    if (isRolling || winner || isModalVisible) return;
-    setIsRolling(true);
-
-    const finalRoll = Math.floor(Math.random() * 6) + 1;
-
-    let steps = 0;
-    const interval = setInterval(() => {
-      setDiceValue(Math.floor(Math.random() * 6) + 1);
-      steps++;
-
-      if (steps > 10) {
-        clearInterval(interval);
-        setDiceValue(finalRoll);
-        setIsRolling(false);
-        movePlayer(finalRoll);
-      }
-    }, 60);
-  };
-
-  const passTurn = () => {
-    setTurnIndex((prev) => (prev + 1) % players.length);
-  };
-
-  const movePlayer = (roll: number) => {
-    const mover = players[turnIndex];
-    let newPos = mover.position + roll;
-
-    if (newPos >= 100) {
-      newPos = 100;
-      const updated = [...players];
-      updated[turnIndex] = { ...mover, position: newPos };
-      setPlayers(updated);
-      setWinner(updated[turnIndex]);
-      return;
-    }
-
-    if (LADDERS[newPos]) {
-      const updated = [...players];
-      updated[turnIndex] = { ...mover, position: newPos };
-      setPlayers(updated);
-      openQuiz({ type: 'ladder', landedPos: newPos, target: LADDERS[newPos] });
-      return;
-    }
-
-    if (SNAKES[newPos]) {
-      const updated = [...players];
-      updated[turnIndex] = { ...mover, position: newPos };
-      setPlayers(updated);
-      openQuiz({ type: 'snake', landedPos: newPos, target: SNAKES[newPos] });
-      return;
-    }
-
-    const updated = [...players];
-    updated[turnIndex] = { ...mover, position: newPos };
-    setPlayers(updated);
-    passTurn();
-  };
-
-  const openQuiz = (event: PendingEvent) => {
-    setPendingEvent(event);
-    setCurrentQuestion(getPlaceholderQuestion(event.type));
-    setSelectedIndex(null);
-    setIsAnswerCorrect(null);
-  };
-
-  const handleAnswerSelect = (index: number) => {
-    if (!currentQuestion || isAnswerCorrect !== null) return;
-    setSelectedIndex(index);
-    const isCorrect = index === currentQuestion.correctIndex;
-    setIsAnswerCorrect(isCorrect);
-  };
-
-  const resolveQuiz = () => {
-    if (!pendingEvent || isAnswerCorrect === null) return;
-
-    setPlayers((prevPlayers) => {
-      const updated = [...prevPlayers];
-      const player = { ...updated[turnIndex] };
-
-      if (pendingEvent.type === 'ladder') {
-        if (isAnswerCorrect) {
-          player.position = pendingEvent.target;
-        }
-      } else {
-        if (!isAnswerCorrect) {
-          player.position = pendingEvent.target;
-        }
-      }
-
-      updated[turnIndex] = player;
-      return updated;
-    });
-
-    setPendingEvent(null);
-    setCurrentQuestion(null);
-    setSelectedIndex(null);
-    setIsAnswerCorrect(null);
-    passTurn();
-  };
-
-  const handleVictoryTap = () => {
-    router.push('/stats');
   };
 
   return (
@@ -316,112 +117,12 @@ export default function GameScreen() {
         </View>
       </View>
 
-      {/* BOTTOM TABS: Player color status bars reaching up to the red line */}
-      <View style={styles.bottomBarContainer}>
-        {players.map((player, index) => {
-          const isActive = index === turnIndex;
-          return (
-            <View
-              key={player.id}
-              style={[
-                styles.bottomIndicator,
-                { backgroundColor: player.color },
-                isActive ? styles.indicatorActive : styles.indicatorInactive,
-              ]}
-            />
-          );
-        })}
-      </View>
-
-      {/* Ladder / Snake Quiz Modal */}
-      <Modal
-        visible={isModalVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => {}}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.quizCard}>
-            <Text style={styles.quizHeader}>
-              {pendingEvent?.type === 'ladder' ? '🪜 Ladder Challenge!' : '🐍 Snake Challenge!'}
-            </Text>
-            <Text style={styles.quizSubheader}>
-              {pendingEvent?.type === 'ladder'
-                ? `Answer right to climb from ${pendingEvent.landedPos} to ${pendingEvent.target}.`
-                : `Answer right to stay safe from the snake at ${pendingEvent?.landedPos}.`}
-            </Text>
-
-            <Text style={styles.quizPrompt}>{currentQuestion?.prompt}</Text>
-
-            <View style={styles.optionsGrid}>
-              {currentQuestion?.options.map((option, index) => {
-                const isSelected = selectedIndex === index;
-                const isCorrectOption = currentQuestion.correctIndex === index;
-
-                let optionStateStyle = styles.optionButton;
-                if (isAnswerCorrect !== null) {
-                  if (isSelected) {
-                    optionStateStyle = isAnswerCorrect ? styles.optionCorrect : styles.optionWrong;
-                  } else if (isCorrectOption) {
-                    optionStateStyle = styles.optionCorrect;
-                  }
-                }
-
-                return (
-                  <TouchableOpacity
-                    key={index}
-                    style={[styles.optionButton, optionStateStyle]}
-                    onPress={() => handleAnswerSelect(index)}
-                    disabled={isAnswerCorrect !== null}
-                    activeOpacity={0.8}
-                  >
-                    <Text style={styles.optionText}>{option}</Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-
-            {isAnswerCorrect !== null && (
-              <View style={styles.resultBlock}>
-                <Text
-                  style={[
-                    styles.resultText,
-                    isAnswerCorrect ? styles.resultCorrectText : styles.resultWrongText,
-                  ]}
-                >
-                  {isAnswerCorrect
-                    ? pendingEvent?.type === 'ladder'
-                      ? 'Correct! Climbing the ladder.'
-                      : 'Correct! You dodged the snake.'
-                    : pendingEvent?.type === 'ladder'
-                      ? 'Not quite — staying put this turn.'
-                      : 'Not quite — sliding down the snake.'}
-                </Text>
-                <TouchableOpacity style={styles.continueButton} onPress={resolveQuiz} activeOpacity={0.8}>
-                  <Text style={styles.continueButtonText}>Continue</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-          </View>
-        </View>
-      </Modal>
-
-      {/* Victory Popup Overlay */}
-      {winner && (
-        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={handleVictoryTap}>
-          <ImageBackground
-            source={require('../../assets/images/victory-popup.png')}
-            style={styles.popupImageContainer}
-            resizeMode="contain"
-          >
-            <View style={styles.popupTextWrapper}>
-              <Text style={styles.victorySubtitle}>{winner.name} wins the game!</Text>
-              <Text style={styles.tapToContinueText}>Tap to Continue</Text>
-            </View>
-          </ImageBackground>
-        </TouchableOpacity>
-      )}
-    </BookcaseBackground>
+          <TouchableOpacity style={styles.continueButton} onPress={handleContinue} activeOpacity={0.9}>
+            <Text style={styles.continueText}>START GAME</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </SafeAreaView>
+    </ImageBackground>
   );
 }
 
@@ -543,21 +244,18 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 3,
   },
-  tapToContinueText: {
-    color: '#facc15',
-    fontWeight: 'bold',
-    fontSize: 14,
-    textShadowColor: 'rgba(0,0,0,0.75)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 3,
+  levelsContainer: {
+    gap: PADDING,
   },
-
-  quizCard: {
-    width: '88%',
-    maxWidth: 420,
-    backgroundColor: '#1e293b',
-    borderRadius: 16,
-    padding: 20,
+  levelCardWrapper: {
+    height: 96,
+    borderRadius: CARD_RADIUS,
+    overflow: 'hidden',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
+  },
+  selectedCardBorder: {
+    borderColor: '#ffffff',
     borderWidth: 2,
     borderColor: '#475569',
     shadowColor: '#000',
