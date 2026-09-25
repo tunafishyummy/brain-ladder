@@ -158,8 +158,8 @@ const styles = StyleSheet.create({
   playContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 280, // Adjusted from 550 so it stays safely within view on mobile
-    marginLeft: 145,
+    marginBottom: 240, // Adjusted from 550 so it stays safely within view on mobile
+    marginLeft: 135,
   },
   playButton: {
     paddingHorizontal: 20,
@@ -178,7 +178,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 40,
     marginLeft: 200,
-    transform: [{ translateY: 60 }], // Reduced from 100 so it doesn't get clipped past the bottom edge
+    transform: [{ translateY: 155 }], // Reduced from 100 so it doesn't get clipped past the bottom edge
   },
   iconDivider: {
     width: 2,
