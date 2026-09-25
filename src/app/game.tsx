@@ -1,232 +1,644 @@
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
+  Dimensions,
+  Image,
   ImageBackground,
-  SafeAreaView,
-  ScrollView,
+  Modal,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+import BookcaseBackground from '../components/BookcaseBackground';
 
-// Constants
-const PADDING = 16;
-const CARD_RADIUS = 16;
+const SCREEN_WIDTH = Dimensions.get('window').width;
+const BOARD_SIZE = Math.min(SCREEN_WIDTH * 0.90, 360);
+const CELL_SIZE = BOARD_SIZE / 10;
 
+// Ladders (Going Up): landing tile -> top tile
+const LADDERS: { [key: number]: number } = {
+  2: 33,
+  8: 34,
+  20: 77,
+  32: 68,
+  41: 79,
+  74: 88,
+  82: 100,
+  85: 95,
+};
 
-{/*dito yung mga levels */}
-const LEVELS = [
-  {
-    id: 'reading',
-    title: 'The Reading Wing',
-    subtitle: 'Language',
-    color: '#a3e635',
-    image: require('../../assets/images/english.jpg'),
-  },
-  {
-    id: 'research',
-    title: 'The Research Corner',
-    subtitle: 'Science & Technology',
-    color: '#60a5fa',
-    image: require('../../assets/images/science.jpg'),
-  },
-  {
-    id: 'collections',
-    title: 'The Old Collections',
-    subtitle: 'World History',
-    color: '#f87171',
-    image: require('../../assets/images/history.jpg'),
-  },
-];
+// Snakes (Going Down): landing tile (head) -> tail tile
+const SNAKES: { [key: number]: number } = {
+  29: 9,
+  38: 15,
+  47: 5,
+  53: 33,
+  62: 37,
+  86: 54,
+  92: 70,
+  97: 25,
+};
 
-const DIFFICULTIES = ['Easy', 'Normal', 'Hard'];
+const DICE_IMAGES: { [key: number]: any } = {
+  1: require('../../assets/images/dice1.png'),
+  2: require('../../assets/images/dice2.png'),
+  3: require('../../assets/images/dice3.png'),
+  4: require('../../assets/images/dice4.png'),
+  5: require('../../assets/images/dice5.png'),
+  6: require('../../assets/images/dice6.png'),
+};
 
-export default function LevelSelectScreen() {
+const COLOR_NAMES: { [key: string]: string } = {
+  '#dc2626': 'Red',
+  '#16a34a': 'Green',
+  '#2563eb': 'Blue',
+  '#fed330': 'Yellow',
+  '#ff5252': 'Red',
+  '#26de81': 'Green',
+  '#4b7bec': 'Blue',
+};
+
+const getCharacterAssetForColor = (color: string) => {
+  switch (color) {
+    case '#dc2626':
+    case '#ff5252':
+      return require('../../assets/images/Playerred.png');
+    case '#16a34a':
+    case '#26de81':
+      return require('../../assets/images/Playergreen.png');
+    case '#fed330':
+    case '#2563eb':
+    case '#4b7bec':
+    default:
+      return require('../../assets/images/Playerblue.png');
+  }
+};
+
+type Player = {
+  id: string;
+  name: string;
+  color: string;
+  position: number;
+};
+
+type EventType = 'ladder' | 'snake';
+
+type PendingEvent = {
+  type: EventType;
+  landedPos: number;
+  target: number;
+};
+
+type Question = {
+  prompt: string;
+  options: string[];
+  correctIndex: number;
+};
+
+const getPlaceholderQuestion = (type: EventType): Question => {
+  if (type === 'ladder') {
+    return {
+      prompt: 'Placeholder question — answer correctly to climb the ladder!',
+      options: ['Option A', 'Option B', 'Option C', 'Option D'],
+      correctIndex: 0,
+    };
+  }
+  return {
+    prompt: 'Placeholder question — answer correctly to dodge the snake!',
+    options: ['Option A', 'Option B', 'Option C', 'Option D'],
+    correctIndex: 0,
+  };
+};
+
+export default function GameScreen() {
   const router = useRouter();
-  const [selectedLevel, setSelectedLevel] = useState('collections');
-  const [difficultyIndex, setDifficultyIndex] = useState(1);
+  const params = useLocalSearchParams<{ players?: string; playerColors?: string }>();
+  
+  const playerCount = Math.min(3, Math.max(1, Number(params.players) || 3));
+  const parsedColors: string[] = params.playerColors
+    ? JSON.parse(params.playerColors as string)
+    : ['#16a34a', '#dc2626', '#2563eb'];
 
-  const handlePrevDifficulty = () => {
-    setDifficultyIndex((prev) => (prev > 0 ? prev - 1 : DIFFICULTIES.length - 1));
-  };
-
-  const handleNextDifficulty = () => {
-    setDifficultyIndex((prev) => (prev < DIFFICULTIES.length - 1 ? prev + 1 : 0));
-  };
-
-  const handleContinue = () => {
-    router.push({
-      pathname: '/game',
-      params: { level: selectedLevel, difficulty: DIFFICULTIES[difficultyIndex] },
+  const [players, setPlayers] = useState<Player[]>(() => {
+    return Array.from({ length: playerCount }, (_, index) => {
+      const color = parsedColors[index] || '#2563eb';
+      return {
+        id: String(index + 1),
+        name: COLOR_NAMES[color] || `Player ${index + 1}`,
+        color: color,
+        position: 1,
+      };
     });
+  });
+
+  const [turnIndex, setTurnIndex] = useState(0);
+  const [diceValue, setDiceValue] = useState<number>(1);
+  const [isRolling, setIsRolling] = useState(false);
+  const [winner, setWinner] = useState<Player | null>(null);
+
+  const [pendingEvent, setPendingEvent] = useState<PendingEvent | null>(null);
+  const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null);
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [isAnswerCorrect, setIsAnswerCorrect] = useState<boolean | null>(null);
+
+  const activePlayer = players[turnIndex] || players[0];
+  const isModalVisible = pendingEvent !== null;
+
+  const getCoordinatesForPosition = (pos: number) => {
+    const zeroBased = pos - 1;
+    const row = Math.floor(zeroBased / 10);
+    let col = zeroBased % 10;
+    if (row % 2 === 1) {
+      col = 9 - col;
+    }
+    const x = col * CELL_SIZE;
+    const y = (9 - row) * CELL_SIZE;
+    return { x, y };
+  };
+
+  const rollDice = () => {
+    if (isRolling || winner || isModalVisible) return;
+    setIsRolling(true);
+
+    const finalRoll = Math.floor(Math.random() * 6) + 1;
+
+    let steps = 0;
+    const interval = setInterval(() => {
+      setDiceValue(Math.floor(Math.random() * 6) + 1);
+      steps++;
+
+      if (steps > 10) {
+        clearInterval(interval);
+        setDiceValue(finalRoll);
+        setIsRolling(false);
+        movePlayer(finalRoll);
+      }
+    }, 60);
+  };
+
+  const passTurn = () => {
+    setTurnIndex((prev) => (prev + 1) % players.length);
+  };
+
+  const movePlayer = (roll: number) => {
+    const mover = players[turnIndex];
+    let newPos = mover.position + roll;
+
+    if (newPos >= 100) {
+      newPos = 100;
+      const updated = [...players];
+      updated[turnIndex] = { ...mover, position: newPos };
+      setPlayers(updated);
+      setWinner(updated[turnIndex]);
+      return;
+    }
+
+    if (LADDERS[newPos]) {
+      const updated = [...players];
+      updated[turnIndex] = { ...mover, position: newPos };
+      setPlayers(updated);
+      openQuiz({ type: 'ladder', landedPos: newPos, target: LADDERS[newPos] });
+      return;
+    }
+
+    if (SNAKES[newPos]) {
+      const updated = [...players];
+      updated[turnIndex] = { ...mover, position: newPos };
+      setPlayers(updated);
+      openQuiz({ type: 'snake', landedPos: newPos, target: SNAKES[newPos] });
+      return;
+    }
+
+    const updated = [...players];
+    updated[turnIndex] = { ...mover, position: newPos };
+    setPlayers(updated);
+    passTurn();
+  };
+
+  const openQuiz = (event: PendingEvent) => {
+    setPendingEvent(event);
+    setCurrentQuestion(getPlaceholderQuestion(event.type));
+    setSelectedIndex(null);
+    setIsAnswerCorrect(null);
+  };
+
+  const handleAnswerSelect = (index: number) => {
+    if (!currentQuestion || isAnswerCorrect !== null) return;
+    setSelectedIndex(index);
+    const isCorrect = index === currentQuestion.correctIndex;
+    setIsAnswerCorrect(isCorrect);
+  };
+
+  const resolveQuiz = () => {
+    if (!pendingEvent || isAnswerCorrect === null) return;
+
+    setPlayers((prevPlayers) => {
+      const updated = [...prevPlayers];
+      const player = { ...updated[turnIndex] };
+
+      if (pendingEvent.type === 'ladder') {
+        if (isAnswerCorrect) {
+          player.position = pendingEvent.target;
+        }
+      } else {
+        if (!isAnswerCorrect) {
+          player.position = pendingEvent.target;
+        }
+      }
+
+      updated[turnIndex] = player;
+      return updated;
+    });
+
+    setPendingEvent(null);
+    setCurrentQuestion(null);
+    setSelectedIndex(null);
+    setIsAnswerCorrect(null);
+    passTurn();
+  };
+
+  const handleVictoryTap = () => {
+    router.push('/stats');
   };
 
   return (
-    <ImageBackground
-      source={require('../../assets/images/bookcase.png')}
-      style={styles.background}
-      resizeMode="cover"
-    >
-      <SafeAreaView style={styles.container}>
-        <ScrollView contentContainerStyle={styles.scrollContent}>
-          <View style={styles.headerBanner}>
-            <Text style={styles.headerTitle}>SELECT LEVEL</Text>
-          </View>
+    <BookcaseBackground>
+      <View style={styles.mainContainer}>
+        {/* UPPER BOX: Turn Header Banner */}
+        <View style={[styles.turnBanner, { backgroundColor: activePlayer.color }]}>
+          <Text style={styles.turnText}>{activePlayer.name}'s Turn</Text>
+        </View>
 
-          <View style={styles.levelsContainer}>
-            {LEVELS.map((level) => {
-              const isSelected = selectedLevel === level.id;
+        {/* MIDDLE BOX: Board Display */}
+        <View style={styles.boardWrapper}>
+          <ImageBackground
+            source={require('../../assets/images/board.png')}
+            style={styles.boardImage}
+            resizeMode="cover"
+          >
+            {players.map((player) => {
+              const { x, y } = getCoordinatesForPosition(player.position);
               return (
-                <TouchableOpacity
-                  key={level.id}
-                  activeOpacity={0.85}
-                  onPress={() => setSelectedLevel(level.id)}
-                  style={[styles.levelCardWrapper, isSelected && styles.selectedCardBorder]}
+                <View
+                  key={player.id}
+                  style={[
+                    styles.playerTokenWrapper,
+                    {
+                      left: x + CELL_SIZE * 0.05,
+                      top: y + CELL_SIZE * 0.05,
+                      backgroundColor: player.color,
+                    },
+                  ]}
                 >
-                  <ImageBackground source={level.image} style={styles.background}>
-                    <View style={styles.cardOverlay}>
-                      <View>
-                        <Text style={[styles.levelTitle, { color: level.color }]}>
-                          {level.title}
-                        </Text>
-                        <Text style={styles.levelSubtitle}>{level.subtitle}</Text>
-                      </View>
-                      {isSelected && <View style={styles.selectDot} />}
-                    </View>
-                  </ImageBackground>
-                </TouchableOpacity>
+                  <Image
+                    source={getCharacterAssetForColor(player.color)}
+                    style={styles.playerToken}
+                  />
+                </View>
               );
             })}
-          </View>
+          </ImageBackground>
+        </View>
 
-          <View style={styles.difficultyBanner}>
-            <Text style={styles.difficultyLabel}>DIFFICULTY</Text>
-            <View style={styles.difficultyControls}>
-              <TouchableOpacity onPress={handlePrevDifficulty} style={styles.arrowButton}>
-                <Text style={styles.arrowText}>‹</Text>
-              </TouchableOpacity>
-              <Text style={styles.difficultyText}>{DIFFICULTIES[difficultyIndex]}</Text>
-              <TouchableOpacity onPress={handleNextDifficulty} style={styles.arrowButton}>
-                <Text style={styles.arrowText}>›</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          <TouchableOpacity style={styles.continueButton} onPress={handleContinue} activeOpacity={0.9}>
-            <Text style={styles.continueText}>START GAME</Text>
+        {/* LOWER SMALL BOX: Dice Button */}
+        <View style={styles.diceSection}>
+          <TouchableOpacity
+            onPress={rollDice}
+            disabled={isRolling || !!winner || isModalVisible}
+            activeOpacity={0.7}
+          >
+            <Image
+              source={DICE_IMAGES[diceValue]}
+              style={[styles.diceImage, isRolling && styles.diceRollingAnimation]}
+            />
           </TouchableOpacity>
-        </ScrollView>
-      </SafeAreaView>
-    </ImageBackground>
+        </View>
+      </View>
+
+      {/* BOTTOM TABS: Player color status bars reaching up to the red line */}
+      <View style={styles.bottomBarContainer}>
+        {players.map((player, index) => {
+          const isActive = index === turnIndex;
+          return (
+            <View
+              key={player.id}
+              style={[
+                styles.bottomIndicator,
+                { backgroundColor: player.color },
+                isActive ? styles.indicatorActive : styles.indicatorInactive,
+              ]}
+            />
+          );
+        })}
+      </View>
+
+      {/* Ladder / Snake Quiz Modal */}
+      <Modal
+        visible={isModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => {}}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.quizCard}>
+            <Text style={styles.quizHeader}>
+              {pendingEvent?.type === 'ladder' ? '🪜 Ladder Challenge!' : '🐍 Snake Challenge!'}
+            </Text>
+            <Text style={styles.quizSubheader}>
+              {pendingEvent?.type === 'ladder'
+                ? `Answer right to climb from ${pendingEvent.landedPos} to ${pendingEvent.target}.`
+                : `Answer right to stay safe from the snake at ${pendingEvent?.landedPos}.`}
+            </Text>
+
+            <Text style={styles.quizPrompt}>{currentQuestion?.prompt}</Text>
+
+            <View style={styles.optionsGrid}>
+              {currentQuestion?.options.map((option, index) => {
+                const isSelected = selectedIndex === index;
+                const isCorrectOption = currentQuestion.correctIndex === index;
+
+                let optionStateStyle = styles.optionButton;
+                if (isAnswerCorrect !== null) {
+                  if (isSelected) {
+                    optionStateStyle = isAnswerCorrect ? styles.optionCorrect : styles.optionWrong;
+                  } else if (isCorrectOption) {
+                    optionStateStyle = styles.optionCorrect;
+                  }
+                }
+
+                return (
+                  <TouchableOpacity
+                    key={index}
+                    style={[styles.optionButton, optionStateStyle]}
+                    onPress={() => handleAnswerSelect(index)}
+                    disabled={isAnswerCorrect !== null}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={styles.optionText}>{option}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            {isAnswerCorrect !== null && (
+              <View style={styles.resultBlock}>
+                <Text
+                  style={[
+                    styles.resultText,
+                    isAnswerCorrect ? styles.resultCorrectText : styles.resultWrongText,
+                  ]}
+                >
+                  {isAnswerCorrect
+                    ? pendingEvent?.type === 'ladder'
+                      ? 'Correct! Climbing the ladder.'
+                      : 'Correct! You dodged the snake.'
+                    : pendingEvent?.type === 'ladder'
+                      ? 'Not quite — staying put this turn.'
+                      : 'Not quite — sliding down the snake.'}
+                </Text>
+                <TouchableOpacity style={styles.continueButton} onPress={resolveQuiz} activeOpacity={0.8}>
+                  <Text style={styles.continueButtonText}>Continue</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        </View>
+      </Modal>
+
+      {/* Victory Popup Overlay */}
+      {winner && (
+        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={handleVictoryTap}>
+          <ImageBackground
+            source={require('../../assets/images/victory-popup.png')}
+            style={styles.popupImageContainer}
+            resizeMode="contain"
+          >
+            <View style={styles.popupTextWrapper}>
+              <Text style={styles.victorySubtitle}>{winner.name} wins the game!</Text>
+              <Text style={styles.tapToContinueText}>Tap to Continue</Text>
+            </View>
+          </ImageBackground>
+        </TouchableOpacity>
+      )}
+    </BookcaseBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  background: {
+  bg: { flex: 1, width: '100%', height: '100%' },
+
+  mainContainer: {
     flex: 1,
-  },
-  container: {
-    flex: 1,
-    backgroundColor: 'rgba(10, 12, 20, 0.65)',
-  },
-  scrollContent: {
-    padding: PADDING,
-    gap: PADDING,
-  },
-  headerBanner: {
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    paddingVertical: 14,
-    borderRadius: CARD_RADIUS,
+    width: '100%',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
+    justifyContent: 'space-evenly',
+    paddingVertical: 10,
   },
-  headerTitle: {
-    color: '#ffffff',
-    fontSize: 20,
-    fontWeight: '700',
-    letterSpacing: 2,
+
+  turnBanner: {
+    width: '90%',
+    maxWidth: BOARD_SIZE,
+    paddingVertical: 10,
+    borderRadius: 12,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 6,
   },
-  levelsContainer: {
-    gap: PADDING,
-  },
-  levelCardWrapper: {
-    height: 96,
-    borderRadius: CARD_RADIUS,
-    overflow: 'hidden',
-    borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
-  },
-  selectedCardBorder: {
-    borderColor: '#ffffff',
+  turnText: { color: '#fff', fontSize: 18, fontWeight: 'bold', letterSpacing: 1 },
+
+  boardWrapper: {
+    width: BOARD_SIZE,
+    height: BOARD_SIZE,
     borderWidth: 2,
+    borderColor: '#334155',
+    borderRadius: 10,
+    overflow: 'hidden',
   },
-  cardOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(15, 18, 28, 0.72)',
-    paddingHorizontal: PADDING,
-    flexDirection: 'row',
+  boardImage: { width: '100%', height: '100%' },
+
+  playerTokenWrapper: {
+    position: 'absolute',
+    width: CELL_SIZE * 0.9,
+    height: CELL_SIZE * 0.9,
+    borderRadius: CELL_SIZE * 0.9,
+    borderWidth: 2,
+    borderColor: '#0f172a',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.5,
+    shadowRadius: 3,
+    elevation: 5,
   },
-  levelTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-    marginBottom: 2,
+  playerToken: {
+    width: '82%',
+    height: '82%',
+    resizeMode: 'contain',
   },
-  levelSubtitle: {
-    color: '#a0a5b5',
-    fontSize: 13,
-  },
-  selectDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#ffffff',
-  },
-  difficultyBanner: {
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    borderRadius: CARD_RADIUS,
-    padding: PADDING,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
-    gap: 8,
-  },
-  difficultyLabel: {
-    color: '#8e94a5',
-    fontSize: 12,
-    fontWeight: '600',
-    letterSpacing: 1.5,
-    textAlign: 'center',
-  },
-  difficultyControls: {
-    flexDirection: 'row',
+
+  diceSection: {
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
+    height: 50,
   },
-  arrowButton: {
+  diceImage: { width: 50, height: 50, resizeMode: 'contain' },
+  diceRollingAnimation: { opacity: 0.6, transform: [{ scale: 0.95 }] },
+
+  bottomBarContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'flex-end',
+    width: '100%',
     paddingHorizontal: 12,
   },
-  arrowText: {
-    color: '#ffffff',
-    fontSize: 22,
+  bottomIndicator: {
+    flex: 1,
+    marginHorizontal: 6,
+    borderTopLeftRadius: 14,
+    borderTopRightRadius: 14,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.4,
+    shadowRadius: 4,
+    elevation: 6,
   },
-  difficultyText: {
-    color: '#ffffff',
+  indicatorActive: {
+    height: 95,
+    borderTopWidth: 4,
+    borderTopColor: '#fff',
+  },
+  indicatorInactive: {
+    height: 25,
+    opacity: 0.7,
+  },
+
+  modalOverlay: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 100,
+  },
+  popupImageContainer: {
+    width: 340,
+    height: 260,
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    paddingBottom: 28,
+  },
+  popupTextWrapper: {
+    alignItems: 'center',
+    gap: 8,
+  },
+  victorySubtitle: {
+    fontSize: 18,
+    color: '#fff',
+    fontWeight: 'bold',
+    textShadowColor: 'rgba(0,0,0,0.75)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
+  },
+  tapToContinueText: {
+    color: '#facc15',
+    fontWeight: 'bold',
+    fontSize: 14,
+    textShadowColor: 'rgba(0,0,0,0.75)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
+  },
+
+  quizCard: {
+    width: '88%',
+    maxWidth: 420,
+    backgroundColor: '#1e293b',
+    borderRadius: 16,
+    padding: 20,
+    borderWidth: 2,
+    borderColor: '#475569',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.4,
+    shadowRadius: 10,
+    elevation: 10,
+  },
+  quizHeader: {
     fontSize: 20,
-    fontWeight: '700',
+    fontWeight: 'bold',
+    color: '#fff',
+    textAlign: 'center',
+    marginBottom: 4,
   },
-  continueButton: {
-    backgroundColor: '#ffffff',
-    paddingVertical: 16,
-    borderRadius: CARD_RADIUS,
+  quizSubheader: {
+    fontSize: 13,
+    color: '#cbd5e1',
+    textAlign: 'center',
+    marginBottom: 14,
+  },
+  quizPrompt: {
+    fontSize: 15,
+    color: '#f8fafc',
+    textAlign: 'center',
+    marginBottom: 16,
+    fontWeight: '600',
+  },
+
+  optionsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    rowGap: 10,
+  },
+  optionButton: {
+    width: '48%',
+    backgroundColor: '#334155',
+    paddingVertical: 14,
+    paddingHorizontal: 8,
+    borderRadius: 10,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  optionCorrect: {
+    backgroundColor: '#166534',
+    borderColor: '#22c55e',
+  },
+  optionWrong: {
+    backgroundColor: '#7f1d1d',
+    borderColor: '#ef4444',
+  },
+  optionText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+
+  resultBlock: {
+    marginTop: 16,
     alignItems: 'center',
   },
-  continueText: {
-    color: '#0f121c',
-    fontSize: 18,
-    fontWeight: '800',
-    letterSpacing: 1,
+  resultText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  resultCorrectText: { color: '#4ade80' },
+  resultWrongText: { color: '#f87171' },
+  continueButton: {
+    backgroundColor: '#facc15',
+    paddingVertical: 10,
+    paddingHorizontal: 28,
+    borderRadius: 10,
+  },
+  continueButtonText: {
+    color: '#1e293b',
+    fontWeight: 'bold',
+    fontSize: 14,
   },
 });

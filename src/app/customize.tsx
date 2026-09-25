@@ -1,12 +1,12 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
-    Image,
-    SafeAreaView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Image,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import BookcaseBackground from '../components/BookcaseBackground';
 
@@ -51,14 +51,14 @@ export default function CustomizeCharacterScreen() {
     setSelectedColors(updated);
   };
 
-  // Next Player or Finish Button
   const handleNextOrStart = () => {
     if (!currentSelection) return;
 
     if (activePlayerIndex < totalPlayers - 1) {
+      // Move to the next player's turn
       setActivePlayerIndex((prev) => prev + 1);
     } else {
-      // All players picked colors -> Forward to Game
+      // Last player has selected their color -> Forward to Game screen
       router.push({
         pathname: '/game',
         params: {
