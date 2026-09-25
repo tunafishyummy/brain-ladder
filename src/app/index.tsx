@@ -1,51 +1,49 @@
 import { useRouter } from 'expo-router';
+import { useEffect } from 'react';
 import {
+  ActivityIndicator,
   StyleSheet,
   Text,
-  TouchableWithoutFeedback,
-  View
+  View,
 } from 'react-native';
 import { useAudio } from '../AudioContext';
-import BookcaseBackground from '../components/BookcaseBackground';
 import AnimatedLogoStack from '../components/AnimatedLogoStack';
+import BookcaseBackground from '../components/BookcaseBackground';
 
 export default function SplashScreen() {
   const router = useRouter();
   const { startAudio } = useAudio();
-  const handlePress = () => {
-    startAudio();
-    router.replace('/mainmenu')
-  };
 
-  const handlePlay = () => {
-    router.push('/game')
-  };
+  useEffect(() => {
+    // Set duration for splash screen in milliseconds (3000ms = 3 seconds)
+    const timer = setTimeout(() => {
+      startAudio();
+      router.replace('/mainmenu');
+    }, 3000);
+
+    // Clean up timer if component unmounts
+    return () => clearTimeout(timer);
+  }, []);
 
   return (
-    <TouchableWithoutFeedback onPress={handlePress}>
-      <View style={styles.screenWrapper}>
-        <BookcaseBackground>
-          <View style={styles.contentContainer}>
-            <View style={styles.logoContainer}>
+    <View style={styles.screenWrapper}>
+      <BookcaseBackground>
+        <View style={styles.contentContainer}>
+          <View style={styles.logoContainer}>
             <AnimatedLogoStack />
-            </View>
-            <View style={styles.promptContainer}>
-              <Text style={styles.promptText}>Press the screen to continue.</Text>
-            </View>
           </View>
-        </BookcaseBackground>
-      </View>
-    </TouchableWithoutFeedback>
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#ffffff" style={styles.spinner} />
+            <Text style={styles.loadingText}>Loading...</Text>
+          </View>
+        </View>
+      </BookcaseBackground>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   screenWrapper: {
-    flex: 1,
-    width: '100%',
-    height: '100%',
-  },
-  background: {
     flex: 1,
     width: '100%',
     height: '100%',
@@ -60,14 +58,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     width: '100%',
   },
-  promptContainer: {
+  loadingContainer: {
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 12,
   },
-  promptText: {
-    fontSize: 22,
+  spinner: {
+    transform: [{ scale: 1.2 }],
+  },
+  loadingText: {
+    fontSize: 18,
     fontWeight: 'bold',
-    color: 'rgb(187, 187, 187)',
+    color: 'rgb(220, 220, 220)',
     letterSpacing: 2,
     textShadowColor: 'rgba(0, 0, 0, 0.9)',
     textShadowOffset: { width: 1, height: 2 },
