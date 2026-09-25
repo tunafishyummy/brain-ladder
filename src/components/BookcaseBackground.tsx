@@ -3,7 +3,7 @@ import { Animated, Easing, Image, StyleSheet, useWindowDimensions, View } from '
 import { useAudio } from '../AudioContext';
 
 const BOOKCASE = require('../../assets/images/bookcase.png');
-const BOOKCASE_SIZE = Image.resolveAssetSource(BOOKCASE);
+const BOOKCASE_SIZE = { width: 1024, height: 1536 };
 const BACKGROUND_ZOOM = 2.5;
 
 /** Shared, gently scrolling bookcase backdrop for every app route. */

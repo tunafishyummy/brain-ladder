@@ -1,15 +1,15 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
-  BackHandler,
-  Image,
-  Modal,
-  Platform,
-  SafeAreaView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View
+    BackHandler,
+    Image,
+    Modal,
+    Platform,
+    SafeAreaView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
 } from 'react-native';
 import MainMenuArtwork from '../components/MainMenuArtwork';
 // @ts-ignore SettingsScreen is maintained as JSX.

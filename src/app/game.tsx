@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
   Dimensions,
@@ -97,12 +97,14 @@ const getPlaceholderQuestion = (type: EventType): Question => {
 
 export default function GameScreen() {
   const router = useRouter();
+  const { players: playersParam = '3' } = useLocalSearchParams<{ players?: string }>();
+  const playerCount = Math.min(3, Math.max(1, Number(playersParam) || 3));
 
   const [players, setPlayers] = useState<Player[]>([
     { id: '1', name: "Green", color: '#16a34a', position: 1 },
     { id: '2', name: "Red", color: '#dc2626', position: 1 },
     { id: '3', name: "Blue", color: '#2563eb', position: 1 },
-  ]);
+  ].slice(0, playerCount));
   const [turnIndex, setTurnIndex] = useState(0);
   const [diceValue, setDiceValue] = useState<number>(1);
   const [isRolling, setIsRolling] = useState(false);
