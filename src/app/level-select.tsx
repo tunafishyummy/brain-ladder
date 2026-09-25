@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
   ImageBackground,
@@ -64,6 +64,7 @@ export default function LevelSelectScreen() {
 
   return (
     <BookcaseBackground>
+      <Stack.Screen options={{ animation: 'none' }} />
       <View style={styles.centerWrapper}>
         <SafeAreaView style={styles.container}>
           <ScrollView contentContainerStyle={styles.scrollContent}>

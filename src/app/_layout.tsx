@@ -1,6 +1,7 @@
 import { Stack } from 'expo-router';
 import { Image } from 'react-native';
 import { AudioProvider } from '../AudioContext';
+import { TransitionProvider } from '../TransitionContext';
 
 if (!(Image as any).resolveAssetSource) {
   (Image as any).resolveAssetSource = (source: any) => source;
@@ -9,7 +10,9 @@ if (!(Image as any).resolveAssetSource) {
 export default function RootLayout() {
   return (
     <AudioProvider>
-      <Stack screenOptions={{ headerShown: false }} />
+      <TransitionProvider>
+        <Stack screenOptions={{ headerShown: false }} />
+      </TransitionProvider>
     </AudioProvider>
   );
 }

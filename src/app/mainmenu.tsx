@@ -1,7 +1,9 @@
-import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useCallback, useRef, useState } from 'react';
 import {
+  Animated,
   BackHandler,
+  Easing,
   Image,
   Modal,
   Platform,
@@ -12,16 +14,50 @@ import {
   View
 } from 'react-native';
 import MainMenuArtwork from '../components/MainMenuArtwork';
+import { useScreenTransition } from '../TransitionContext';
 // @ts-ignore SettingsScreen is maintained as JSX.
 import SettingsScreen from '../components/SettingsScreen';
 
 export default function MainMenuScreen() {
   const router = useRouter();
+  const { fadeThroughBlack } = useScreenTransition();
+  const zoomProgress = useRef(new Animated.Value(0)).current;
+  const transitionStarted = useRef(false);
   const [settingsVisible, setSettingsVisible] = useState(false);
   const [exitPromptVisible, setExitPromptVisible] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [zoomAnchor, setZoomAnchor] = useState<{ x: number; y: number }>();
+
+  useFocusEffect(
+    useCallback(() => {
+      if (transitionStarted.current) {
+        zoomProgress.setValue(0);
+        transitionStarted.current = false;
+        setIsTransitioning(false);
+      }
+    }, [zoomProgress]),
+  );
 
   const handlePlay = () => {
-    router.push('/level-select');
+    if (transitionStarted.current) return;
+
+    transitionStarted.current = true;
+    setIsTransitioning(true);
+
+    Animated.timing(zoomProgress, {
+      toValue: 1,
+      duration: 780,
+      easing: Easing.in(Easing.cubic),
+      useNativeDriver: true,
+    }).start(({ finished }) => {
+      if (finished) {
+        fadeThroughBlack(() => router.push('/level-select'));
+      } else {
+        transitionStarted.current = false;
+        zoomProgress.setValue(0);
+        setIsTransitioning(false);
+      }
+    });
   };
 
   const handleSettings = () => {
@@ -46,7 +82,11 @@ export default function MainMenuScreen() {
   };
 
   return (
-    <MainMenuArtwork>
+    <MainMenuArtwork
+      zoomProgress={zoomProgress}
+      zoomAnchor={zoomAnchor}
+      isTransitioning={isTransitioning}
+    >
       <SafeAreaView style={styles.container}>
         <TouchableOpacity
           style={styles.debugButton}
@@ -56,10 +96,16 @@ export default function MainMenuScreen() {
           <Text style={styles.debugButtonText}>(for test) return to splash</Text>
         </TouchableOpacity>
 
-        <View style={styles.playContainer}>
+        <View
+          style={styles.playContainer}
+          onLayout={({ nativeEvent: { layout } }) =>
+            setZoomAnchor({ x: layout.x + layout.width / 2, y: layout.y + layout.height / 2 })
+          }
+        >
           <TouchableOpacity
             style={styles.playButton}
             onPress={handlePlay}
+            disabled={isTransitioning}
             activeOpacity={0.8}
           >
             <Text style={styles.playText}>PLAY</Text>
