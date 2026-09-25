@@ -52,7 +52,7 @@ export default function MainMenuScreen() {
           onPress={handleReturnToSplash}
           activeOpacity={0.8}
         >
-          <Text style={styles.debugButtonText}>(DEBUG) return to splash</Text>
+          <Text style={styles.debugButtonText}>(for test) return to splash</Text>
         </TouchableOpacity>
 
         <View style={styles.playContainer}>
