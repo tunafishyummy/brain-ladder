@@ -1,22 +1,18 @@
 import { useRouter } from 'expo-router';
 import {
-    ImageBackground,
     SafeAreaView,
     StyleSheet,
     Text,
     TouchableOpacity,
     View,
 } from 'react-native';
+import BookcaseBackground from '../components/BookcaseBackground';
 
 export default function StatsScreen() {
 	const router = useRouter();
 
 	return (
-		<ImageBackground
-			source={require('../../assets/images/bookcase.png')}
-			style={styles.background}
-			resizeMode="cover"
-		>
+		<BookcaseBackground>
 			<View style={styles.overlay} />
 			<SafeAreaView style={styles.container}>
 				<Text style={styles.title}>Stats screen</Text>
@@ -29,7 +25,7 @@ export default function StatsScreen() {
 					<Text style={styles.buttonText}>return button</Text>
 				</TouchableOpacity>
 			</SafeAreaView>
-		</ImageBackground>
+		</BookcaseBackground>
 	);
 }
 

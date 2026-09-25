@@ -9,6 +9,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import BookcaseBackground from '../components/BookcaseBackground';
 
 // Constants
 const PADDING = 16;
@@ -61,11 +62,7 @@ export default function LevelSelectScreen() {
   };
 
   return (
-    <ImageBackground
-      source={require('../../assets/images/bookcase.png')}
-      style={styles.background}
-      resizeMode="cover"
-    >
+    <BookcaseBackground>
       <SafeAreaView style={styles.container}>
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.headerBanner}>
@@ -116,7 +113,7 @@ export default function LevelSelectScreen() {
           </TouchableOpacity>
         </ScrollView>
       </SafeAreaView>
-    </ImageBackground>
+    </BookcaseBackground>
   );
 }
 
