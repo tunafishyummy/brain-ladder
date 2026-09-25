@@ -36,7 +36,6 @@ export default function MainMenuScreen() {
 
   return (
     <BookcaseBackground>
-      <View pointerEvents="none" style={styles.overlay} />
       <SafeAreaView style={styles.container}>
         <TouchableOpacity
           style={styles.debugButton}
@@ -95,12 +94,6 @@ const styles = StyleSheet.create({
     flex: 1,
     width: '100%',
     height: '100%',
-  },
-  overlay: {
-    position: 'absolute',
-    inset: 0,
-    zIndex: 1,
-    backgroundColor: 'rgba(0,0,0,0.3)',
   },
   container: {
     flex: 1,

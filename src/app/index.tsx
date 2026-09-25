@@ -25,8 +25,6 @@ export default function SplashScreen() {
     <TouchableWithoutFeedback onPress={handlePress}>
       <View style={styles.screenWrapper}>
         <BookcaseBackground>
-          <View style={styles.overlay} />
-
           <View style={styles.contentContainer}>
             <View style={styles.logoContainer}>
             <AnimatedLogoStack />
@@ -51,10 +49,6 @@ const styles = StyleSheet.create({
     flex: 1,
     width: '100%',
     height: '100%',
-  },
-  overlay: {
-    ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
   },
   contentContainer: {
     flex: 1,

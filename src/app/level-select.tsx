@@ -123,7 +123,6 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    backgroundColor: 'rgba(10, 12, 20, 0.65)',
   },
   scrollContent: {
     padding: PADDING,
