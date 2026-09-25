@@ -10,7 +10,7 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
-import BookcaseBackground from '../components/BookcaseBackground';
+import MainMenuArtwork from '../components/MainMenuArtwork';
 
 export default function MainMenuScreen() {
   const router = useRouter();
@@ -35,7 +35,7 @@ export default function MainMenuScreen() {
   };
 
   return (
-    <BookcaseBackground>
+    <MainMenuArtwork>
       <SafeAreaView style={styles.container}>
         <TouchableOpacity
           style={styles.debugButton}
@@ -85,16 +85,11 @@ export default function MainMenuScreen() {
           </TouchableOpacity>
         </View>
       </SafeAreaView>
-    </BookcaseBackground>
+    </MainMenuArtwork>
   );
 }
 
 const styles = StyleSheet.create({
-  background: {
-    flex: 1,
-    width: '100%',
-    height: '100%',
-  },
   container: {
     flex: 1,
     zIndex: 2,
@@ -123,7 +118,8 @@ const styles = StyleSheet.create({
   playContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 10,
+    marginBottom: 550,
+    marginLeft: 100,
   },
   playButton: {
     width: 200,
@@ -149,7 +145,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     gap: 40,
-    marginBottom: 20,
+    marginBottom: -100,
+    marginLeft:200,
   },
   iconButton: {
     padding: 10,
