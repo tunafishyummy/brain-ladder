@@ -1,10 +1,12 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
+  Alert,
   Dimensions,
   Image,
   ImageBackground,
   Modal,
+  SafeAreaView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -154,6 +156,23 @@ export default function GameScreen() {
   const activePlayer = players[turnIndex] || players[0];
   const isModalVisible = pendingEvent !== null;
 
+  // Exit game confirmation popup
+  const handleExitGame = () => {
+    Alert.alert(
+      'Exit Game',
+      'Are you sure? You will lose your progress if you exit the game.',
+      [
+        { text: 'No', style: 'cancel' },
+        {
+          text: 'Yes',
+          style: 'destructive',
+          onPress: () => router.replace('/'),
+        },
+      ],
+      { cancelable: true }
+    );
+  };
+
   const getCoordinatesForPosition = (pos: number) => {
     const zeroBased = pos - 1;
     const row = Math.floor(zeroBased / 10);
@@ -273,170 +292,180 @@ export default function GameScreen() {
 
   return (
     <BookcaseBackground>
-      <View style={styles.mainContainer}>
-        {/* UPPER BOX: Turn Header Banner */}
-        <View style={[styles.turnBanner, { backgroundColor: activePlayer.color }]}>
-          <Text style={styles.turnText}>{activePlayer.name}'s Turn</Text>
-        </View>
+      <SafeAreaView style={{ flex: 1 }}>
+        <View style={styles.mainContainer}>
+          {/* HEADER SECTION: Exit Button + Turn Banner */}
+          <View style={styles.headerRow}>
+            <TouchableOpacity
+              style={styles.exitButton}
+              onPress={handleExitGame}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.exitIcon}>✕</Text>
+            </TouchableOpacity>
 
-        {/* MIDDLE BOX: Board Display */}
-        <View style={styles.boardWrapper}>
-          <ImageBackground
-            source={require('../../assets/images/board.png')}
-            style={styles.boardImage}
-            resizeMode="cover"
-          >
-            {players.map((player) => {
-              const { x, y } = getCoordinatesForPosition(player.position);
-              return (
-                <View
-                  key={player.id}
-                  style={[
-                    styles.playerTokenWrapper,
-                    {
-                      left: x + CELL_SIZE * 0.05,
-                      top: y + CELL_SIZE * 0.05,
-                      backgroundColor: player.color,
-                    },
-                  ]}
-                >
-                  <Image
-                    source={getCharacterAssetForColor(player.color)}
-                    style={styles.playerToken}
-                  />
-                </View>
-              );
-            })}
-          </ImageBackground>
-        </View>
+            <View style={[styles.turnBanner, { backgroundColor: activePlayer.color }]}>
+              <Text style={styles.turnText}>{activePlayer.name}'s Turn</Text>
+            </View>
+          </View>
 
-        {/* LOWER SMALL BOX: Dice Button */}
-        <View style={styles.diceSection}>
-          <TouchableOpacity
-            onPress={rollDice}
-            disabled={isRolling || !!winner || isModalVisible}
-            activeOpacity={0.7}
-          >
-            <Image
-              source={DICE_IMAGES[diceValue]}
-              style={[styles.diceImage, isRolling && styles.diceRollingAnimation]}
-            />
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* BOTTOM TABS: Player color status bars reaching up to the red line */}
-      <View style={styles.bottomBarContainer}>
-        {players.map((player, index) => {
-          const isActive = index === turnIndex;
-          return (
-            <View
-              key={player.id}
-              style={[
-                styles.bottomIndicator,
-                { backgroundColor: player.color },
-                isActive ? styles.indicatorActive : styles.indicatorInactive,
-              ]}
-            />
-          );
-        })}
-      </View>
-
-      {/* Ladder / Snake Quiz Modal */}
-      <Modal
-        visible={isModalVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => {}}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.quizCard}>
-            <Text style={styles.quizHeader}>
-              {pendingEvent?.type === 'ladder' ? '🪜 Ladder Challenge!' : '🐍 Snake Challenge!'}
-            </Text>
-            <Text style={styles.quizSubheader}>
-              {pendingEvent?.type === 'ladder'
-                ? `Answer right to climb from ${pendingEvent.landedPos} to ${pendingEvent.target}.`
-                : `Answer right to stay safe from the snake at ${pendingEvent?.landedPos}.`}
-            </Text>
-
-            <Text style={styles.quizPrompt}>{currentQuestion?.prompt}</Text>
-
-            <View style={styles.optionsGrid}>
-              {currentQuestion?.options.map((option, index) => {
-                const isSelected = selectedIndex === index;
-                const isCorrectOption = currentQuestion.correctIndex === index;
-
-                let optionStateStyle = styles.optionButton;
-                if (isAnswerCorrect !== null) {
-                  if (isSelected) {
-                    optionStateStyle = isAnswerCorrect ? styles.optionCorrect : styles.optionWrong;
-                  } else if (isCorrectOption) {
-                    optionStateStyle = styles.optionCorrect;
-                  }
-                }
-
+          {/* MIDDLE BOX: Board Display */}
+          <View style={styles.boardWrapper}>
+            <ImageBackground
+              source={require('../../assets/images/board.png')}
+              style={styles.boardImage}
+              resizeMode="cover"
+            >
+              {players.map((player) => {
+                const { x, y } = getCoordinatesForPosition(player.position);
                 return (
-                  <TouchableOpacity
-                    key={index}
-                    style={[styles.optionButton, optionStateStyle]}
-                    onPress={() => handleAnswerSelect(index)}
-                    disabled={isAnswerCorrect !== null}
-                    activeOpacity={0.8}
+                  <View
+                    key={player.id}
+                    style={[
+                      styles.playerTokenWrapper,
+                      {
+                        left: x + CELL_SIZE * 0.05,
+                        top: y + CELL_SIZE * 0.05,
+                        backgroundColor: player.color,
+                      },
+                    ]}
                   >
-                    <Text style={styles.optionText}>{option}</Text>
-                  </TouchableOpacity>
+                    <Image
+                      source={getCharacterAssetForColor(player.color)}
+                      style={styles.playerToken}
+                    />
+                  </View>
                 );
               })}
-            </View>
+            </ImageBackground>
+          </View>
 
-            {isAnswerCorrect !== null && (
-              <View style={styles.resultBlock}>
-                <Text
-                  style={[
-                    styles.resultText,
-                    isAnswerCorrect ? styles.resultCorrectText : styles.resultWrongText,
-                  ]}
-                >
-                  {isAnswerCorrect
-                    ? pendingEvent?.type === 'ladder'
-                      ? 'Correct! Climbing the ladder.'
-                      : 'Correct! You dodged the snake.'
-                    : pendingEvent?.type === 'ladder'
-                      ? 'Not quite — staying put this turn.'
-                      : 'Not quite — sliding down the snake.'}
-                </Text>
-                <TouchableOpacity style={styles.continueButton} onPress={resolveQuiz} activeOpacity={0.8}>
-                  <Text style={styles.continueButtonText}>Continue</Text>
-                </TouchableOpacity>
-              </View>
-            )}
+          {/* LOWER SMALL BOX: Dice Button */}
+          <View style={styles.diceSection}>
+            <TouchableOpacity
+              onPress={rollDice}
+              disabled={isRolling || !!winner || isModalVisible}
+              activeOpacity={0.7}
+            >
+              <Image
+                source={DICE_IMAGES[diceValue]}
+                style={[styles.diceImage, isRolling && styles.diceRollingAnimation]}
+              />
+            </TouchableOpacity>
           </View>
         </View>
-      </Modal>
 
-      {/* Victory Popup Overlay */}
-      {winner && (
-        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={handleVictoryTap}>
-          <ImageBackground
-            source={require('../../assets/images/victory-popup.png')}
-            style={styles.popupImageContainer}
-            resizeMode="contain"
-          >
-            <View style={styles.popupTextWrapper}>
-              <Text style={styles.victorySubtitle}>{winner.name} wins the game!</Text>
-              <Text style={styles.tapToContinueText}>Tap to Continue</Text>
+        {/* BOTTOM TABS: Player color status bars */}
+        <View style={styles.bottomBarContainer}>
+          {players.map((player, index) => {
+            const isActive = index === turnIndex;
+            return (
+              <View
+                key={player.id}
+                style={[
+                  styles.bottomIndicator,
+                  { backgroundColor: player.color },
+                  isActive ? styles.indicatorActive : styles.indicatorInactive,
+                ]}
+              />
+            );
+          })}
+        </View>
+
+        {/* Ladder / Snake Quiz Modal */}
+        <Modal
+          visible={isModalVisible}
+          transparent
+          animationType="fade"
+          onRequestClose={() => {}}
+        >
+          <View style={styles.modalOverlayContainer}>
+            <View style={styles.quizCard}>
+              <Text style={styles.quizHeader}>
+                {pendingEvent?.type === 'ladder' ? '🪜 Ladder Challenge!' : '🐍 Snake Challenge!'}
+              </Text>
+              <Text style={styles.quizSubheader}>
+                {pendingEvent?.type === 'ladder'
+                  ? `Answer right to climb from ${pendingEvent.landedPos} to ${pendingEvent.target}.`
+                  : `Answer right to stay safe from the snake at ${pendingEvent?.landedPos}.`}
+              </Text>
+
+              <Text style={styles.quizPrompt}>{currentQuestion?.prompt}</Text>
+
+              <View style={styles.optionsGrid}>
+                {currentQuestion?.options.map((option, index) => {
+                  const isSelected = selectedIndex === index;
+                  const isCorrectOption = currentQuestion.correctIndex === index;
+
+                  let optionStateStyle = styles.optionButton;
+                  if (isAnswerCorrect !== null) {
+                    if (isSelected) {
+                      optionStateStyle = isAnswerCorrect ? styles.optionCorrect : styles.optionWrong;
+                    } else if (isCorrectOption) {
+                      optionStateStyle = styles.optionCorrect;
+                    }
+                  }
+
+                  return (
+                    <TouchableOpacity
+                      key={index}
+                      style={[styles.optionButton, optionStateStyle]}
+                      onPress={() => handleAnswerSelect(index)}
+                      disabled={isAnswerCorrect !== null}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={styles.optionText}>{option}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              {isAnswerCorrect !== null && (
+                <View style={styles.resultBlock}>
+                  <Text
+                    style={[
+                      styles.resultText,
+                      isAnswerCorrect ? styles.resultCorrectText : styles.resultWrongText,
+                    ]}
+                  >
+                    {isAnswerCorrect
+                      ? pendingEvent?.type === 'ladder'
+                        ? 'Correct! Climbing the ladder.'
+                        : 'Correct! You dodged the snake.'
+                      : pendingEvent?.type === 'ladder'
+                        ? 'Not quite — staying put this turn.'
+                        : 'Not quite — sliding down the snake.'}
+                  </Text>
+                  <TouchableOpacity style={styles.continueButton} onPress={resolveQuiz} activeOpacity={0.8}>
+                    <Text style={styles.continueButtonText}>Continue</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
             </View>
-          </ImageBackground>
-        </TouchableOpacity>
-      )}
+          </View>
+        </Modal>
+
+        {/* Victory Popup Overlay */}
+        {winner && (
+          <TouchableOpacity style={styles.modalOverlayContainer} activeOpacity={1} onPress={handleVictoryTap}>
+            <ImageBackground
+              source={require('../../assets/images/victory-popup.png')}
+              style={styles.popupImageContainer}
+              resizeMode="contain"
+            >
+              <View style={styles.popupTextWrapper}>
+                <Text style={styles.victorySubtitle}>{winner.name} wins the game!</Text>
+                <Text style={styles.tapToContinueText}>Tap to Continue</Text>
+              </View>
+            </ImageBackground>
+          </TouchableOpacity>
+        )}
+      </SafeAreaView>
     </BookcaseBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  bg: { flex: 1, width: '100%', height: '100%' },
-
   mainContainer: {
     flex: 1,
     width: '100%',
@@ -445,9 +474,32 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
 
-  turnBanner: {
+  headerRow: {
     width: '90%',
     maxWidth: BOARD_SIZE,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    zIndex: 10,
+  },
+  exitButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: 'rgba(239, 68, 68, 0.25)',
+    borderWidth: 1.5,
+    borderColor: '#ef4444',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  exitIcon: {
+    color: '#ffffff',
+    fontSize: 18,
+    fontWeight: '800',
+  },
+
+  turnBanner: {
+    flex: 1,
     paddingVertical: 10,
     borderRadius: 12,
     alignItems: 'center',
@@ -526,12 +578,11 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
 
-  modalOverlay: {
-    ...StyleSheet.absoluteFill,
+  modalOverlayContainer: {
+    flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.8)',
     justifyContent: 'center',
     alignItems: 'center',
-    zIndex: 100,
   },
   popupImageContainer: {
     width: 340,
