@@ -158,15 +158,15 @@ const styles = StyleSheet.create({
   playContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 400, // Adjusted from 550 so it stays safely within view on mobile
-    marginLeft: 100,
+    marginBottom: 280, // Adjusted from 550 so it stays safely within view on mobile
+    marginLeft: 145,
   },
   playButton: {
     paddingHorizontal: 20,
     paddingVertical: 16,
   },
   playText: {
-    fontSize: 28,
+    fontSize: 50,
     fontWeight: 'bold',
     color: '#FFD700',
     textShadowColor: 'rgba(0, 0, 0, 0.75)',
