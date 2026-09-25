@@ -1,13 +1,13 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
-    ImageBackground,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ImageBackground,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import BookcaseBackground from '../components/BookcaseBackground';
 
@@ -56,7 +56,7 @@ export default function LevelSelectScreen() {
 
   const handleContinue = () => {
     router.push({
-      pathname: '/game',
+      pathname: '/playerselection',
       params: { level: selectedLevel, difficulty: DIFFICULTIES[difficultyIndex] },
     });
   };
@@ -109,7 +109,7 @@ export default function LevelSelectScreen() {
           </View>
 
           <TouchableOpacity style={styles.continueButton} onPress={handleContinue} activeOpacity={0.9}>
-            <Text style={styles.continueText}>START GAME</Text>
+            <Text style={styles.continueText}>NEXT</Text>
           </TouchableOpacity>
         </ScrollView>
       </SafeAreaView>
