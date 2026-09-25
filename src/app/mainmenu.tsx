@@ -22,6 +22,10 @@ export default function MainMenuScreen() {
     router.push('/settings');
   };
 
+  const handleReturnToSplash = () => {
+    router.replace('/');
+  };
+
   const handleExit = () => {
     if (Platform.OS === 'web') {
       window.close();
@@ -34,6 +38,14 @@ export default function MainMenuScreen() {
     <BookcaseBackground>
       <View pointerEvents="none" style={styles.overlay} />
       <SafeAreaView style={styles.container}>
+        <TouchableOpacity
+          style={styles.debugButton}
+          onPress={handleReturnToSplash}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.debugButtonText}>(DEBUG) return to splash</Text>
+        </TouchableOpacity>
+
         <View style={styles.playContainer}>
           <TouchableOpacity
             style={styles.playButton}
@@ -96,6 +108,24 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingVertical: 20,
+  },
+  debugButton: {
+    position: 'absolute',
+    top: 150,
+    left: 10,
+    zIndex: 3,
+    backgroundColor: '#fff',
+    borderWidth: 2,
+    borderColor: '#facc15',
+    borderRadius: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    elevation: 8,
+  },
+  debugButtonText: {
+    color: '#111827',
+    fontWeight: '900',
+    fontSize: 13,
   },
   playContainer: {
     alignItems: 'center',
