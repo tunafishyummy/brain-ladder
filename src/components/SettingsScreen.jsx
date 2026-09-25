@@ -21,8 +21,6 @@ export default function SettingsScreen({ onReturnToMenu }) {
 
   return (
     <BookcaseBackground>
-      <View style={styles.overlay} />
-      
       <View style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
@@ -173,23 +171,13 @@ export default function SettingsScreen({ onReturnToMenu }) {
           {/* Return Button */}
           <TouchableOpacity onPress={onReturnToMenu} style={styles.returnBtn}>
             <Text style={styles.returnText}>RETURN TO MENU</Text>
-          </TouchableOpacity>
-        </View>
+        </TouchableOpacity>
       </View>
     </BookcaseBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  bg: {
-    flex: 1,
-    width: '100%',
-    height: '100%',
-  },
-  overlay: {
-    ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-  },
   container: {
     width: '90%',
     maxWidth: 360,
