@@ -13,7 +13,6 @@ export default function StatsScreen() {
 
 	return (
 		<BookcaseBackground>
-			<View style={styles.overlay} />
 			<SafeAreaView style={styles.container}>
 				<Text style={styles.title}>Stats screen</Text>
 				<Text style={styles.subtitle}>statter screener</Text>
@@ -32,10 +31,6 @@ export default function StatsScreen() {
 const styles = StyleSheet.create({
 	background: {
 		flex: 1,
-	},
-	overlay: {
-		...StyleSheet.absoluteFill,
-		backgroundColor: 'rgba(0, 0, 0, 0.55)',
 	},
 	container: {
 		flex: 1,

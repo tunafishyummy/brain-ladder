@@ -246,8 +246,6 @@ export default function GameScreen() {
 
   return (
     <BookcaseBackground>
-      <View style={styles.overlay} />
-
       <View style={styles.mainContainer}>
         {/* UPPER BOX: Turn Header Banner */}
         <View style={[styles.turnBanner, { backgroundColor: activePlayer.color }]}>
@@ -410,7 +408,6 @@ export default function GameScreen() {
 
 const styles = StyleSheet.create({
   bg: { flex: 1, width: '100%', height: '100%' },
-  overlay: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(0,0,0,0.65)' },
 
   mainContainer: {
     flex: 1,

@@ -21,8 +21,6 @@ export default function SettingsScreen({ onReturnToMenu }) {
 
   return (
     <BookcaseBackground>
-      <View style={styles.overlay} />
-      
       <View style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
@@ -186,10 +184,6 @@ const styles = StyleSheet.create({
     height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  overlay: {
-    ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(0,0,0,0.6)',
   },
   container: {
     width: '90%',

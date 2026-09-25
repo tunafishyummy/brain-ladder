@@ -4,13 +4,14 @@ import { useAudio } from '../AudioContext';
 
 const BOOKCASE = require('../../assets/images/bookcase.png');
 const BOOKCASE_SIZE = Image.resolveAssetSource(BOOKCASE);
+const BACKGROUND_ZOOM = 1.35;
 
 /** Shared, gently scrolling bookcase backdrop for every app route. */
 export default function BookcaseBackground({ children }: { children: React.ReactNode }) {
   const { width, height } = useWindowDimensions();
   const { backgroundSpeed } = useAudio();
   const offset = useRef(new Animated.Value(0)).current;
-  const imageScale = Math.min(width, height) / Math.max(BOOKCASE_SIZE.width, BOOKCASE_SIZE.height);
+  const imageScale = (Math.min(width, height) / Math.max(BOOKCASE_SIZE.width, BOOKCASE_SIZE.height)) * BACKGROUND_ZOOM;
   const tileWidth = BOOKCASE_SIZE.width * imageScale;
   const tileHeight = BOOKCASE_SIZE.height * imageScale;
   const columns = Math.max(1, Math.ceil(width / tileWidth) + 1);
