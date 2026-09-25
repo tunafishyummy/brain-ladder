@@ -4,8 +4,8 @@ import { Animated, Easing, Image, StyleSheet, View } from 'react-native';
 const MENU_ART = require('../../assets/images/mainmenuart.png');
 const MENU_LAD = require('../../assets/images/mainmenulad.png');
 const MENU_ARM = require('../../assets/images/mainmenuladarm.png');
-const ART_SIZE = Image.resolveAssetSource(MENU_ART);
-const ARM_SIZE = Image.resolveAssetSource(MENU_ARM);
+const ART_SIZE = { width: 1350, height: 3000 };
+const ARM_SIZE = { width: 940, height: 940 };
 const PAGE_ASPECT = 9 / 20;
 
 const ARM_PIVOT = { x: 159, y: 910 };
