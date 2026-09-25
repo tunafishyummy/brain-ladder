@@ -1,7 +1,6 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
-  Alert,
   Dimensions,
   Image,
   ImageBackground,
@@ -126,7 +125,7 @@ export default function GameScreen() {
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
       }
     } catch (e) {
-      // fallback if parsing fails
+      // fallback
     }
     return ['#16a34a', '#dc2626', '#2563eb'];
   })();
@@ -153,24 +152,14 @@ export default function GameScreen() {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [isAnswerCorrect, setIsAnswerCorrect] = useState<boolean | null>(null);
 
+  const [showExitModal, setShowExitModal] = useState(false);
+
   const activePlayer = players[turnIndex] || players[0];
   const isModalVisible = pendingEvent !== null;
 
-  // Exit game confirmation popup
-  const handleExitGame = () => {
-    Alert.alert(
-      'Exit Game',
-      'Are you sure? You will lose your progress if you exit the game.',
-      [
-        { text: 'No', style: 'cancel' },
-        {
-          text: 'Yes',
-          style: 'destructive',
-          onPress: () => router.replace('/'),
-        },
-      ],
-      { cancelable: true }
-    );
+  const handleConfirmExit = () => {
+    setShowExitModal(false);
+    router.replace('/');
   };
 
   const getCoordinatesForPosition = (pos: number) => {
@@ -186,7 +175,7 @@ export default function GameScreen() {
   };
 
   const rollDice = () => {
-    if (isRolling || winner || isModalVisible) return;
+    if (isRolling || winner || isModalVisible || showExitModal) return;
     setIsRolling(true);
 
     const finalRoll = Math.floor(Math.random() * 6) + 1;
@@ -294,12 +283,13 @@ export default function GameScreen() {
     <BookcaseBackground>
       <SafeAreaView style={{ flex: 1 }}>
         <View style={styles.mainContainer}>
-          {/* HEADER SECTION: Exit Button + Turn Banner */}
+          {/* TOP BANNER & EXIT BUTTON */}
           <View style={styles.headerRow}>
             <TouchableOpacity
               style={styles.exitButton}
-              onPress={handleExitGame}
+              onPress={() => setShowExitModal(true)}
               activeOpacity={0.7}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
               <Text style={styles.exitIcon}>✕</Text>
             </TouchableOpacity>
@@ -309,7 +299,7 @@ export default function GameScreen() {
             </View>
           </View>
 
-          {/* MIDDLE BOX: Board Display */}
+          {/* BOARD */}
           <View style={styles.boardWrapper}>
             <ImageBackground
               source={require('../../assets/images/board.png')}
@@ -340,11 +330,11 @@ export default function GameScreen() {
             </ImageBackground>
           </View>
 
-          {/* LOWER SMALL BOX: Dice Button */}
+          {/* DICE */}
           <View style={styles.diceSection}>
             <TouchableOpacity
               onPress={rollDice}
-              disabled={isRolling || !!winner || isModalVisible}
+              disabled={isRolling || !!winner || isModalVisible || showExitModal}
               activeOpacity={0.7}
             >
               <Image
@@ -355,7 +345,7 @@ export default function GameScreen() {
           </View>
         </View>
 
-        {/* BOTTOM TABS: Player color status bars */}
+        {/* BOTTOM INDICATORS */}
         <View style={styles.bottomBarContainer}>
           {players.map((player, index) => {
             const isActive = index === turnIndex;
@@ -372,7 +362,37 @@ export default function GameScreen() {
           })}
         </View>
 
-        {/* Ladder / Snake Quiz Modal */}
+        {/* CUSTOM IMAGE-MATCHED EXIT DIALOG */}
+        <Modal
+          visible={showExitModal}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setShowExitModal(false)}
+        >
+          <View style={styles.modalOverlayContainer}>
+            <View style={styles.exitCard}>
+              <Text style={styles.exitTitle}>Are you sure? clicking yes will make you lose your progress.</Text>
+              <View style={styles.exitActions}>
+                <TouchableOpacity
+                  style={styles.exitBtn}
+                  onPress={handleConfirmExit}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.exitBtnText}>YES</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.exitBtn}
+                  onPress={() => setShowExitModal(false)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.exitBtnText}>NO</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+
+        {/* QUIZ MODAL */}
         <Modal
           visible={isModalVisible}
           transparent
@@ -445,7 +465,7 @@ export default function GameScreen() {
           </View>
         </Modal>
 
-        {/* Victory Popup Overlay */}
+        {/* VICTORY POPUP */}
         {winner && (
           <TouchableOpacity style={styles.modalOverlayContainer} activeOpacity={1} onPress={handleVictoryTap}>
             <ImageBackground
@@ -480,17 +500,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    zIndex: 10,
+    zIndex: 20,
   },
   exitButton: {
     width: 44,
     height: 44,
     borderRadius: 12,
-    backgroundColor: 'rgba(239, 68, 68, 0.25)',
+    backgroundColor: 'rgba(239, 68, 68, 0.3)',
     borderWidth: 1.5,
     borderColor: '#ef4444',
     justifyContent: 'center',
     alignItems: 'center',
+    zIndex: 30,
   },
   exitIcon: {
     color: '#ffffff',
@@ -580,10 +601,56 @@ const styles = StyleSheet.create({
 
   modalOverlayContainer: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    backgroundColor: 'rgba(0, 0, 0, 0.75)',
     justifyContent: 'center',
     alignItems: 'center',
   },
+
+  /* MATCHED DIALOG DESIGN */
+  exitCard: {
+    width: '88%',
+    maxWidth: 380,
+    backgroundColor: '#1b2338',
+    borderRadius: 8,
+    paddingVertical: 24,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.5,
+    shadowRadius: 10,
+    elevation: 12,
+  },
+  exitTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#ffffff',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  exitActions: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 16,
+    width: '100%',
+  },
+  exitBtn: {
+    flex: 1,
+    maxWidth: 130,
+    backgroundColor: '#27334d',
+    paddingVertical: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#3b4b6c',
+    alignItems: 'center',
+  },
+  exitBtnText: {
+    color: '#ffffff',
+    fontWeight: 'bold',
+    fontSize: 16,
+    letterSpacing: 0.5,
+  },
+
   popupImageContainer: {
     width: 340,
     height: 260,
