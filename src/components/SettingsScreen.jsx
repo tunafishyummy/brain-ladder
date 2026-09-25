@@ -29,9 +29,9 @@ export default function SettingsScreen({ onReturnToMenu }) {
           <View style={{ width: 30 }} />
         </View>
 
-          <View style={styles.panel}>
-            <View style={styles.row}>
-              <Text style={styles.label}>BOOKCASE MOTION ({backgroundSpeed === 0 ? 'OFF' : `${backgroundSpeed}s / cycle`})</Text>
+        <View style={styles.panel}>
+          <View style={styles.row}>
+            <Text style={styles.label}>BOOKCASE MOTION ({backgroundSpeed === 0 ? 'OFF' : `${backgroundSpeed}s / cycle`})</Text>
             </View>
             <Slider
               style={styles.slider}
@@ -44,8 +44,9 @@ export default function SettingsScreen({ onReturnToMenu }) {
               maximumTrackTintColor="#1f283d"
               thumbTintColor="#818cf8"
             />
-            <Text style={styles.rulesText}>0 turns motion off; larger values move more slowly.</Text>
-          </View>
+          <Text style={styles.rulesText}>0 turns motion off; larger values move more slowly.</Text>
+        </View>
+
 
           {/* Audio Mixer */}
           <View style={styles.panel}>
