@@ -7,9 +7,10 @@ const MENU_ARM = require('../../assets/images/mainmenuladarm.png');
 const ART_SIZE = Image.resolveAssetSource(MENU_ART);
 const ARM_SIZE = Image.resolveAssetSource(MENU_ARM);
 const PAGE_ASPECT = 9 / 20;
+const ARM_SCALE = 2;
 
 const ARM_PIVOT = { x: 159, y: 910 };
-const ARM_HINGE_ON_CANVAS = { x: 400, y: 2600 };
+const ARM_HINGE_ON_CANVAS = { x: -200, y: 2100 };
 
 export default function MainMenuArtwork({ children }: { children: React.ReactNode }) {
   const [screenSize, setScreenSize] = useState({ width: 0, height: 0 });
@@ -19,9 +20,9 @@ export default function MainMenuArtwork({ children }: { children: React.ReactNod
   const scale = pageWidth / ART_SIZE.width;
   const pageLeft = (screenSize.width - pageWidth) / 2;
   const pageTop = (screenSize.height - pageHeight) / 2;
-  const armWidth = ARM_SIZE.width * scale;
-  const armLeft = pageLeft + (ARM_HINGE_ON_CANVAS.x - ARM_PIVOT.x) * scale;
-  const armTop = pageTop + (ARM_HINGE_ON_CANVAS.y - ARM_PIVOT.y) * scale;
+  const armWidth = ARM_SIZE.width * scale * ARM_SCALE;
+  const armLeft = pageLeft + ARM_HINGE_ON_CANVAS.x * scale - ARM_PIVOT.x * scale * ARM_SCALE;
+  const armTop = pageTop + ARM_HINGE_ON_CANVAS.y * scale - ARM_PIVOT.y * scale * ARM_SCALE;
 
   useEffect(() => {
     const animation = Animated.loop(Animated.sequence([
@@ -47,7 +48,7 @@ export default function MainMenuArtwork({ children }: { children: React.ReactNod
           top: armTop,
           width: armWidth,
           height: armWidth,
-          transformOrigin: [ARM_PIVOT.x * scale, ARM_PIVOT.y * scale, 0],
+          transformOrigin: [ARM_PIVOT.x * scale * ARM_SCALE, ARM_PIVOT.y * scale * ARM_SCALE, 0],
           transform: [{ rotate: armRotation }],
         }}
       />
