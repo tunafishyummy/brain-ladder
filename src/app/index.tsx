@@ -9,41 +9,65 @@ import {
   View
 } from 'react-native';
 import { useAudio } from '../AudioContext';
+import { LOGO_LAYOUT } from '../constants/logoLayout';
 
 export default function SplashScreen() {
   const router = useRouter();
   const { startAudio } = useAudio();
-  const fadeAnim = useRef(new Animated.Value(0.1)).current;
-  const rotateAnim = useRef(new Animated.Value(0)).current;
+  const adderRotateAnim = useRef(new Animated.Value(0)).current;
+  const brainLadderRotateAnim = useRef(new Animated.Value(0)).current;
+  const ladRotateAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    const rotate = Animated.loop(
+    const createRockingAnimation = (
+      animation: Animated.Value,
+      initialDelay: number,
+      duration: number,
+    ) => Animated.loop(
       Animated.sequence([
-        Animated.timing(rotateAnim, {
+        Animated.delay(initialDelay),
+        Animated.timing(animation, {
           toValue: 0.2, //Strongness of the rotation to the right
-          duration: 1000,
+          duration,
           useNativeDriver: true,
         }),
-        Animated.timing(rotateAnim, {
+        Animated.timing(animation, {
           toValue: -0.2, //Strongness of the rotation to the left
-          duration: 1000,
+          duration: duration + 150,
           useNativeDriver: true,
         }),
-        Animated.timing(rotateAnim, {
+        Animated.timing(animation, {
           toValue: 0, //Reset rotation to the center
-          duration: 1000,
+          duration: duration - 100,
           useNativeDriver: true,
         }),
       ])
     );
-    rotate.start();
+
+    const adderRotate = createRockingAnimation(adderRotateAnim, 0, 900);
+    const brainLadderRotate = createRockingAnimation(brainLadderRotateAnim, 150, 1000);
+    const ladRotate = createRockingAnimation(ladRotateAnim, 300, 1100);
+
+    adderRotate.start();
+    brainLadderRotate.start();
+    ladRotate.start();
 
     return () => {
-      rotate.stop();
+      adderRotate.stop();
+      brainLadderRotate.stop();
+      ladRotate.stop();
     };
-  }, [fadeAnim, rotateAnim]);
+  }, [adderRotateAnim, brainLadderRotateAnim, ladRotateAnim]);
 
-  const logoRotation = rotateAnim.interpolate({
+  const adderRotation = adderRotateAnim.interpolate({
+    inputRange: [-1, 0, 1],
+    outputRange: ['-10deg', '0deg', '10deg'],
+  });
+  const brainLadderRotation = brainLadderRotateAnim.interpolate({
+    inputRange: [-1, 0, 1],
+    outputRange: ['-10deg', '0deg', '10deg'],
+  });
+  const ladRotation = ladRotateAnim.interpolate({
     inputRange: [-1, 0, 1],
     outputRange: ['-10deg', '0deg', '10deg'],
   });
@@ -69,16 +93,35 @@ export default function SplashScreen() {
 
           <View style={styles.contentContainer}>
             <View style={styles.logoContainer}>
-              <Animated.Image
-                source={require('@/assets/images/MainLogo.png')}
-                style={[
-                  styles.logo,
-                  {
-                    transform: [{ rotate: logoRotation }],
-                  },
-                ]}
-                resizeMode="contain"
-              />
+              <View style={styles.logoStack}>
+                <Animated.Image
+                  source={require('@/assets/images/LogoLad.png')}
+                  style={[styles.logoLayer, {
+                    left: LOGO_LAYOUT.layers.lad.left,
+                    top: LOGO_LAYOUT.layers.lad.top,
+                    transform: [{ scale: LOGO_LAYOUT.layers.lad.scale }, { rotate: ladRotation }],
+                  }]}
+                  resizeMode="contain"
+                />
+                <Animated.Image
+                  source={require('@/assets/images/LogoBrainLadder.png')}
+                  style={[styles.logoLayer, {
+                    left: LOGO_LAYOUT.layers.brainLadder.left,
+                    top: LOGO_LAYOUT.layers.brainLadder.top,
+                    transform: [{ scale: LOGO_LAYOUT.layers.brainLadder.scale }, { rotate: brainLadderRotation }],
+                  }]}
+                  resizeMode="contain"
+                />
+                <Animated.Image
+                  source={require('@/assets/images/LogoKnowItAdder.png')}
+                  style={[styles.logoLayer, {
+                    left: LOGO_LAYOUT.layers.adder.left,
+                    top: LOGO_LAYOUT.layers.adder.top,
+                    transform: [{ scale: LOGO_LAYOUT.layers.adder.scale }, { rotate: adderRotation }],
+                  }]}
+                  resizeMode="contain"
+                />
+              </View>
             </View>
             <View style={styles.promptContainer}>
               <Text style={styles.promptText}>Press the screen to continue.</Text>
@@ -114,13 +157,17 @@ const styles = StyleSheet.create({
   logoContainer: {
     marginBottom: -120,
     alignItems: 'center',
-    width: '50%',
+    width: '100%',
   },
-  logo: {
-    width: '50%',
-    height: undefined,
-    aspectRatio: 2,
-    resizeMode: 'contain',
+  logoStack: {
+    width: LOGO_LAYOUT.stackWidth,
+    alignSelf: 'center',
+    aspectRatio: LOGO_LAYOUT.stackAspectRatio,
+  },
+  logoLayer: {
+    position: 'absolute',
+    height: '100%',
+    width: '100%',
   },
   promptContainer: {
     alignItems: 'center',
