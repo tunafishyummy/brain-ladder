@@ -55,83 +55,98 @@ export default function LevelSelectScreen() {
     setDifficultyIndex((prev) => (prev < DIFFICULTIES.length - 1 ? prev + 1 : 0));
   };
 
+  
   const handleContinue = () => {
     router.push({
-      pathname: '/game',
-      params: { level: selectedLevel, difficulty: DIFFICULTIES[difficultyIndex], players: String(players) },
+      pathname: '/playerselection',
+      params: { level: selectedLevel, difficulty: DIFFICULTIES[difficultyIndex] },
     });
   };
 
   return (
     <BookcaseBackground>
-      <SafeAreaView style={styles.container}>
-        <ScrollView contentContainerStyle={styles.scrollContent}>
-          <View style={styles.headerBanner}>
-            <Text style={styles.headerTitle}>SELECT LEVEL</Text>
-          </View>
-
-          <View style={styles.levelsContainer}>
-            {LEVELS.map((level) => {
-              const isSelected = selectedLevel === level.id;
-              return (
-                <TouchableOpacity
-                  key={level.id}
-                  activeOpacity={0.85}
-                  onPress={() => setSelectedLevel(level.id)}
-                  style={[styles.levelCardWrapper, isSelected && styles.selectedCardBorder]}
-                >
-                  <ImageBackground source={level.image} style={styles.background}>
-                    <View style={styles.cardOverlay}>
-                      <View>
-                        <Text style={[styles.levelTitle, { color: level.color }]}>
-                          {level.title}
-                        </Text>
-                        <Text style={styles.levelSubtitle}>{level.subtitle}</Text>
-                      </View>
-                      {isSelected && <View style={styles.selectDot} />}
-                    </View>
-                  </ImageBackground>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-
-          <View style={styles.difficultyBanner}>
-            <Text style={styles.difficultyLabel}>DIFFICULTY</Text>
-            <View style={styles.difficultyControls}>
-              <TouchableOpacity onPress={handlePrevDifficulty} style={styles.arrowButton}>
-                <Text style={styles.arrowText}>‹</Text>
-              </TouchableOpacity>
-              <Text style={styles.difficultyText}>{DIFFICULTIES[difficultyIndex]}</Text>
-              <TouchableOpacity onPress={handleNextDifficulty} style={styles.arrowButton}>
-                <Text style={styles.arrowText}>›</Text>
-              </TouchableOpacity>
+      <View style={styles.centerWrapper}>
+        <SafeAreaView style={styles.container}>
+          <ScrollView contentContainerStyle={styles.scrollContent}>
+            <View style={styles.headerBanner}>
+              <Text style={styles.headerTitle}>SELECT LEVEL</Text>
             </View>
-          </View>
 
-          <TouchableOpacity style={styles.backButton} onPress={() => router.back()} activeOpacity={0.9}>
-            <Text style={styles.backText}>BACK</Text>
-          </TouchableOpacity>
+            <View style={styles.levelsContainer}>
+              {LEVELS.map((level) => {
+                const isSelected = selectedLevel === level.id;
+                return (
+                  <TouchableOpacity
+                    key={level.id}
+                    activeOpacity={0.85}
+                    onPress={() => setSelectedLevel(level.id)}
+                    style={[styles.levelCardWrapper, isSelected && styles.selectedCardBorder]}
+                  >
+                    <ImageBackground source={level.image} style={styles.background}>
+                      <View style={styles.cardOverlay}>
+                        <View>
+                          <Text style={[styles.levelTitle, { color: level.color }]}>
+                            {level.title}
+                          </Text>
+                          <Text style={styles.levelSubtitle}>{level.subtitle}</Text>
+                        </View>
+                        {isSelected && <View style={styles.selectDot} />}
+                      </View>
+                    </ImageBackground>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
 
-          <TouchableOpacity style={styles.continueButton} onPress={handleContinue} activeOpacity={0.9}>
-            <Text style={styles.continueText}>START GAME</Text>
-          </TouchableOpacity>
-        </ScrollView>
-      </SafeAreaView>
+            <View style={styles.difficultyBanner}>
+              <Text style={styles.difficultyLabel}>DIFFICULTY</Text>
+              <View style={styles.difficultyControls}>
+                <TouchableOpacity onPress={handlePrevDifficulty} style={styles.arrowButton}>
+                  <Text style={styles.arrowText}>‹</Text>
+                </TouchableOpacity>
+                <Text style={styles.difficultyText}>{DIFFICULTIES[difficultyIndex]}</Text>
+                <TouchableOpacity onPress={handleNextDifficulty} style={styles.arrowButton}>
+                  <Text style={styles.arrowText}>›</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <TouchableOpacity style={styles.backButton} onPress={() => router.back()} activeOpacity={0.9}>
+              <Text style={styles.backText}>BACK</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.continueButton} onPress={handleContinue} activeOpacity={0.9}>
+              <Text style={styles.continueText}>NEXT</Text>
+            </TouchableOpacity>
+          </ScrollView>
+        </SafeAreaView>
+      </View>
     </BookcaseBackground>
   );
 }
 
 const styles = StyleSheet.create({
+  centerWrapper: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 2,
+  },
   background: {
     flex: 1,
   },
   container: {
     flex: 1,
+    width: '100%',
+    maxWidth: 420,
   },
   scrollContent: {
     padding: PADDING,
     gap: PADDING,
+    flexGrow: 1,
+    justifyContent: 'center',
   },
   headerBanner: {
     backgroundColor: 'rgba(255, 255, 255, 0.08)',
