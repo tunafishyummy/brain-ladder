@@ -3,12 +3,18 @@ import { Animated, Easing, Image, StyleSheet, useWindowDimensions, View } from '
 import { useAudio } from '../AudioContext';
 
 const BOOKCASE = require('../../assets/images/bookcase.png');
+const BOOKCASE_SIZE = Image.resolveAssetSource(BOOKCASE);
 
 /** Shared, gently scrolling bookcase backdrop for every app route. */
 export default function BookcaseBackground({ children }: { children: React.ReactNode }) {
   const { width, height } = useWindowDimensions();
   const { backgroundSpeed } = useAudio();
   const offset = useRef(new Animated.Value(0)).current;
+  const imageScale = Math.min(width, height) / Math.max(BOOKCASE_SIZE.width, BOOKCASE_SIZE.height);
+  const tileWidth = BOOKCASE_SIZE.width * imageScale;
+  const tileHeight = BOOKCASE_SIZE.height * imageScale;
+  const columns = Math.max(1, Math.ceil(width / tileWidth) + 1);
+  const rows = Math.max(1, Math.ceil(height / tileHeight) + 1);
 
   useEffect(() => {
     offset.stopAnimation();
@@ -25,19 +31,19 @@ export default function BookcaseBackground({ children }: { children: React.React
     return () => animation.stop();
   }, [backgroundSpeed, height, offset, width]);
 
-  const translateX = offset.interpolate({ inputRange: [0, 1], outputRange: [0, -width] });
-  const translateY = offset.interpolate({ inputRange: [0, 1], outputRange: [0, -height] });
+  const translateX = offset.interpolate({ inputRange: [0, 1], outputRange: [0, -tileWidth] });
+  const translateY = offset.interpolate({ inputRange: [0, 1], outputRange: [0, -tileHeight] });
 
   return (
     <View style={styles.root}>
       <View pointerEvents="none" style={StyleSheet.absoluteFill}>
-        <Animated.View style={{ width: width * 2, height: height * 2, transform: [{ translateX }, { translateY }] }}>
-          {[0, 1, 2, 3].map((tile) => (
+        <Animated.View style={{ width: columns * tileWidth, height: rows * tileHeight, transform: [{ translateX }, { translateY }] }}>
+          {Array.from({ length: rows * columns }, (_, tile) => (
             <Image
               key={tile}
               source={BOOKCASE}
               resizeMode="cover"
-              style={{ position: 'absolute', left: (tile % 2) * width, top: Math.floor(tile / 2) * height, width, height }}
+              style={{ position: 'absolute', left: (tile % columns) * tileWidth, top: Math.floor(tile / columns) * tileHeight, width: tileWidth, height: tileHeight }}
             />
           ))}
         </Animated.View>

@@ -3,9 +3,9 @@ import { Animated, Easing, Image, ImageSourcePropType, StyleSheet, useWindowDime
 import { LOGO_LAYOUT } from '../constants/logoLayout';
 
 const layers = [
-  { key: 'lad', source: require('../../assets/images/LogoLad.png'), phaseDelay: 300 },
-  { key: 'brainLadder', source: require('../../assets/images/LogoBrainLadder.png'), phaseDelay: 150 },
-  { key: 'adder', source: require('../../assets/images/LogoKnowItAdder.png'), phaseDelay: 0 },
+  { key: 'lad', source: require('../../assets/images/LogoLad.png'), delay: 300 },
+  { key: 'brainLadder', source: require('../../assets/images/LogoBrainLadder.png'), delay: 150 },
+  { key: 'adder', source: require('../../assets/images/LogoKnowItAdder.png'), delay: 0 },
 ] as const;
 
 export default function AnimatedLogoStack() {
@@ -16,14 +16,14 @@ export default function AnimatedLogoStack() {
   const motions = useRef(layers.map(() => new Animated.Value(0))).current;
 
   useEffect(() => {
-    const animations = motions.map((motion, index) => {
-      const rocking = Animated.loop(Animated.sequence([
+    const animations = motions.map((motion, index) => Animated.sequence([
+      Animated.delay(layers[index].delay),
+      Animated.loop(Animated.sequence([
         Animated.timing(motion, { toValue: 1, duration: 1000, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
         Animated.timing(motion, { toValue: -1, duration: 1000, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
         Animated.timing(motion, { toValue: 0, duration: 1000, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
-      ]));
-      return Animated.sequence([Animated.delay(layers[index].phaseDelay), rocking]);
-    });
+      ])),
+    ]));
     animations.forEach((animation) => animation.start());
     return () => animations.forEach((animation) => animation.stop());
   }, [motions]);
