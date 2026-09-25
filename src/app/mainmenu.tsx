@@ -11,7 +11,6 @@ import {
   View
 } from 'react-native';
 import BookcaseBackground from '../components/BookcaseBackground';
-import AnimatedLogoStack from '../components/AnimatedLogoStack';
 
 export default function MainMenuScreen() {
   const router = useRouter();
@@ -35,10 +34,6 @@ export default function MainMenuScreen() {
     <BookcaseBackground>
       <View pointerEvents="none" style={styles.overlay} />
       <SafeAreaView style={styles.container}>
-        <View style={styles.logoContainer}>
-          <AnimatedLogoStack />
-        </View>
-
         <View style={styles.playContainer}>
           <TouchableOpacity
             style={styles.playButton}
@@ -101,11 +96,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingVertical: 20,
-  },
-  logoContainer: {
-    marginBottom: -120,
-    alignItems: 'center',
-    width: '100%',
   },
   playContainer: {
     alignItems: 'center',
