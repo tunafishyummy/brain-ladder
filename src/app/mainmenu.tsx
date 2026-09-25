@@ -2,7 +2,6 @@ import { useRouter } from 'expo-router';
 import {
   BackHandler,
   Image,
-  ImageBackground,
   Platform,
   SafeAreaView,
   StyleSheet,
@@ -51,13 +50,7 @@ export default function MainMenuScreen() {
             onPress={handlePlay}
             activeOpacity={0.8}
           >
-            <ImageBackground
-              source={require('@/assets/images/book.png')}
-              style={styles.bookImage}
-              resizeMode="contain"
-            >
-              <Text style={styles.playText}>PLAY</Text>
-            </ImageBackground>
+            <Text style={styles.playText}>PLAY</Text>
           </TouchableOpacity>
         </View>
 
@@ -72,6 +65,8 @@ export default function MainMenuScreen() {
               style={styles.icon}
             />
           </TouchableOpacity>
+
+          <View pointerEvents="none" style={styles.iconDivider} />
 
           <TouchableOpacity
             style={styles.iconButton}
@@ -122,16 +117,8 @@ const styles = StyleSheet.create({
     marginLeft: 100,
   },
   playButton: {
-    width: 200,
-    height: 160,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  bookImage: {
-    width: '100%',
-    height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
   },
   playText: {
     fontSize: 28,
@@ -147,13 +134,16 @@ const styles = StyleSheet.create({
     gap: 40,
     marginBottom: -100,
     marginLeft:200,
+    transform: [{ translateY: 100 }],
+  },
+  iconDivider: {
+    width: 2,
+    height: 56,
+    alignSelf: 'center',
+    backgroundColor: 'rgba(255,255,255,0.75)',
   },
   iconButton: {
     padding: 10,
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
-    borderRadius: 12,
-    minWidth: 60,
-    minHeight: 60,
     justifyContent: 'center',
     alignItems: 'center',
   },
