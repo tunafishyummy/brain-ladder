@@ -13,6 +13,8 @@ import BookcaseBackground from '../components/BookcaseBackground';
 const PADDING = 16;
 const CARD_RADIUS = 16;
 
+
+
 export default function PlayerSelectionScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
@@ -20,7 +22,7 @@ export default function PlayerSelectionScreen() {
 
   const handleStartGame = () => {
     router.push({
-      pathname: '/game',
+      pathname: '/customize',
       params: {
         ...params,
         players: playerCount,
