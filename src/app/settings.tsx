@@ -1,13 +1,5 @@
-import { useRouter } from 'expo-router';
-// @ts-ignore
-import SettingsScreen from '../components/SettingsScreen';
+import { Redirect } from 'expo-router';
 
 export default function SettingsRoute() {
-  const router = useRouter();
-
-  return (
-    <SettingsScreen 
-      onReturnToMenu={() => router.replace('/mainmenu')} 
-    />
-  );
+  return <Redirect href="/mainmenu" />;
 }
