@@ -12,10 +12,13 @@
         "android.permission.RECORD_AUDIO",
         "android.permission.MODIFY_AUDIO_SETTINGS",
         "android.permission.FOREGROUND_SERVICE",
+<<<<<<< HEAD
         "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK",
         "android.permission.RECORD_AUDIO",
         "android.permission.MODIFY_AUDIO_SETTINGS",
         "android.permission.FOREGROUND_SERVICE",
+=======
+>>>>>>> c15298c10d21e6166ada23ea5d6925e0a550cb4e
         "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"
       ]
     },
@@ -35,6 +38,7 @@
       "eas": {
         "projectId": "7dadc25a-1923-4678-9a21-2dacfd6e6475"
       }
+<<<<<<< HEAD
     },
     "owner": "adinoel.lamio",
     "runtimeVersion": {
@@ -44,5 +48,8 @@
       "url": "https://u.expo.dev/7dadc25a-1923-4678-9a21-2dacfd6e6475"
     },
     "ios": {}
+=======
+    }
+>>>>>>> c15298c10d21e6166ada23ea5d6925e0a550cb4e
   }
 }

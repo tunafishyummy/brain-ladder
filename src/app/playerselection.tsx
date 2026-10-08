@@ -3,11 +3,17 @@ import { useState } from 'react';
 import {
     Image,
     SafeAreaView,
+<<<<<<< HEAD
     ScrollView,
     StyleSheet,
     Text,
     TouchableOpacity,
     useWindowDimensions,
+=======
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+>>>>>>> c15298c10d21e6166ada23ea5d6925e0a550cb4e
     View,
 } from 'react-native';
 import BookcaseBackground from '../components/BookcaseBackground';
@@ -17,9 +23,13 @@ const CARD_RADIUS = 16;
 
 export default function PlayerSelectionScreen() {
   const router = useRouter();
+<<<<<<< HEAD
   const { width } = useWindowDimensions();
   const params = useLocalSearchParams();
   const avatarSize = Math.min(80, Math.max(56, (width - PADDING * 4 - 26) / 3));
+=======
+  const params = useLocalSearchParams();
+>>>>>>> c15298c10d21e6166ada23ea5d6925e0a550cb4e
   const [playerCount, setPlayerCount] = useState<1 | 2 | 3>(1);
 
   const handleStartGame = () => {
@@ -35,7 +45,11 @@ export default function PlayerSelectionScreen() {
   return (
     <BookcaseBackground>
       <SafeAreaView style={styles.container}>
+<<<<<<< HEAD
         <ScrollView contentContainerStyle={styles.content}>
+=======
+        <View style={styles.content}>
+>>>>>>> c15298c10d21e6166ada23ea5d6925e0a550cb4e
           
           {/* Header with Back Button */}
           <View style={styles.headerRow}>
@@ -59,7 +73,11 @@ export default function PlayerSelectionScreen() {
               <View style={styles.avatarWrapper}>
                 <Image
                   source={require('../../assets/images/Playerblue.png')}
+<<<<<<< HEAD
                   style={[styles.avatarImage, { width: avatarSize, height: avatarSize * 1.625 }]}
+=======
+                  style={styles.avatarImage}
+>>>>>>> c15298c10d21e6166ada23ea5d6925e0a550cb4e
                   resizeMode="contain"
                 />
                 <View style={[styles.playerBadge, { backgroundColor: '#3b82f6' }]}>
@@ -72,7 +90,11 @@ export default function PlayerSelectionScreen() {
                 <View style={styles.avatarWrapper}>
                   <Image
                     source={require('../../assets/images/Playerblue.png')}
+<<<<<<< HEAD
                     style={[styles.avatarImage, { width: avatarSize, height: avatarSize * 1.625 }]}
+=======
+                    style={styles.avatarImage}
+>>>>>>> c15298c10d21e6166ada23ea5d6925e0a550cb4e
                     resizeMode="contain"
                   />
                   <View style={[styles.playerBadge, { backgroundColor: '#ef4444' }]}>
@@ -86,7 +108,11 @@ export default function PlayerSelectionScreen() {
                 <View style={styles.avatarWrapper}>
                   <Image
                     source={require('../../assets/images/Playerblue.png')}
+<<<<<<< HEAD
                     style={[styles.avatarImage, { width: avatarSize, height: avatarSize * 1.625 }]}
+=======
+                    style={styles.avatarImage}
+>>>>>>> c15298c10d21e6166ada23ea5d6925e0a550cb4e
                     resizeMode="contain"
                   />
                   <View style={[styles.playerBadge, { backgroundColor: '#10b981' }]}>
@@ -143,7 +169,11 @@ export default function PlayerSelectionScreen() {
             <Text style={styles.startText}>NEXT</Text>
           </TouchableOpacity>
 
+<<<<<<< HEAD
         </ScrollView>
+=======
+        </View>
+>>>>>>> c15298c10d21e6166ada23ea5d6925e0a550cb4e
       </SafeAreaView>
     </BookcaseBackground>
   );
@@ -154,7 +184,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
+<<<<<<< HEAD
     flexGrow: 1,
+=======
+    flex: 1,
+>>>>>>> c15298c10d21e6166ada23ea5d6925e0a550cb4e
     padding: PADDING,
     justifyContent: 'space-between',
   },
@@ -195,7 +229,11 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
   },
   previewCard: {
+<<<<<<< HEAD
     minHeight: 260,
+=======
+    flex: 1,
+>>>>>>> c15298c10d21e6166ada23ea5d6925e0a550cb4e
     marginVertical: PADDING,
     backgroundColor: 'rgba(15, 18, 28, 0.72)',
     borderRadius: CARD_RADIUS,
@@ -244,7 +282,10 @@ const styles = StyleSheet.create({
   },
   toggleTab: {
     flex: 1,
+<<<<<<< HEAD
     minHeight: 48,
+=======
+>>>>>>> c15298c10d21e6166ada23ea5d6925e0a550cb4e
     paddingVertical: 14,
     borderRadius: CARD_RADIUS,
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
@@ -277,4 +318,8 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 1,
   },
+<<<<<<< HEAD
 });
+=======
+});
+>>>>>>> c15298c10d21e6166ada23ea5d6925e0a550cb4e

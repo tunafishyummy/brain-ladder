@@ -3,7 +3,10 @@ import { useState } from 'react';
 import {
     Image,
     SafeAreaView,
+<<<<<<< HEAD
     ScrollView,
+=======
+>>>>>>> c15298c10d21e6166ada23ea5d6925e0a550cb4e
     StyleSheet,
     Text,
     TouchableOpacity,
@@ -82,7 +85,11 @@ export default function CustomizeCharacterScreen() {
   return (
     <BookcaseBackground>
       <SafeAreaView style={styles.container}>
+<<<<<<< HEAD
         <ScrollView contentContainerStyle={styles.content}>
+=======
+        <View style={styles.content}>
+>>>>>>> c15298c10d21e6166ada23ea5d6925e0a550cb4e
 
           {/* Header Banner with Back Button */}
           <View style={styles.headerRow}>
@@ -179,7 +186,11 @@ export default function CustomizeCharacterScreen() {
             </Text>
           </TouchableOpacity>
 
+<<<<<<< HEAD
         </ScrollView>
+=======
+        </View>
+>>>>>>> c15298c10d21e6166ada23ea5d6925e0a550cb4e
       </SafeAreaView>
     </BookcaseBackground>
   );
@@ -190,7 +201,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
+<<<<<<< HEAD
     flexGrow: 1,
+=======
+    flex: 1,
+>>>>>>> c15298c10d21e6166ada23ea5d6925e0a550cb4e
     padding: PADDING,
     justifyContent: 'space-between',
   },
@@ -238,7 +253,11 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   previewCard: {
+<<<<<<< HEAD
     minHeight: 265,
+=======
+    flex: 1,
+>>>>>>> c15298c10d21e6166ada23ea5d6925e0a550cb4e
     marginVertical: PADDING,
     backgroundColor: 'rgba(15, 18, 28, 0.72)',
     borderRadius: CARD_RADIUS,
@@ -338,4 +357,8 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 1,
   },
+<<<<<<< HEAD
 });
+=======
+});
+>>>>>>> c15298c10d21e6166ada23ea5d6925e0a550cb4e

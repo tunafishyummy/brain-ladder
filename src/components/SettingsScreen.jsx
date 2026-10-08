@@ -199,11 +199,17 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   backBtn: {
+<<<<<<< HEAD
     width: 44,
     height: 44,
     backgroundColor: '#252f47',
     alignItems: 'center',
     justifyContent: 'center',
+=======
+    backgroundColor: '#252f47',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+>>>>>>> c15298c10d21e6166ada23ea5d6925e0a550cb4e
     borderRadius: 4,
   },
   btnText: {
@@ -239,12 +245,20 @@ const styles = StyleSheet.create({
   },
   muteText: {
     color: '#94a3b8',
+<<<<<<< HEAD
     fontSize: 10,
+=======
+    fontSize: 9,
+>>>>>>> c15298c10d21e6166ada23ea5d6925e0a550cb4e
     fontWeight: 'bold',
   },
   slider: {
     width: '100%',
+<<<<<<< HEAD
     height: 38,
+=======
+    height: 30,
+>>>>>>> c15298c10d21e6166ada23ea5d6925e0a550cb4e
   },
   stepperRow: {
     flexDirection: 'row',
@@ -256,6 +270,7 @@ const styles = StyleSheet.create({
   },
   label: {
     color: '#fff',
+<<<<<<< HEAD
     fontSize: 12,
     fontWeight: 'bold',
   },
@@ -265,6 +280,15 @@ const styles = StyleSheet.create({
     backgroundColor: '#1f283d',
     alignItems: 'center',
     justifyContent: 'center',
+=======
+    fontSize: 11,
+    fontWeight: 'bold',
+  },
+  stepBtn: {
+    backgroundColor: '#1f283d',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+>>>>>>> c15298c10d21e6166ada23ea5d6925e0a550cb4e
     borderRadius: 4,
   },
   helpBtn: {
@@ -286,10 +310,16 @@ const styles = StyleSheet.create({
   },
   rulesText: {
     color: '#94a3b8',
+<<<<<<< HEAD
     fontSize: 11,
   },
   returnBtn: {
     minHeight: 44,
+=======
+    fontSize: 10,
+  },
+  returnBtn: {
+>>>>>>> c15298c10d21e6166ada23ea5d6925e0a550cb4e
     backgroundColor: '#252d42',
     padding: 12,
     borderRadius: 8,

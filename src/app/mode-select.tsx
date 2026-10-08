@@ -1,5 +1,9 @@
 import { useRouter } from 'expo-router';
+<<<<<<< HEAD
 import { Image, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+=======
+import { Image, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+>>>>>>> c15298c10d21e6166ada23ea5d6925e0a550cb4e
 import BookcaseBackground from '../components/BookcaseBackground';
 
 const MODES = [
@@ -18,6 +22,7 @@ export default function ModeSelectScreen() {
   return (
     <BookcaseBackground>
       <SafeAreaView style={styles.container}>
+<<<<<<< HEAD
         <ScrollView contentContainerStyle={styles.content}>
           <View style={styles.headerBanner}>
             <Text style={styles.headerTitle}>SELECT PLAYERS</Text>
@@ -44,6 +49,30 @@ export default function ModeSelectScreen() {
             <Text style={styles.backText}>BACK</Text>
           </TouchableOpacity>
         </ScrollView>
+=======
+        <View style={styles.headerBanner}>
+          <Text style={styles.headerTitle}>SELECT PLAYERS</Text>
+        </View>
+
+        <View style={styles.modeList}>
+          {MODES.map((mode) => (
+            <TouchableOpacity
+              key={mode.count}
+              style={[styles.modeCard, { borderColor: mode.color }]}
+              onPress={() => handleContinue(mode.count)}
+              activeOpacity={0.85}
+            >
+              <Image source={mode.image} style={styles.playerImage} resizeMode="contain" />
+              <Text style={[styles.modeLabel, { color: mode.color }]}>{mode.label}</Text>
+              <Text style={styles.placeholderLabel}>PLACEHOLDER MODE</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()} activeOpacity={0.85}>
+          <Text style={styles.backText}>BACK</Text>
+        </TouchableOpacity>
+>>>>>>> c15298c10d21e6166ada23ea5d6925e0a550cb4e
       </SafeAreaView>
     </BookcaseBackground>
   );
@@ -53,11 +82,15 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     width: '100%',
+<<<<<<< HEAD
   },
   content: {
     flexGrow: 1,
     width: '100%',
     maxWidth: 480,
+=======
+    maxWidth: 560,
+>>>>>>> c15298c10d21e6166ada23ea5d6925e0a550cb4e
     alignSelf: 'center',
     justifyContent: 'center',
     padding: 16,
@@ -78,6 +111,7 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
   },
   modeList: {
+<<<<<<< HEAD
     gap: 10,
   },
   modeCard: {
@@ -87,11 +121,24 @@ const styles = StyleSheet.create({
     gap: 14,
     paddingHorizontal: 14,
     paddingVertical: 8,
+=======
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 12,
+  },
+  modeCard: {
+    flex: 1,
+    minHeight: 220,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 12,
+>>>>>>> c15298c10d21e6166ada23ea5d6925e0a550cb4e
     borderRadius: 12,
     borderWidth: 2,
     backgroundColor: 'rgba(15,18,28,0.84)',
   },
   playerImage: {
+<<<<<<< HEAD
     width: 72,
     height: 82,
   },
@@ -101,11 +148,23 @@ const styles = StyleSheet.create({
   },
   modeLabel: {
     fontSize: 16,
+=======
+    width: '100%',
+    height: 120,
+    marginBottom: 12,
+  },
+  modeLabel: {
+    fontSize: 15,
+>>>>>>> c15298c10d21e6166ada23ea5d6925e0a550cb4e
     fontWeight: '800',
     textAlign: 'center',
   },
   placeholderLabel: {
+<<<<<<< HEAD
     marginTop: 0,
+=======
+    marginTop: 8,
+>>>>>>> c15298c10d21e6166ada23ea5d6925e0a550cb4e
     color: '#a0a5b5',
     fontSize: 9,
     fontWeight: '700',

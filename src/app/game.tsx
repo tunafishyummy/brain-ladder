@@ -1,6 +1,10 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
+<<<<<<< HEAD
+=======
+  Dimensions,
+>>>>>>> c15298c10d21e6166ada23ea5d6925e0a550cb4e
   Image,
   ImageBackground,
   Modal,
@@ -8,12 +12,21 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
+<<<<<<< HEAD
   useWindowDimensions,
+=======
+>>>>>>> c15298c10d21e6166ada23ea5d6925e0a550cb4e
   View,
 } from 'react-native';
 import BookcaseBackground from '../components/BookcaseBackground';
 
+<<<<<<< HEAD
 const MAX_BOARD_SIZE = 360;
+=======
+const SCREEN_WIDTH = Dimensions.get('window').width;
+const BOARD_SIZE = Math.min(SCREEN_WIDTH * 0.90, 360);
+const CELL_SIZE = BOARD_SIZE / 10;
+>>>>>>> c15298c10d21e6166ada23ea5d6925e0a550cb4e
 
 // Ladders (Going Up): landing tile -> top tile
 const LADDERS: { [key: number]: number } = {
@@ -113,9 +126,12 @@ const getPlaceholderQuestion = (type: EventType): Question => {
 export default function GameScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ players?: string; playerColors?: string }>();
+<<<<<<< HEAD
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const boardSize = Math.min(screenWidth - 32, screenHeight * 0.44, MAX_BOARD_SIZE);
   const cellSize = boardSize / 10;
+=======
+>>>>>>> c15298c10d21e6166ada23ea5d6925e0a550cb4e
   
   const playerCount = Math.min(3, Math.max(1, Number(params.players) || 3));
 
@@ -170,8 +186,13 @@ export default function GameScreen() {
     if (row % 2 === 1) {
       col = 9 - col;
     }
+<<<<<<< HEAD
     const x = col * cellSize;
     const y = (9 - row) * cellSize;
+=======
+    const x = col * CELL_SIZE;
+    const y = (9 - row) * CELL_SIZE;
+>>>>>>> c15298c10d21e6166ada23ea5d6925e0a550cb4e
     return { x, y };
   };
 
@@ -285,7 +306,11 @@ export default function GameScreen() {
       <SafeAreaView style={{ flex: 1 }}>
         <View style={styles.mainContainer}>
           {/* TOP BANNER & EXIT BUTTON */}
+<<<<<<< HEAD
           <View style={[styles.headerRow, { width: boardSize }]}>
+=======
+          <View style={styles.headerRow}>
+>>>>>>> c15298c10d21e6166ada23ea5d6925e0a550cb4e
             <TouchableOpacity
               style={styles.exitButton}
               onPress={() => setShowExitModal(true)}
@@ -301,7 +326,11 @@ export default function GameScreen() {
           </View>
 
           {/* BOARD */}
+<<<<<<< HEAD
           <View style={[styles.boardWrapper, { width: boardSize, height: boardSize }]}>
+=======
+          <View style={styles.boardWrapper}>
+>>>>>>> c15298c10d21e6166ada23ea5d6925e0a550cb4e
             <ImageBackground
               source={require('../../assets/images/board.png')}
               style={styles.boardImage}
@@ -315,11 +344,16 @@ export default function GameScreen() {
                     style={[
                       styles.playerTokenWrapper,
                       {
+<<<<<<< HEAD
                         left: x + cellSize * 0.05,
                         top: y + cellSize * 0.05,
                         width: cellSize * 0.9,
                         height: cellSize * 0.9,
                         borderRadius: cellSize * 0.45,
+=======
+                        left: x + CELL_SIZE * 0.05,
+                        top: y + CELL_SIZE * 0.05,
+>>>>>>> c15298c10d21e6166ada23ea5d6925e0a550cb4e
                         backgroundColor: player.color,
                       },
                     ]}
@@ -337,18 +371,25 @@ export default function GameScreen() {
           {/* DICE */}
           <View style={styles.diceSection}>
             <TouchableOpacity
+<<<<<<< HEAD
               style={styles.diceButton}
+=======
+>>>>>>> c15298c10d21e6166ada23ea5d6925e0a550cb4e
               onPress={rollDice}
               disabled={isRolling || !!winner || isModalVisible || showExitModal}
               activeOpacity={0.7}
             >
               <Image
                 source={DICE_IMAGES[diceValue]}
+<<<<<<< HEAD
                 style={[
                   styles.diceImage,
                   { width: Math.min(52, boardSize * 0.15), height: Math.min(52, boardSize * 0.15) },
                   isRolling && styles.diceRollingAnimation,
                 ]}
+=======
+                style={[styles.diceImage, isRolling && styles.diceRollingAnimation]}
+>>>>>>> c15298c10d21e6166ada23ea5d6925e0a550cb4e
               />
             </TouchableOpacity>
           </View>
@@ -364,9 +405,13 @@ export default function GameScreen() {
                 style={[
                   styles.bottomIndicator,
                   { backgroundColor: player.color },
+<<<<<<< HEAD
                   isActive
                     ? [styles.indicatorActive, { height: Math.min(95, screenHeight * 0.13) }]
                     : [styles.indicatorInactive, { height: Math.min(25, screenHeight * 0.04) }],
+=======
+                  isActive ? styles.indicatorActive : styles.indicatorInactive,
+>>>>>>> c15298c10d21e6166ada23ea5d6925e0a550cb4e
                 ]}
               />
             );
@@ -506,14 +551,24 @@ const styles = StyleSheet.create({
   },
 
   headerRow: {
+<<<<<<< HEAD
+=======
+    width: '90%',
+    maxWidth: BOARD_SIZE,
+>>>>>>> c15298c10d21e6166ada23ea5d6925e0a550cb4e
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
     zIndex: 20,
   },
   exitButton: {
+<<<<<<< HEAD
     width: 48,
     height: 48,
+=======
+    width: 44,
+    height: 44,
+>>>>>>> c15298c10d21e6166ada23ea5d6925e0a550cb4e
     borderRadius: 12,
     backgroundColor: 'rgba(239, 68, 68, 0.3)',
     borderWidth: 1.5,
@@ -542,6 +597,11 @@ const styles = StyleSheet.create({
   turnText: { color: '#fff', fontSize: 18, fontWeight: 'bold', letterSpacing: 1 },
 
   boardWrapper: {
+<<<<<<< HEAD
+=======
+    width: BOARD_SIZE,
+    height: BOARD_SIZE,
+>>>>>>> c15298c10d21e6166ada23ea5d6925e0a550cb4e
     borderWidth: 2,
     borderColor: '#334155',
     borderRadius: 10,
@@ -551,6 +611,12 @@ const styles = StyleSheet.create({
 
   playerTokenWrapper: {
     position: 'absolute',
+<<<<<<< HEAD
+=======
+    width: CELL_SIZE * 0.9,
+    height: CELL_SIZE * 0.9,
+    borderRadius: CELL_SIZE * 0.9,
+>>>>>>> c15298c10d21e6166ada23ea5d6925e0a550cb4e
     borderWidth: 2,
     borderColor: '#0f172a',
     alignItems: 'center',
@@ -570,6 +636,7 @@ const styles = StyleSheet.create({
   diceSection: {
     alignItems: 'center',
     justifyContent: 'center',
+<<<<<<< HEAD
     height: 56,
   },
   diceButton: {
@@ -579,6 +646,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   diceImage: { resizeMode: 'contain' },
+=======
+    height: 50,
+  },
+  diceImage: { width: 50, height: 50, resizeMode: 'contain' },
+>>>>>>> c15298c10d21e6166ada23ea5d6925e0a550cb4e
   diceRollingAnimation: { opacity: 0.6, transform: [{ scale: 0.95 }] },
 
   bottomBarContainer: {
@@ -662,9 +734,14 @@ const styles = StyleSheet.create({
   },
 
   popupImageContainer: {
+<<<<<<< HEAD
     width: '88%',
     maxWidth: 340,
     aspectRatio: 340 / 260,
+=======
+    width: 340,
+    height: 260,
+>>>>>>> c15298c10d21e6166ada23ea5d6925e0a550cb4e
     justifyContent: 'flex-end',
     alignItems: 'center',
     paddingBottom: 28,
@@ -769,17 +846,27 @@ const styles = StyleSheet.create({
   resultCorrectText: { color: '#4ade80' },
   resultWrongText: { color: '#f87171' },
   continueButton: {
+<<<<<<< HEAD
     minHeight: 44,
+=======
+>>>>>>> c15298c10d21e6166ada23ea5d6925e0a550cb4e
     backgroundColor: '#facc15',
     paddingVertical: 10,
     paddingHorizontal: 28,
     borderRadius: 10,
+<<<<<<< HEAD
     alignItems: 'center',
     justifyContent: 'center',
+=======
+>>>>>>> c15298c10d21e6166ada23ea5d6925e0a550cb4e
   },
   continueButtonText: {
     color: '#1e293b',
     fontWeight: 'bold',
     fontSize: 14,
   },
+<<<<<<< HEAD
 });
+=======
+});
+>>>>>>> c15298c10d21e6166ada23ea5d6925e0a550cb4e
