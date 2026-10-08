@@ -3,9 +3,11 @@ import { useState } from 'react';
 import {
     Image,
     SafeAreaView,
+    ScrollView,
     StyleSheet,
     Text,
     TouchableOpacity,
+    useWindowDimensions,
     View,
 } from 'react-native';
 import BookcaseBackground from '../components/BookcaseBackground';
@@ -15,7 +17,9 @@ const CARD_RADIUS = 16;
 
 export default function PlayerSelectionScreen() {
   const router = useRouter();
+  const { width } = useWindowDimensions();
   const params = useLocalSearchParams();
+  const avatarSize = Math.min(80, Math.max(56, (width - PADDING * 4 - 26) / 3));
   const [playerCount, setPlayerCount] = useState<1 | 2 | 3>(1);
 
   const handleStartGame = () => {
@@ -31,7 +35,7 @@ export default function PlayerSelectionScreen() {
   return (
     <BookcaseBackground>
       <SafeAreaView style={styles.container}>
-        <View style={styles.content}>
+        <ScrollView contentContainerStyle={styles.content}>
           
           {/* Header with Back Button */}
           <View style={styles.headerRow}>
@@ -55,7 +59,7 @@ export default function PlayerSelectionScreen() {
               <View style={styles.avatarWrapper}>
                 <Image
                   source={require('../../assets/images/Playerblue.png')}
-                  style={styles.avatarImage}
+                  style={[styles.avatarImage, { width: avatarSize, height: avatarSize * 1.625 }]}
                   resizeMode="contain"
                 />
                 <View style={[styles.playerBadge, { backgroundColor: '#3b82f6' }]}>
@@ -68,7 +72,7 @@ export default function PlayerSelectionScreen() {
                 <View style={styles.avatarWrapper}>
                   <Image
                     source={require('../../assets/images/Playerblue.png')}
-                    style={styles.avatarImage}
+                    style={[styles.avatarImage, { width: avatarSize, height: avatarSize * 1.625 }]}
                     resizeMode="contain"
                   />
                   <View style={[styles.playerBadge, { backgroundColor: '#ef4444' }]}>
@@ -82,7 +86,7 @@ export default function PlayerSelectionScreen() {
                 <View style={styles.avatarWrapper}>
                   <Image
                     source={require('../../assets/images/Playerblue.png')}
-                    style={styles.avatarImage}
+                    style={[styles.avatarImage, { width: avatarSize, height: avatarSize * 1.625 }]}
                     resizeMode="contain"
                   />
                   <View style={[styles.playerBadge, { backgroundColor: '#10b981' }]}>
@@ -139,7 +143,7 @@ export default function PlayerSelectionScreen() {
             <Text style={styles.startText}>NEXT</Text>
           </TouchableOpacity>
 
-        </View>
+        </ScrollView>
       </SafeAreaView>
     </BookcaseBackground>
   );
@@ -150,7 +154,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    flex: 1,
+    flexGrow: 1,
     padding: PADDING,
     justifyContent: 'space-between',
   },
@@ -191,7 +195,7 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
   },
   previewCard: {
-    flex: 1,
+    minHeight: 260,
     marginVertical: PADDING,
     backgroundColor: 'rgba(15, 18, 28, 0.72)',
     borderRadius: CARD_RADIUS,
@@ -240,6 +244,7 @@ const styles = StyleSheet.create({
   },
   toggleTab: {
     flex: 1,
+    minHeight: 48,
     paddingVertical: 14,
     borderRadius: CARD_RADIUS,
     backgroundColor: 'rgba(255, 255, 255, 0.05)',

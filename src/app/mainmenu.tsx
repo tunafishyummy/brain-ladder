@@ -11,6 +11,7 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
+  useWindowDimensions,
   View
 } from 'react-native';
 import MainMenuArtwork from '../components/MainMenuArtwork';
@@ -20,6 +21,10 @@ import SettingsScreen from '../components/SettingsScreen';
 
 export default function MainMenuScreen() {
   const router = useRouter();
+  const { width, height } = useWindowDimensions();
+  const artworkWidth = Math.min(width, height * (9 / 20));
+  const controlSize = Math.min(52, artworkWidth * 0.14);
+  const playFontSize = Math.min(50, artworkWidth * 0.14);
   const { fadeThroughBlack } = useScreenTransition();
   const zoomProgress = useRef(new Animated.Value(0)).current;
   const transitionStarted = useRef(false);
@@ -97,7 +102,7 @@ export default function MainMenuScreen() {
         </TouchableOpacity>
 
         <View
-          style={styles.playContainer}
+          style={[styles.playContainer, { top: '29%', left: '42%', width: '38%' }]}
           onLayout={({ nativeEvent: { layout } }) =>
             setZoomAnchor({ x: layout.x + layout.width / 2, y: layout.y + layout.height / 2 })
           }
@@ -108,11 +113,11 @@ export default function MainMenuScreen() {
             disabled={isTransitioning}
             activeOpacity={0.8}
           >
-            <Text style={styles.playText}>PLAY</Text>
+            <Text style={[styles.playText, { fontSize: playFontSize }]}>PLAY</Text>
           </TouchableOpacity>
         </View>
 
-        <View style={styles.bottomRow}>
+        <View style={[styles.bottomRow, { right: '7%', bottom: '2%', gap: artworkWidth * 0.045 }]}>
           <TouchableOpacity
             style={styles.iconButton}
             onPress={handleSettings}
@@ -120,11 +125,11 @@ export default function MainMenuScreen() {
           >
             <Image
               source={require('@/assets/images/settings.png')}
-              style={styles.icon}
+              style={[styles.icon, { width: controlSize, height: controlSize }]}
             />
           </TouchableOpacity>
 
-          <View pointerEvents="none" style={styles.iconDivider} />
+          <View pointerEvents="none" style={[styles.iconDivider, { height: controlSize + 20 }]} />
 
           <TouchableOpacity
             style={styles.iconButton}
@@ -133,7 +138,7 @@ export default function MainMenuScreen() {
           >
             <Image
               source={require('@/assets/images/door.png')}
-              style={styles.icon}
+              style={[styles.icon, { width: controlSize, height: controlSize }]}
             />
           </TouchableOpacity>
         </View>
@@ -185,8 +190,8 @@ const styles = StyleSheet.create({
   },
   debugButton: {
     position: 'absolute',
-    top: 60,
-    left: 20,
+    top: 12,
+    left: 12,
     zIndex: 3,
     backgroundColor: '#fff',
     borderWidth: 2,
@@ -199,20 +204,18 @@ const styles = StyleSheet.create({
   debugButtonText: {
     color: '#111827',
     fontWeight: '900',
-    fontSize: 13,
+    fontSize: 11,
   },
   playContainer: {
+    position: 'absolute',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 240, // Adjusted from 550 so it stays safely within view on mobile
-    marginLeft: 135,
   },
   playButton: {
     paddingHorizontal: 20,
     paddingVertical: 16,
   },
   playText: {
-    fontSize: 50,
     fontWeight: 'bold',
     color: '#FFD700',
     textShadowColor: 'rgba(0, 0, 0, 0.75)',
@@ -220,11 +223,10 @@ const styles = StyleSheet.create({
     textShadowRadius: 4,
   },
   bottomRow: {
+    position: 'absolute',
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: 40,
-    marginLeft: 200,
-    transform: [{ translateY: 155 }], // Reduced from 100 so it doesn't get clipped past the bottom edge
+    alignItems: 'center',
   },
   iconDivider: {
     width: 2,
@@ -238,8 +240,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   icon: {
-    width: 48,
-    height: 48,
     resizeMode: 'contain',
   },
   modalBackdrop: {

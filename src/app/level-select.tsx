@@ -216,7 +216,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   arrowButton: {
+    minWidth: 44,
+    minHeight: 44,
     paddingHorizontal: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   arrowText: {
     color: '#ffffff',

@@ -1,7 +1,6 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
-  Dimensions,
   Image,
   ImageBackground,
   Modal,
@@ -9,13 +8,12 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import BookcaseBackground from '../components/BookcaseBackground';
 
-const SCREEN_WIDTH = Dimensions.get('window').width;
-const BOARD_SIZE = Math.min(SCREEN_WIDTH * 0.90, 360);
-const CELL_SIZE = BOARD_SIZE / 10;
+const MAX_BOARD_SIZE = 360;
 
 // Ladders (Going Up): landing tile -> top tile
 const LADDERS: { [key: number]: number } = {
@@ -115,6 +113,9 @@ const getPlaceholderQuestion = (type: EventType): Question => {
 export default function GameScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ players?: string; playerColors?: string }>();
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
+  const boardSize = Math.min(screenWidth - 32, screenHeight * 0.44, MAX_BOARD_SIZE);
+  const cellSize = boardSize / 10;
   
   const playerCount = Math.min(3, Math.max(1, Number(params.players) || 3));
 
@@ -169,8 +170,8 @@ export default function GameScreen() {
     if (row % 2 === 1) {
       col = 9 - col;
     }
-    const x = col * CELL_SIZE;
-    const y = (9 - row) * CELL_SIZE;
+    const x = col * cellSize;
+    const y = (9 - row) * cellSize;
     return { x, y };
   };
 
@@ -284,7 +285,7 @@ export default function GameScreen() {
       <SafeAreaView style={{ flex: 1 }}>
         <View style={styles.mainContainer}>
           {/* TOP BANNER & EXIT BUTTON */}
-          <View style={styles.headerRow}>
+          <View style={[styles.headerRow, { width: boardSize }]}>
             <TouchableOpacity
               style={styles.exitButton}
               onPress={() => setShowExitModal(true)}
@@ -300,7 +301,7 @@ export default function GameScreen() {
           </View>
 
           {/* BOARD */}
-          <View style={styles.boardWrapper}>
+          <View style={[styles.boardWrapper, { width: boardSize, height: boardSize }]}>
             <ImageBackground
               source={require('../../assets/images/board.png')}
               style={styles.boardImage}
@@ -314,8 +315,11 @@ export default function GameScreen() {
                     style={[
                       styles.playerTokenWrapper,
                       {
-                        left: x + CELL_SIZE * 0.05,
-                        top: y + CELL_SIZE * 0.05,
+                        left: x + cellSize * 0.05,
+                        top: y + cellSize * 0.05,
+                        width: cellSize * 0.9,
+                        height: cellSize * 0.9,
+                        borderRadius: cellSize * 0.45,
                         backgroundColor: player.color,
                       },
                     ]}
@@ -333,13 +337,18 @@ export default function GameScreen() {
           {/* DICE */}
           <View style={styles.diceSection}>
             <TouchableOpacity
+              style={styles.diceButton}
               onPress={rollDice}
               disabled={isRolling || !!winner || isModalVisible || showExitModal}
               activeOpacity={0.7}
             >
               <Image
                 source={DICE_IMAGES[diceValue]}
-                style={[styles.diceImage, isRolling && styles.diceRollingAnimation]}
+                style={[
+                  styles.diceImage,
+                  { width: Math.min(52, boardSize * 0.15), height: Math.min(52, boardSize * 0.15) },
+                  isRolling && styles.diceRollingAnimation,
+                ]}
               />
             </TouchableOpacity>
           </View>
@@ -355,7 +364,9 @@ export default function GameScreen() {
                 style={[
                   styles.bottomIndicator,
                   { backgroundColor: player.color },
-                  isActive ? styles.indicatorActive : styles.indicatorInactive,
+                  isActive
+                    ? [styles.indicatorActive, { height: Math.min(95, screenHeight * 0.13) }]
+                    : [styles.indicatorInactive, { height: Math.min(25, screenHeight * 0.04) }],
                 ]}
               />
             );
@@ -495,16 +506,14 @@ const styles = StyleSheet.create({
   },
 
   headerRow: {
-    width: '90%',
-    maxWidth: BOARD_SIZE,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
     zIndex: 20,
   },
   exitButton: {
-    width: 44,
-    height: 44,
+    width: 48,
+    height: 48,
     borderRadius: 12,
     backgroundColor: 'rgba(239, 68, 68, 0.3)',
     borderWidth: 1.5,
@@ -533,8 +542,6 @@ const styles = StyleSheet.create({
   turnText: { color: '#fff', fontSize: 18, fontWeight: 'bold', letterSpacing: 1 },
 
   boardWrapper: {
-    width: BOARD_SIZE,
-    height: BOARD_SIZE,
     borderWidth: 2,
     borderColor: '#334155',
     borderRadius: 10,
@@ -544,9 +551,6 @@ const styles = StyleSheet.create({
 
   playerTokenWrapper: {
     position: 'absolute',
-    width: CELL_SIZE * 0.9,
-    height: CELL_SIZE * 0.9,
-    borderRadius: CELL_SIZE * 0.9,
     borderWidth: 2,
     borderColor: '#0f172a',
     alignItems: 'center',
@@ -566,9 +570,15 @@ const styles = StyleSheet.create({
   diceSection: {
     alignItems: 'center',
     justifyContent: 'center',
-    height: 50,
+    height: 56,
   },
-  diceImage: { width: 50, height: 50, resizeMode: 'contain' },
+  diceButton: {
+    width: 52,
+    height: 52,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  diceImage: { resizeMode: 'contain' },
   diceRollingAnimation: { opacity: 0.6, transform: [{ scale: 0.95 }] },
 
   bottomBarContainer: {
@@ -652,8 +662,9 @@ const styles = StyleSheet.create({
   },
 
   popupImageContainer: {
-    width: 340,
-    height: 260,
+    width: '88%',
+    maxWidth: 340,
+    aspectRatio: 340 / 260,
     justifyContent: 'flex-end',
     alignItems: 'center',
     paddingBottom: 28,
@@ -758,10 +769,13 @@ const styles = StyleSheet.create({
   resultCorrectText: { color: '#4ade80' },
   resultWrongText: { color: '#f87171' },
   continueButton: {
+    minHeight: 44,
     backgroundColor: '#facc15',
     paddingVertical: 10,
     paddingHorizontal: 28,
     borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   continueButtonText: {
     color: '#1e293b',

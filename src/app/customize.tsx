@@ -3,6 +3,7 @@ import { useState } from 'react';
 import {
     Image,
     SafeAreaView,
+    ScrollView,
     StyleSheet,
     Text,
     TouchableOpacity,
@@ -81,7 +82,7 @@ export default function CustomizeCharacterScreen() {
   return (
     <BookcaseBackground>
       <SafeAreaView style={styles.container}>
-        <View style={styles.content}>
+        <ScrollView contentContainerStyle={styles.content}>
 
           {/* Header Banner with Back Button */}
           <View style={styles.headerRow}>
@@ -178,7 +179,7 @@ export default function CustomizeCharacterScreen() {
             </Text>
           </TouchableOpacity>
 
-        </View>
+        </ScrollView>
       </SafeAreaView>
     </BookcaseBackground>
   );
@@ -189,7 +190,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    flex: 1,
+    flexGrow: 1,
     padding: PADDING,
     justifyContent: 'space-between',
   },
@@ -237,7 +238,7 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   previewCard: {
-    flex: 1,
+    minHeight: 265,
     marginVertical: PADDING,
     backgroundColor: 'rgba(15, 18, 28, 0.72)',
     borderRadius: CARD_RADIUS,

@@ -199,9 +199,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   backBtn: {
+    width: 44,
+    height: 44,
     backgroundColor: '#252f47',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
     borderRadius: 4,
   },
   btnText: {
@@ -237,12 +239,12 @@ const styles = StyleSheet.create({
   },
   muteText: {
     color: '#94a3b8',
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: 'bold',
   },
   slider: {
     width: '100%',
-    height: 30,
+    height: 38,
   },
   stepperRow: {
     flexDirection: 'row',
@@ -254,13 +256,15 @@ const styles = StyleSheet.create({
   },
   label: {
     color: '#fff',
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: 'bold',
   },
   stepBtn: {
+    width: 44,
+    height: 44,
     backgroundColor: '#1f283d',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
     borderRadius: 4,
   },
   helpBtn: {
@@ -282,9 +286,10 @@ const styles = StyleSheet.create({
   },
   rulesText: {
     color: '#94a3b8',
-    fontSize: 10,
+    fontSize: 11,
   },
   returnBtn: {
+    minHeight: 44,
     backgroundColor: '#252d42',
     padding: 12,
     borderRadius: 8,

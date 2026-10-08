@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { Image, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import BookcaseBackground from '../components/BookcaseBackground';
 
 const MODES = [
@@ -18,28 +18,32 @@ export default function ModeSelectScreen() {
   return (
     <BookcaseBackground>
       <SafeAreaView style={styles.container}>
-        <View style={styles.headerBanner}>
-          <Text style={styles.headerTitle}>SELECT PLAYERS</Text>
-        </View>
+        <ScrollView contentContainerStyle={styles.content}>
+          <View style={styles.headerBanner}>
+            <Text style={styles.headerTitle}>SELECT PLAYERS</Text>
+          </View>
 
-        <View style={styles.modeList}>
-          {MODES.map((mode) => (
-            <TouchableOpacity
-              key={mode.count}
-              style={[styles.modeCard, { borderColor: mode.color }]}
-              onPress={() => handleContinue(mode.count)}
-              activeOpacity={0.85}
-            >
-              <Image source={mode.image} style={styles.playerImage} resizeMode="contain" />
-              <Text style={[styles.modeLabel, { color: mode.color }]}>{mode.label}</Text>
-              <Text style={styles.placeholderLabel}>PLACEHOLDER MODE</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+          <View style={styles.modeList}>
+            {MODES.map((mode) => (
+              <TouchableOpacity
+                key={mode.count}
+                style={[styles.modeCard, { borderColor: mode.color }]}
+                onPress={() => handleContinue(mode.count)}
+                activeOpacity={0.85}
+              >
+                <Image source={mode.image} style={styles.playerImage} resizeMode="contain" />
+                <View style={styles.modeText}>
+                  <Text style={[styles.modeLabel, { color: mode.color }]}>{mode.label}</Text>
+                  <Text style={styles.placeholderLabel}>PLACEHOLDER MODE</Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
 
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()} activeOpacity={0.85}>
-          <Text style={styles.backText}>BACK</Text>
-        </TouchableOpacity>
+          <TouchableOpacity style={styles.backButton} onPress={() => router.back()} activeOpacity={0.85}>
+            <Text style={styles.backText}>BACK</Text>
+          </TouchableOpacity>
+        </ScrollView>
       </SafeAreaView>
     </BookcaseBackground>
   );
@@ -49,7 +53,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     width: '100%',
-    maxWidth: 560,
+  },
+  content: {
+    flexGrow: 1,
+    width: '100%',
+    maxWidth: 480,
     alignSelf: 'center',
     justifyContent: 'center',
     padding: 16,
@@ -70,32 +78,34 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
   },
   modeList: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 12,
+    gap: 10,
   },
   modeCard: {
-    flex: 1,
-    minHeight: 220,
+    minHeight: 100,
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    padding: 12,
+    gap: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
     borderRadius: 12,
     borderWidth: 2,
     backgroundColor: 'rgba(15,18,28,0.84)',
   },
   playerImage: {
-    width: '100%',
-    height: 120,
-    marginBottom: 12,
+    width: 72,
+    height: 82,
+  },
+  modeText: {
+    flex: 1,
+    gap: 6,
   },
   modeLabel: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '800',
     textAlign: 'center',
   },
   placeholderLabel: {
-    marginTop: 8,
+    marginTop: 0,
     color: '#a0a5b5',
     fontSize: 9,
     fontWeight: '700',
