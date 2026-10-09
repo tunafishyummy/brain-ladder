@@ -1,67 +1,21 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useAudioPlayer } from 'expo-audio';
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import {
-  Alert,
-  Animated,
-  Easing,
+  Dimensions,
   Image,
   ImageBackground,
   Modal,
-  ScrollView,
+  SafeAreaView,
   StyleSheet,
-  Switch,
   Text,
   TouchableOpacity,
-  useWindowDimensions,
   View,
-  type ViewStyle,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useAudio } from '../AudioContext';
 import BookcaseBackground from '../components/BookcaseBackground';
-import Dice3D, { type Dice3DHandle } from '../components/Dice3D';
 
-const DICE_ROLL_SOUND = require('../../assets/audio/dice-roll.mp3');
-const DICE_RESULT_SOUND = require('../../assets/audio/dice-result.mp3');
-const MAX_BOARD_SIZE = 380;
-const BOARD_FRAME_BORDER_WIDTH = 2;
-const BOARD_FRAME_SIDE_INSET = 8;
-const BOARD_FRAME_HEIGHT_RATIO = 1.2;
-const BOARD_RESTING_WIDTH_RATIO = 0.82;
-const BOARD_IMAGE_SCALE = 1.06;
-const BOARD_CAMERA_ZOOM = 1.45;
-const PLAYER_MOVEMENT_WARMUP_MS = 650;
-const PLAYER_MOVEMENT_COOLDOWN_MS = 500;
-const PLAYER_TILE_MOVE_MS = 150;
-const TILE_NUMBER_FONT_SIZE = 9;
-const TILE_NUMBER_FONT_WEIGHT = '900' as const;
-const TILE_NUMBER_WIDTH = 24;
-const TILE_NUMBER_HEIGHT = 18;
-const TILE_NUMBER_INSET = 3;
-const TYPEWRITER_CHARACTER_INTERVAL_MS = 18;
-const DIALOGUE_LINE_HEIGHT = 20;
-const DIALOGUE_MAX_LINES = 3;
-const QUIZ_DIALOGUE_BOX_HEIGHT = DIALOGUE_LINE_HEIGHT * DIALOGUE_MAX_LINES + 26;
-const QUIZ_SCENE_HEIGHT = QUIZ_DIALOGUE_BOX_HEIGHT + 36;
-const BOARD_FRAME = {
-  borderWidth: BOARD_FRAME_BORDER_WIDTH,
-  borderRadius: 10,
-  borderColor: '#334155',
-  backgroundColor: '#0f172a',
-};
-const DIALOGUE_FILES = {
-  Lad: {
-    Language: require('../data/dialogue/LadDialogueLanguage.json'),
-    Science: require('../data/dialogue/LadDialogueScience.json'),
-    History: require('../data/dialogue/LadDialogueHistory.json'),
-  },
-  Adder: {
-    Language: require('../data/dialogue/AdderDialogueLanguage.json'),
-    Science: require('../data/dialogue/AdderDialogueScience.json'),
-    History: require('../data/dialogue/AdderDialogueHistory.json'),
-  },
-} as const;
+const SCREEN_WIDTH = Dimensions.get('window').width;
+const BOARD_SIZE = Math.min(SCREEN_WIDTH * 0.90, 360);
+const CELL_SIZE = BOARD_SIZE / 10;
 
 // Ladders (Going Up): landing tile -> top tile
 const LADDERS: { [key: number]: number } = {
@@ -79,11 +33,21 @@ const LADDERS: { [key: number]: number } = {
 const SNAKES: { [key: number]: number } = {
   29: 9,
   38: 15,
+  47: 5,
   53: 33,
   62: 37,
   86: 54,
   92: 70,
   97: 25,
+};
+
+const DICE_IMAGES: { [key: number]: any } = {
+  1: require('../../assets/images/dice1.png'),
+  2: require('../../assets/images/dice2.png'),
+  3: require('../../assets/images/dice3.png'),
+  4: require('../../assets/images/dice4.png'),
+  5: require('../../assets/images/dice5.png'),
+  6: require('../../assets/images/dice6.png'),
 };
 
 const COLOR_NAMES: { [key: string]: string } = {
@@ -105,7 +69,6 @@ const getCharacterAssetForColor = (color: string) => {
     case '#26de81':
       return require('../../assets/images/Playergreen.png');
     case '#fed330':
-      return require('../../assets/images/Playeryellow.png');
     case '#2563eb':
     case '#4b7bec':
     default:
@@ -120,12 +83,6 @@ type Player = {
   position: number;
 };
 
-type BoardMovement = {
-  playerId: string;
-  path: number[];
-  progress: Animated.Value;
-};
-
 type EventType = 'ladder' | 'snake';
 
 type PendingEvent = {
@@ -138,48 +95,6 @@ type Question = {
   prompt: string;
   options: string[];
   correctIndex: number;
-};
-
-type DialogueSubject = 'Language' | 'Science' | 'History';
-type DialogueSection = 'Encounter' | 'CorrectAnswer' | 'IncorrectAnswer';
-
-const QUESTION_BANKS: Partial<Record<DialogueSubject, Question[]>> = {
-  Language: require('../data/questions/language.json'),
-  Science: require('../data/questions/science.json'),
-  History: require('../data/questions/history.json'),
-};
-
-const shuffleQuestions = (questions: Question[]): Question[] => {
-  const shuffled = questions.map((question) => {
-    const options = question.options.map((text, index) => ({
-      text,
-      isCorrect: index === question.correctIndex,
-    }));
-    for (let index = options.length - 1; index > 0; index -= 1) {
-      const randomIndex = Math.floor(Math.random() * (index + 1));
-      [options[index], options[randomIndex]] = [options[randomIndex], options[index]];
-    }
-    return {
-      ...question,
-      options: options.map(({ text }) => text),
-      correctIndex: options.findIndex(({ isCorrect }) => isCorrect),
-    };
-  });
-  for (let index = shuffled.length - 1; index > 0; index -= 1) {
-    const randomIndex = Math.floor(Math.random() * (index + 1));
-    [shuffled[index], shuffled[randomIndex]] = [shuffled[randomIndex], shuffled[index]];
-  }
-  return shuffled;
-};
-
-const getRandomDialogueLine = (
-  eventType: EventType,
-  subject: DialogueSubject,
-  section: DialogueSection,
-) => {
-  const character = eventType === 'ladder' ? 'Lad' : 'Adder';
-  const lines: string[] = DIALOGUE_FILES[character][subject][section];
-  return lines.length ? lines[Math.floor(Math.random() * lines.length)] : '';
 };
 
 const getPlaceholderQuestion = (type: EventType): Question => {
@@ -199,22 +114,7 @@ const getPlaceholderQuestion = (type: EventType): Question => {
 
 export default function GameScreen() {
   const router = useRouter();
-  const { masterVol, masterMute, sfxVol, sfxMute } = useAudio();
-  const params = useLocalSearchParams<{ players?: string; playerColors?: string; level?: string }>();
-  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
-  const rollSoundPlayer = useAudioPlayer(DICE_ROLL_SOUND);
-  const resultSoundPlayer = useAudioPlayer(DICE_RESULT_SOUND);
-  const frameWidth = screenWidth - BOARD_FRAME_SIDE_INSET * 2;
-  const frameHeight = Math.min(frameWidth * BOARD_FRAME_HEIGHT_RATIO, screenHeight * 0.52);
-  const boardSize = Math.min(
-    frameWidth * BOARD_RESTING_WIDTH_RATIO,
-    frameHeight * BOARD_RESTING_WIDTH_RATIO,
-    MAX_BOARD_SIZE,
-  );
-  const gridSize = boardSize - BOARD_FRAME_BORDER_WIDTH * 2;
-  const boardOffsetX = (frameWidth - gridSize) / 2;
-  const boardOffsetY = (frameHeight - gridSize) / 2;
-  const cellSize = gridSize / 10;
+  const params = useLocalSearchParams<{ players?: string; playerColors?: string }>();
   
   const playerCount = Math.min(3, Math.max(1, Number(params.players) || 3));
 
@@ -243,68 +143,19 @@ export default function GameScreen() {
   });
 
   const [turnIndex, setTurnIndex] = useState(0);
+  const [diceValue, setDiceValue] = useState<number>(1);
   const [isRolling, setIsRolling] = useState(false);
-  const [isDiceReady, setIsDiceReady] = useState(false);
-  const diceRef = useRef<Dice3DHandle>(null);
   const [winner, setWinner] = useState<Player | null>(null);
 
   const [pendingEvent, setPendingEvent] = useState<PendingEvent | null>(null);
   const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [isAnswerCorrect, setIsAnswerCorrect] = useState<boolean | null>(null);
-  const [useQuestionBank, setUseQuestionBank] = useState(true);
-  const questionDeck = useRef<Question[]>([]);
 
   const [showExitModal, setShowExitModal] = useState(false);
-  const [movement, setMovement] = useState<BoardMovement | null>(null);
-  const [dialogueText, setDialogueText] = useState('');
-  const [typedDialogue, setTypedDialogue] = useState('');
-  const movementLocked = useRef(false);
-  const cameraScale = useRef(new Animated.Value(1)).current;
-  const cameraFollow = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    const sfxVolume = masterMute || sfxMute ? 0 : (masterVol / 100) * (sfxVol / 100);
-    rollSoundPlayer.volume = sfxVolume;
-    resultSoundPlayer.volume = sfxVolume;
-    rollSoundPlayer.loop = false;
-    resultSoundPlayer.loop = false;
-  }, [masterVol, masterMute, sfxVol, sfxMute, rollSoundPlayer, resultSoundPlayer]);
 
   const activePlayer = players[turnIndex] || players[0];
   const isModalVisible = pendingEvent !== null;
-  const dialogueSubject = params.level === 'reading'
-    ? 'Language'
-    : params.level === 'research'
-      ? 'Science'
-      : 'History';
-  const hasQuestionBank = Boolean(QUESTION_BANKS[dialogueSubject]?.length);
-  const dialogueImage = pendingEvent?.type === 'ladder'
-    ? require('../../assets/images/LogoLad.png')
-    : require('../../assets/images/LogoKnowItAdder.png');
-
-  const getNextQuestion = (eventType: EventType): Question => {
-    const questions = QUESTION_BANKS[dialogueSubject];
-    if (!useQuestionBank || !questions?.length) return getPlaceholderQuestion(eventType);
-    if (questionDeck.current.length === 0) {
-      questionDeck.current = shuffleQuestions(questions);
-    }
-    return questionDeck.current.pop() ?? getPlaceholderQuestion(eventType);
-  };
-
-  useEffect(() => {
-    setTypedDialogue('');
-    if (!dialogueText) return;
-
-    let visibleCharacters = 0;
-    const timer = setInterval(() => {
-      visibleCharacters += 1;
-      setTypedDialogue(dialogueText.slice(0, visibleCharacters));
-      if (visibleCharacters >= dialogueText.length) clearInterval(timer);
-    }, TYPEWRITER_CHARACTER_INTERVAL_MS);
-
-    return () => clearInterval(timer);
-  }, [dialogueText]);
 
   const handleConfirmExit = () => {
     setShowExitModal(false);
@@ -318,97 +169,29 @@ export default function GameScreen() {
     if (row % 2 === 1) {
       col = 9 - col;
     }
-    const x = col * cellSize;
-    const y = (9 - row) * cellSize;
+    const x = col * CELL_SIZE;
+    const y = (9 - row) * CELL_SIZE;
     return { x, y };
   };
 
-  const animatePlayerPath = (playerId: string, path: number[], onComplete: () => void) => {
-    if (path.length < 2) {
-      onComplete();
-      return;
-    }
-
-    movementLocked.current = true;
-    cameraScale.setValue(1);
-    cameraFollow.setValue(0);
-    const progress = new Animated.Value(0);
-    setMovement({ playerId, path, progress });
-    const movementDuration = path.slice(1).reduce((duration, position, index) => {
-      const from = getCoordinatesForPosition(path[index]);
-      const to = getCoordinatesForPosition(position);
-      const distanceInTiles = Math.hypot(to.x - from.x, to.y - from.y) / cellSize;
-      return duration + Math.max(PLAYER_TILE_MOVE_MS, Math.round(distanceInTiles * PLAYER_TILE_MOVE_MS));
-    }, 0);
-
-    requestAnimationFrame(() => {
-      Animated.parallel([
-        Animated.timing(cameraScale, {
-          toValue: BOARD_CAMERA_ZOOM,
-          duration: PLAYER_MOVEMENT_WARMUP_MS,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: true,
-        }),
-        Animated.timing(cameraFollow, {
-          toValue: 1,
-          duration: PLAYER_MOVEMENT_WARMUP_MS,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: true,
-        }),
-      ]).start(({ finished }) => {
-        if (!finished) {
-          movementLocked.current = false;
-          setMovement(null);
-          return;
-        }
-
-        Animated.timing(progress, {
-          toValue: path.length - 1,
-          duration: movementDuration,
-          easing: Easing.linear,
-          useNativeDriver: true,
-        }).start(({ finished: movementFinished }) => {
-          if (!movementFinished) {
-            movementLocked.current = false;
-            setMovement(null);
-            return;
-          }
-
-          Animated.parallel([
-            Animated.timing(cameraScale, {
-              toValue: 1,
-              duration: PLAYER_MOVEMENT_COOLDOWN_MS,
-              easing: Easing.inOut(Easing.cubic),
-              useNativeDriver: true,
-            }),
-            Animated.timing(cameraFollow, {
-              toValue: 0,
-              duration: PLAYER_MOVEMENT_COOLDOWN_MS,
-              easing: Easing.inOut(Easing.cubic),
-              useNativeDriver: true,
-            }),
-          ]).start(({ finished: resetFinished }) => {
-            movementLocked.current = false;
-            if (resetFinished) onComplete();
-            setMovement(null);
-          });
-        });
-      });
-    });
-  };
-
   const rollDice = () => {
-    if (!isDiceReady || isRolling || movementLocked.current || winner || isModalVisible || showExitModal) return;
+    if (isRolling || winner || isModalVisible || showExitModal) return;
     setIsRolling(true);
-    void rollSoundPlayer.seekTo(0).then(() => rollSoundPlayer.play()).catch((error: unknown) => {
-      console.error('Failed to play the dice rolling sound.', error);
-    });
 
     const finalRoll = Math.floor(Math.random() * 6) + 1;
-    if (!diceRef.current?.roll(finalRoll)) {
-      setIsRolling(false);
-      return;
-    }
+
+    let steps = 0;
+    const interval = setInterval(() => {
+      setDiceValue(Math.floor(Math.random() * 6) + 1);
+      steps++;
+
+      if (steps > 10) {
+        clearInterval(interval);
+        setDiceValue(finalRoll);
+        setIsRolling(false);
+        movePlayer(finalRoll);
+      }
+    }, 60);
   };
 
   const passTurn = () => {
@@ -417,133 +200,91 @@ export default function GameScreen() {
 
   const movePlayer = (roll: number) => {
     const mover = players[turnIndex];
-    const newPos = Math.min(mover.position + roll, 100);
-    const path = Array.from(
-      { length: newPos - mover.position + 1 },
-      (_, index) => mover.position + index,
-    );
+    let newPos = mover.position + roll;
 
-    animatePlayerPath(mover.id, path, () => {
-      const updatedPlayer = { ...mover, position: newPos };
-      setPlayers((currentPlayers) => currentPlayers.map((player) =>
-        player.id === mover.id ? updatedPlayer : player,
-      ));
+    if (newPos >= 100) {
+      newPos = 100;
+      const updated = [...players];
+      updated[turnIndex] = { ...mover, position: newPos };
+      setPlayers(updated);
+      setWinner(updated[turnIndex]);
+      return;
+    }
 
-      if (newPos === 100) {
-        setWinner(updatedPlayer);
-      } else if (LADDERS[newPos]) {
-        openQuiz({ type: 'ladder', landedPos: newPos, target: LADDERS[newPos] });
-      } else if (SNAKES[newPos]) {
-        openQuiz({ type: 'snake', landedPos: newPos, target: SNAKES[newPos] });
-      } else {
-        passTurn();
-      }
-    });
+    if (LADDERS[newPos]) {
+      const updated = [...players];
+      updated[turnIndex] = { ...mover, position: newPos };
+      setPlayers(updated);
+      openQuiz({ type: 'ladder', landedPos: newPos, target: LADDERS[newPos] });
+      return;
+    }
+
+    if (SNAKES[newPos]) {
+      const updated = [...players];
+      updated[turnIndex] = { ...mover, position: newPos };
+      setPlayers(updated);
+      openQuiz({ type: 'snake', landedPos: newPos, target: SNAKES[newPos] });
+      return;
+    }
+
+    const updated = [...players];
+    updated[turnIndex] = { ...mover, position: newPos };
+    setPlayers(updated);
+    passTurn();
   };
 
   const openQuiz = (event: PendingEvent) => {
-    setDialogueText(getRandomDialogueLine(event.type, dialogueSubject, 'Encounter'));
     setPendingEvent(event);
-    setCurrentQuestion(getNextQuestion(event.type));
+    setCurrentQuestion(getPlaceholderQuestion(event.type));
     setSelectedIndex(null);
     setIsAnswerCorrect(null);
   };
 
   const handleAnswerSelect = (index: number) => {
-    if (!currentQuestion || !pendingEvent || isAnswerCorrect !== null) return;
+    if (!currentQuestion || isAnswerCorrect !== null) return;
     setSelectedIndex(index);
-  };
-
-  const confirmAnswer = () => {
-    if (!currentQuestion || !pendingEvent || selectedIndex === null || isAnswerCorrect !== null) return;
-    const isCorrect = selectedIndex === currentQuestion.correctIndex;
-    setDialogueText(getRandomDialogueLine(
-      pendingEvent.type,
-      dialogueSubject,
-      isCorrect ? 'CorrectAnswer' : 'IncorrectAnswer',
-    ));
+    const isCorrect = index === currentQuestion.correctIndex;
     setIsAnswerCorrect(isCorrect);
   };
 
   const resolveQuiz = () => {
     if (!pendingEvent || isAnswerCorrect === null) return;
-    const mover = players[turnIndex];
-    const startPosition = pendingEvent.landedPos;
-    const target = (pendingEvent.type === 'ladder' && isAnswerCorrect)
-      || (pendingEvent.type === 'snake' && !isAnswerCorrect)
-      ? pendingEvent.target
-      : startPosition;
+
+    setPlayers((prevPlayers) => {
+      const updated = [...prevPlayers];
+      const player = { ...updated[turnIndex] };
+
+      if (pendingEvent.type === 'ladder') {
+        if (isAnswerCorrect) {
+          player.position = pendingEvent.target;
+        }
+      } else {
+        if (!isAnswerCorrect) {
+          player.position = pendingEvent.target;
+        }
+      }
+
+      updated[turnIndex] = player;
+      return updated;
+    });
+
     setPendingEvent(null);
     setCurrentQuestion(null);
     setSelectedIndex(null);
     setIsAnswerCorrect(null);
-
-    if (target === startPosition) {
-      setPlayers((currentPlayers) => currentPlayers.map((player) =>
-        player.id === mover.id ? { ...player, position: startPosition } : player,
-      ));
-      passTurn();
-      return;
-    }
-
-    animatePlayerPath(mover.id, [startPosition, target], () => {
-      const updatedPlayer = { ...mover, position: target };
-      setPlayers((currentPlayers) => currentPlayers.map((player) =>
-        player.id === mover.id ? updatedPlayer : player,
-      ));
-      if (target === 100) setWinner(updatedPlayer);
-      else passTurn();
-    });
+    passTurn();
   };
 
   const handleVictoryTap = () => {
     router.push('/stats');
   };
 
-  const movementPoints = movement?.path.map((position) => {
-    const { x, y } = getCoordinatesForPosition(position);
-    return { x: x + cellSize / 2, y: y + cellSize / 2 };
-  });
-  const movementRange = movementPoints?.map((_, index) => index);
-  const movementX = movement && movementPoints && movementRange
-    ? movement.progress.interpolate({
-      inputRange: movementRange,
-      outputRange: movementPoints.map(({ x }) => x),
-      extrapolate: 'clamp',
-    })
-    : null;
-  const movementY = movement && movementPoints && movementRange
-    ? movement.progress.interpolate({
-      inputRange: movementRange,
-      outputRange: movementPoints.map(({ y }) => y),
-      extrapolate: 'clamp',
-    })
-    : null;
-  const cameraTranslateX = movementX
-    ? Animated.multiply(
-      cameraFollow,
-      Animated.subtract(frameWidth / 2 - boardOffsetX, Animated.multiply(cameraScale, movementX)),
-    )
-    : 0;
-  const cameraTranslateY = movementY
-    ? Animated.multiply(
-      cameraFollow,
-      Animated.subtract(frameHeight / 2 - boardOffsetY, Animated.multiply(cameraScale, movementY)),
-    )
-    : 0;
-  const tileNumberScale = cameraScale.interpolate({
-    inputRange: [1, BOARD_CAMERA_ZOOM],
-    outputRange: [1, 1 / BOARD_CAMERA_ZOOM],
-    extrapolate: 'clamp',
-  });
-  const diceSize = Math.min(76, boardSize * 0.34);
-
   return (
     <BookcaseBackground>
-      <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1 }}>
+      <SafeAreaView style={{ flex: 1 }}>
         <View style={styles.mainContainer}>
           {/* TOP BANNER & EXIT BUTTON */}
-          <View style={[styles.headerRow, { width: frameWidth }]}>
+          <View style={styles.headerRow}>
             <TouchableOpacity
               style={styles.exitButton}
               onPress={() => setShowExitModal(true)}
@@ -556,151 +297,49 @@ export default function GameScreen() {
             <View style={[styles.turnBanner, { backgroundColor: activePlayer.color }]}>
               <Text style={styles.turnText}>{activePlayer.name}'s Turn</Text>
             </View>
-            <View style={styles.questionModeControl}>
-              <Text style={styles.questionModeText}>
-                {!hasQuestionBank ? 'NO BANK' : useQuestionBank ? 'QUESTIONS' : 'DEMO'}
-              </Text>
-              <Switch
-                value={hasQuestionBank && useQuestionBank}
-                onValueChange={setUseQuestionBank}
-                disabled={!hasQuestionBank}
-                trackColor={{ false: '#64748b', true: '#15803d' }}
-                thumbColor="#ffffff"
-                accessibilityRole="switch"
-                accessibilityLabel="Question mode"
-                accessibilityHint={hasQuestionBank
-                  ? 'Turn off to use demo placeholder questions.'
-                  : `No ${dialogueSubject.toLowerCase()} question bank is available yet.`}
-              />
-            </View>
           </View>
 
           {/* BOARD */}
-          <View style={[styles.boardFrame, { width: frameWidth, height: frameHeight }]}>
-            <Animated.View
-              style={{
-                position: 'absolute',
-                left: boardOffsetX,
-                top: boardOffsetY,
-                width: gridSize,
-                height: gridSize,
-                transform: [{ translateX: cameraTranslateX }, { translateY: cameraTranslateY }],
-              }}
+          <View style={styles.boardWrapper}>
+            <ImageBackground
+              source={require('../../assets/images/board.png')}
+              style={styles.boardImage}
+              resizeMode="cover"
             >
-              <Animated.View
-                style={{
-                  width: gridSize,
-                  height: gridSize,
-                  transformOrigin: [0, 0, 0],
-                  transform: [{ scale: cameraScale }],
-                }}
-              >
-                <Image
-                  source={require('../../assets/images/board.png')}
-                  style={[styles.boardImage, { transform: [{ scale: BOARD_IMAGE_SCALE }] }]}
-                  resizeMode="cover"
-                />
-                {players.map((player) => {
-                  const markerSize = cellSize * 0.9;
-                  if (movement?.playerId === player.id && movementX !== null && movementY !== null) {
-                    return (
-                      <Animated.View
-                        key={player.id}
-                        style={[
-                          styles.playerTokenWrapper,
-                          {
-                            left: 0,
-                            top: 0,
-                            width: markerSize,
-                            height: markerSize,
-                            borderRadius: markerSize / 2,
-                            backgroundColor: player.color,
-                            transform: [
-                              { translateX: Animated.subtract(movementX, markerSize / 2) },
-                              { translateY: Animated.subtract(movementY, markerSize / 2) },
-                            ],
-                          },
-                        ]}
-                      >
-                        <Image source={getCharacterAssetForColor(player.color)} style={styles.playerToken} />
-                      </Animated.View>
-                    );
-                  }
-
-                  const { x, y } = getCoordinatesForPosition(player.position);
-                  return (
-                    <View
-                      key={player.id}
-                      style={[
-                        styles.playerTokenWrapper,
-                        {
-                          left: x + cellSize * 0.05,
-                          top: y + cellSize * 0.05,
-                          width: markerSize,
-                          height: markerSize,
-                          borderRadius: markerSize / 2,
-                          backgroundColor: player.color,
-                        },
-                      ]}
-                    >
-                      <Image source={getCharacterAssetForColor(player.color)} style={styles.playerToken} />
-                    </View>
-                  );
-                })}
-                {Array.from({ length: 100 }, (_, index) => index + 1).map((number) => {
-                  const { x, y } = getCoordinatesForPosition(number);
-                  return (
-                    <Animated.View
-                      key={number}
-                      pointerEvents="none"
-                      style={{
-                        position: 'absolute',
-                        left: x + cellSize - TILE_NUMBER_WIDTH - TILE_NUMBER_INSET,
-                        top: y + TILE_NUMBER_INSET,
-                        width: TILE_NUMBER_WIDTH,
-                        height: TILE_NUMBER_HEIGHT,
-                        alignItems: 'flex-end',
-                        zIndex: 5,
-                        transformOrigin: [TILE_NUMBER_WIDTH, 0, 0],
-                        transform: [{ scale: tileNumberScale }],
-                      }}
-                    >
-                      <Text style={styles.tileNumber}>{number}</Text>
-                    </Animated.View>
-                  );
-                })}
-              </Animated.View>
-            </Animated.View>
+              {players.map((player) => {
+                const { x, y } = getCoordinatesForPosition(player.position);
+                return (
+                  <View
+                    key={player.id}
+                    style={[
+                      styles.playerTokenWrapper,
+                      {
+                        left: x + CELL_SIZE * 0.05,
+                        top: y + CELL_SIZE * 0.05,
+                        backgroundColor: player.color,
+                      },
+                    ]}
+                  >
+                    <Image
+                      source={getCharacterAssetForColor(player.color)}
+                      style={styles.playerToken}
+                    />
+                  </View>
+                );
+              })}
+            </ImageBackground>
           </View>
 
           {/* DICE */}
           <View style={styles.diceSection}>
             <TouchableOpacity
-              style={styles.diceButton}
               onPress={rollDice}
-              disabled={!isDiceReady || isRolling || !!winner || isModalVisible || showExitModal}
+              disabled={isRolling || !!winner || isModalVisible || showExitModal}
               activeOpacity={0.7}
-              accessibilityRole="button"
-              accessibilityLabel={isRolling ? 'Rolling die' : isDiceReady ? 'Roll one die' : 'Loading die'}
             >
-              <Dice3D
-                ref={diceRef}
-                size={diceSize}
-                onReady={() => setIsDiceReady(true)}
-                onRollComplete={(value) => {
-                  setIsRolling(false);
-                  void resultSoundPlayer.seekTo(0).then(() => resultSoundPlayer.play()).catch((error: unknown) => {
-                    console.error('Failed to play the dice result sound.', error);
-                  });
-                  movePlayer(value);
-                }}
-                onError={() => {
-                  setIsDiceReady(false);
-                  Alert.alert(
-                    '3D die unavailable',
-                    'The die renderer could not start. Please restart the game and try again.',
-                  );
-                }}
+              <Image
+                source={DICE_IMAGES[diceValue]}
+                style={[styles.diceImage, isRolling && styles.diceRollingAnimation]}
               />
             </TouchableOpacity>
           </View>
@@ -716,9 +355,7 @@ export default function GameScreen() {
                 style={[
                   styles.bottomIndicator,
                   { backgroundColor: player.color },
-                  isActive
-                    ? [styles.indicatorActive, { height: Math.min(95, screenHeight * 0.13) }]
-                    : [styles.indicatorInactive, { height: Math.min(25, screenHeight * 0.04) }],
+                  isActive ? styles.indicatorActive : styles.indicatorInactive,
                 ]}
               />
             );
@@ -729,9 +366,6 @@ export default function GameScreen() {
         <Modal
           visible={showExitModal}
           transparent
-          statusBarTranslucent
-          navigationBarTranslucent
-          presentationStyle="overFullScreen"
           animationType="fade"
           onRequestClose={() => setShowExitModal(false)}
         >
@@ -762,43 +396,11 @@ export default function GameScreen() {
         <Modal
           visible={isModalVisible}
           transparent
-          statusBarTranslucent
-          navigationBarTranslucent
-          presentationStyle="overFullScreen"
           animationType="fade"
           onRequestClose={() => {}}
         >
           <View style={styles.modalOverlayContainer}>
-            <ScrollView
-              style={styles.quizPopupScrollView}
-              contentContainerStyle={styles.quizPopupScrollContent}
-              showsVerticalScrollIndicator={false}
-            >
-              <View style={styles.quizPopupGroup}>
-                <ImageBackground
-                  source={require('../../assets/images/bookcase.png')}
-                  style={styles.quizSceneCard}
-                  imageStyle={styles.quizSceneBackgroundImage}
-                  resizeMode="cover"
-                >
-                  <View pointerEvents="none" style={styles.quizSceneForeground}>
-                    <Image
-                      source={dialogueImage}
-                      style={styles.quizCharacterImage}
-                      resizeMode="contain"
-                    />
-                    <View style={styles.quizDialogueBox}>
-                      <Text
-                        style={styles.quizDialogueText}
-                        numberOfLines={DIALOGUE_MAX_LINES}
-                        ellipsizeMode="tail"
-                      >
-                        {typedDialogue}
-                      </Text>
-                    </View>
-                  </View>
-                </ImageBackground>
-                <View style={styles.quizCard}>
+            <View style={styles.quizCard}>
               <Text style={styles.quizHeader}>
                 {pendingEvent?.type === 'ladder' ? '🪜 Ladder Challenge!' : '🐍 Snake Challenge!'}
               </Text>
@@ -815,15 +417,13 @@ export default function GameScreen() {
                   const isSelected = selectedIndex === index;
                   const isCorrectOption = currentQuestion.correctIndex === index;
 
-                  let optionStateStyle: ViewStyle = {};
+                  let optionStateStyle = styles.optionButton;
                   if (isAnswerCorrect !== null) {
                     if (isSelected) {
                       optionStateStyle = isAnswerCorrect ? styles.optionCorrect : styles.optionWrong;
                     } else if (isCorrectOption) {
                       optionStateStyle = styles.optionCorrect;
                     }
-                  } else if (isSelected) {
-                    optionStateStyle = styles.optionSelected;
                   }
 
                   return (
@@ -840,56 +440,47 @@ export default function GameScreen() {
                 })}
               </View>
 
-              <View style={styles.resultBlock}>
-                <TouchableOpacity
-                  style={[
-                    styles.continueButton,
-                    isAnswerCorrect === null && selectedIndex === null && styles.continueButtonDisabled,
-                    isAnswerCorrect === true && styles.answerCorrectButton,
-                    isAnswerCorrect === false && styles.answerIncorrectButton,
-                  ]}
-                  onPress={isAnswerCorrect === null ? confirmAnswer : resolveQuiz}
-                  disabled={isAnswerCorrect === null && selectedIndex === null}
-                  activeOpacity={0.8}
-                >
-                  <Text style={[
-                    styles.continueButtonText,
-                    isAnswerCorrect !== null && styles.answerResultButtonText,
-                  ]}>
-                    {isAnswerCorrect === null
-                      ? 'Confirm Answer'
-                      : isAnswerCorrect
-                        ? 'Correct!'
-                        : 'Incorrect!'}
+              {isAnswerCorrect !== null && (
+                <View style={styles.resultBlock}>
+                  <Text
+                    style={[
+                      styles.resultText,
+                      isAnswerCorrect ? styles.resultCorrectText : styles.resultWrongText,
+                    ]}
+                  >
+                    {isAnswerCorrect
+                      ? pendingEvent?.type === 'ladder'
+                        ? 'Correct! Climbing the ladder.'
+                        : 'Correct! You dodged the snake.'
+                      : pendingEvent?.type === 'ladder'
+                        ? 'Not quite — staying put this turn.'
+                        : 'Not quite — sliding down the snake.'}
                   </Text>
-                </TouchableOpacity>
-              </View>
+                  <TouchableOpacity style={styles.continueButton} onPress={resolveQuiz} activeOpacity={0.8}>
+                    <Text style={styles.continueButtonText}>Continue</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
             </View>
-              </View>
-            </ScrollView>
           </View>
         </Modal>
 
+        {/* VICTORY POPUP */}
+        {winner && (
+          <TouchableOpacity style={styles.modalOverlayContainer} activeOpacity={1} onPress={handleVictoryTap}>
+            <ImageBackground
+              source={require('../../assets/images/victory-popup.png')}
+              style={styles.popupImageContainer}
+              resizeMode="contain"
+            >
+              <View style={styles.popupTextWrapper}>
+                <Text style={styles.victorySubtitle}>{winner.name} wins the game!</Text>
+                <Text style={styles.tapToContinueText}>Tap to Continue</Text>
+              </View>
+            </ImageBackground>
+          </TouchableOpacity>
+        )}
       </SafeAreaView>
-      {/* Keep the victory dimmer full-screen instead of clipping it to safe-area content. */}
-      {winner && (
-        <TouchableOpacity
-          style={[StyleSheet.absoluteFill, styles.modalOverlayContainer]}
-          activeOpacity={1}
-          onPress={handleVictoryTap}
-        >
-          <ImageBackground
-            source={require('../../assets/images/victory-popup.png')}
-            style={styles.popupImageContainer}
-            resizeMode="contain"
-          >
-            <View style={styles.popupTextWrapper}>
-              <Text style={styles.victorySubtitle}>{winner.name} wins the game!</Text>
-              <Text style={styles.tapToContinueText}>Tap to Continue</Text>
-            </View>
-          </ImageBackground>
-        </TouchableOpacity>
-      )}
     </BookcaseBackground>
   );
 }
@@ -904,14 +495,16 @@ const styles = StyleSheet.create({
   },
 
   headerRow: {
+    width: '90%',
+    maxWidth: BOARD_SIZE,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
     zIndex: 20,
   },
   exitButton: {
-    width: 48,
-    height: 48,
+    width: 44,
+    height: 44,
     borderRadius: 12,
     backgroundColor: 'rgba(239, 68, 68, 0.3)',
     borderWidth: 1.5,
@@ -938,41 +531,22 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   turnText: { color: '#fff', fontSize: 18, fontWeight: 'bold', letterSpacing: 1 },
-  questionModeControl: {
-    minWidth: 108,
-    minHeight: 48,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 2,
-  },
-  questionModeText: {
-    width: 64,
-    color: '#fff',
-    fontSize: 9,
-    fontWeight: '800',
-    textAlign: 'center',
-  },
 
-  boardFrame: {
-    ...BOARD_FRAME,
+  boardWrapper: {
+    width: BOARD_SIZE,
+    height: BOARD_SIZE,
+    borderWidth: 2,
+    borderColor: '#334155',
+    borderRadius: 10,
     overflow: 'hidden',
-    alignSelf: 'center',
   },
-  boardImage: { position: 'absolute', width: '100%', height: '100%' },
-  tileNumber: {
-    color: '#fff',
-    fontSize: TILE_NUMBER_FONT_SIZE,
-    fontWeight: TILE_NUMBER_FONT_WEIGHT,
-    textAlign: 'right',
-    includeFontPadding: false,
-    textShadowColor: 'rgba(0,0,0,0.9)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
-  },
+  boardImage: { width: '100%', height: '100%' },
 
   playerTokenWrapper: {
     position: 'absolute',
+    width: CELL_SIZE * 0.9,
+    height: CELL_SIZE * 0.9,
+    borderRadius: CELL_SIZE * 0.9,
     borderWidth: 2,
     borderColor: '#0f172a',
     alignItems: 'center',
@@ -992,14 +566,10 @@ const styles = StyleSheet.create({
   diceSection: {
     alignItems: 'center',
     justifyContent: 'center',
-    height: 56,
+    height: 50,
   },
-  diceButton: {
-    minWidth: 72,
-    minHeight: 72,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  diceImage: { width: 50, height: 50, resizeMode: 'contain' },
+  diceRollingAnimation: { opacity: 0.6, transform: [{ scale: 0.95 }] },
 
   bottomBarContainer: {
     flexDirection: 'row',
@@ -1082,9 +652,8 @@ const styles = StyleSheet.create({
   },
 
   popupImageContainer: {
-    width: '88%',
-    maxWidth: 340,
-    aspectRatio: 340 / 260,
+    width: 340,
+    height: 260,
     justifyContent: 'flex-end',
     alignItems: 'center',
     paddingBottom: 28,
@@ -1110,68 +679,9 @@ const styles = StyleSheet.create({
     textShadowRadius: 3,
   },
 
-  quizPopupScrollView: {
-    flex: 1,
-    width: '100%',
-  },
-  quizPopupScrollContent: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 20,
-  },
-  quizPopupGroup: {
+  quizCard: {
     width: '88%',
     maxWidth: 420,
-    alignItems: 'center',
-    gap: 12,
-  },
-  quizSceneCard: {
-    width: '100%',
-    height: QUIZ_SCENE_HEIGHT,
-    position: 'relative',
-    borderRadius: 16,
-    borderWidth: 2,
-    borderColor: '#475569',
-    overflow: 'visible',
-  },
-  quizSceneBackgroundImage: {
-    borderRadius: 16,
-  },
-  quizSceneForeground: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: 'center',
-    padding: 16,
-    overflow: 'visible',
-  },
-  quizCharacterImage: {
-    position: 'absolute',
-    right: 30,
-    bottom: -140,
-    width: 112,
-    aspectRatio: 1,
-    transform: [{ scale: 2 }],
-    zIndex: 1,
-  },
-  quizDialogueBox: {
-    width: '58%',
-    height: QUIZ_DIALOGUE_BOX_HEIGHT,
-    justifyContent: 'center',
-    padding: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.24)',
-    backgroundColor: 'rgba(15,23,42,0.86)',
-    zIndex: 2,
-  },
-  quizDialogueText: {
-    color: '#fff',
-    fontSize: 14,
-    lineHeight: DIALOGUE_LINE_HEIGHT,
-    fontWeight: '600',
-  },
-  quizCard: {
-    width: '100%',
     backgroundColor: '#1e293b',
     borderRadius: 16,
     padding: 20,
@@ -1224,10 +734,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#166534',
     borderColor: '#22c55e',
   },
-  optionSelected: {
-    backgroundColor: '#475569',
-    borderColor: '#facc15',
-  },
   optionWrong: {
     backgroundColor: '#7f1d1d',
     borderColor: '#ef4444',
@@ -1243,30 +749,23 @@ const styles = StyleSheet.create({
     marginTop: 16,
     alignItems: 'center',
   },
+  resultText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  resultCorrectText: { color: '#4ade80' },
+  resultWrongText: { color: '#f87171' },
   continueButton: {
-    minHeight: 44,
     backgroundColor: '#facc15',
     paddingVertical: 10,
     paddingHorizontal: 28,
     borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  continueButtonDisabled: {
-    opacity: 0.45,
-  },
-  answerCorrectButton: {
-    backgroundColor: '#16a34a',
-  },
-  answerIncorrectButton: {
-    backgroundColor: '#dc2626',
   },
   continueButtonText: {
     color: '#1e293b',
     fontWeight: 'bold',
     fontSize: 14,
-  },
-  answerResultButtonText: {
-    color: '#fff',
   },
 });

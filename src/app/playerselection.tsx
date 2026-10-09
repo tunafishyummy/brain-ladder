@@ -1,149 +1,98 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
-  Image,
-  ScrollView,
+  SafeAreaView,
   StyleSheet,
   Text,
   TouchableOpacity,
-  useWindowDimensions,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import BookcaseBackground from '../components/BookcaseBackground';
 
 const PADDING = 16;
 const CARD_RADIUS = 16;
 
+const PLAYER_OPTIONS = [
+  { count: 1, label: '1 Player', subtitle: 'Solo Mode' },
+  { count: 2, label: '2 Players', subtitle: 'Head to Head' },
+  { count: 3, label: '3 Players', subtitle: 'Triple Threat' },
+];
+
 export default function PlayerSelectionScreen() {
   const router = useRouter();
-  const { width } = useWindowDimensions();
-  const params = useLocalSearchParams();
-  const avatarSize = Math.min(80, Math.max(56, (width - PADDING * 4 - 26) / 3));
-  const [playerCount, setPlayerCount] = useState<1 | 2 | 3>(1);
+  const params = useLocalSearchParams(); // Captures level, difficulty, and timer from level-select
+  const [selectedCount, setSelectedCount] = useState<number>(2);
 
-  const handleStartGame = () => {
+  const handleBack = () => {
+    router.back();
+  };
+
+  const handleContinue = () => {
     router.push({
       pathname: '/customize',
       params: {
-        ...params,
-        players: playerCount,
+        ...params, // Forwards level, difficulty, and timer
+        players: selectedCount,
       },
     });
   };
 
   return (
     <BookcaseBackground>
-      <SafeAreaView edges={['top', 'bottom']} style={styles.container}>
-        <ScrollView contentContainerStyle={styles.content}>
-          
-          {/* Header with Back Button */}
+      <SafeAreaView style={styles.container}>
+        <View style={styles.content}>
+          {/* Header Banner */}
           <View style={styles.headerRow}>
-            <TouchableOpacity 
-              style={styles.backButton} 
-              onPress={() => router.back()}
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={handleBack}
               activeOpacity={0.7}
             >
               <Text style={styles.backArrow}>‹</Text>
             </TouchableOpacity>
 
             <View style={styles.bannerContainer}>
-              <Text style={styles.bannerTitle}>PLAYER COUNT</Text>
+              <Text style={styles.bannerTitle}>SELECT PLAYERS</Text>
             </View>
           </View>
 
-          {/* Character Preview Container */}
-          <View style={styles.previewCard}>
-            <View style={styles.avatarRow}>
-              {/* Player 1 */}
-              <View style={styles.avatarWrapper}>
-                <Image
-                  source={require('../../assets/images/Playergrey.png')}
-                  style={[styles.avatarImage, { width: avatarSize, height: avatarSize * 1.625 }]}
-                  resizeMode="contain"
-                />
-                <View style={[styles.playerBadge, { backgroundColor: '#6b7280' }]}>
-                  <Text style={styles.badgeText}>P1</Text>
-                </View>
-              </View>
-
-              {/* Player 2 */}
-              {playerCount >= 2 && (
-                <View style={styles.avatarWrapper}>
-                  <Image
-                    source={require('../../assets/images/Playergrey.png')}
-                    style={[styles.avatarImage, { width: avatarSize, height: avatarSize * 1.625 }]}
-                    resizeMode="contain"
-                  />
-                  <View style={[styles.playerBadge, { backgroundColor: '#6b7280' }]}>
-                    <Text style={styles.badgeText}>P2</Text>
-                  </View>
-                </View>
-              )}
-
-              {/* Player 3 */}
-              {playerCount === 3 && (
-                <View style={styles.avatarWrapper}>
-                  <Image
-                    source={require('../../assets/images/Playergrey.png')}
-                    style={[styles.avatarImage, { width: avatarSize, height: avatarSize * 1.625 }]}
-                    resizeMode="contain"
-                  />
-                  <View style={[styles.playerBadge, { backgroundColor: '#6b7280' }]}>
-                    <Text style={styles.badgeText}>P3</Text>
-                  </View>
-                </View>
-              )}
-            </View>
-
-            <Text style={styles.countDisplay}>
-              {playerCount} {playerCount === 1 ? 'Player' : 'Players'}
-            </Text>
+          {/* Player Count Selection Cards */}
+          <View style={styles.optionsContainer}>
+            {PLAYER_OPTIONS.map((opt) => {
+              const isSelected = selectedCount === opt.count;
+              return (
+                <TouchableOpacity
+                  key={opt.count}
+                  activeOpacity={0.85}
+                  onPress={() => setSelectedCount(opt.count)}
+                  style={[
+                    styles.optionCard,
+                    isSelected && styles.selectedOptionCard,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.optionTitle,
+                      isSelected && styles.selectedText,
+                    ]}
+                  >
+                    {opt.label}
+                  </Text>
+                  <Text style={styles.optionSubtitle}>{opt.subtitle}</Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
 
-          {/* Toggle Buttons */}
-          <View style={styles.toggleContainer}>
-            <TouchableOpacity
-              activeOpacity={0.8}
-              onPress={() => setPlayerCount(1)}
-              style={[styles.toggleTab, playerCount === 1 && styles.toggleTabActive]}
-            >
-              <Text style={[styles.tabText, playerCount === 1 && styles.tabTextActive]}>
-                1P
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              activeOpacity={0.8}
-              onPress={() => setPlayerCount(2)}
-              style={[styles.toggleTab, playerCount === 2 && styles.toggleTabActive]}
-            >
-              <Text style={[styles.tabText, playerCount === 2 && styles.tabTextActive]}>
-                2P
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              activeOpacity={0.8}
-              onPress={() => setPlayerCount(3)}
-              style={[styles.toggleTab, playerCount === 3 && styles.toggleTabActive]}
-            >
-              <Text style={[styles.tabText, playerCount === 3 && styles.tabTextActive]}>
-                3P
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Next Button */}
+          {/* Continue Button */}
           <TouchableOpacity
-            style={styles.startButton}
-            onPress={handleStartGame}
+            style={styles.continueButton}
+            onPress={handleContinue}
             activeOpacity={0.9}
           >
-            <Text style={styles.startText}>NEXT</Text>
+            <Text style={styles.continueText}>NEXT</Text>
           </TouchableOpacity>
-
-        </ScrollView>
+        </View>
       </SafeAreaView>
     </BookcaseBackground>
   );
@@ -154,7 +103,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    flexGrow: 1,
+    flex: 1,
     padding: PADDING,
     justifyContent: 'space-between',
   },
@@ -183,95 +132,56 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'rgba(255, 255, 255, 0.08)',
     borderRadius: CARD_RADIUS,
-    paddingVertical: 12,
+    paddingVertical: 14,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.15)',
     alignItems: 'center',
   },
   bannerTitle: {
     color: '#ffffff',
-    fontSize: 20,
-    fontWeight: '700',
-    letterSpacing: 2,
+    fontSize: 18,
+    fontWeight: '800',
+    letterSpacing: 1.5,
   },
-  previewCard: {
-    minHeight: 260,
+  optionsContainer: {
+    gap: 16,
     marginVertical: PADDING,
+  },
+  optionCard: {
     backgroundColor: 'rgba(15, 18, 28, 0.72)',
+    paddingVertical: 20,
+    paddingHorizontal: PADDING,
     borderRadius: CARD_RADIUS,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
     alignItems: 'center',
-    padding: PADDING,
+    gap: 4,
   },
-  avatarRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 12,
-    height: 180,
-  },
-  avatarWrapper: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarImage: {
-    width: 80,
-    height: 130,
-  },
-  playerBadge: {
-    marginTop: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  badgeText: {
-    color: '#ffffff',
-    fontWeight: '800',
-    fontSize: 12,
-  },
-  countDisplay: {
-    color: '#ffffff',
-    fontSize: 24,
-    fontWeight: '800',
-    marginTop: 16,
-  },
-  toggleContainer: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: PADDING,
-  },
-  toggleTab: {
-    flex: 1,
-    minHeight: 48,
-    paddingVertical: 14,
-    borderRadius: CARD_RADIUS,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-    alignItems: 'center',
-  },
-  toggleTabActive: {
-    backgroundColor: '#ffffff',
+  selectedOptionCard: {
     borderColor: '#ffffff',
+    borderWidth: 2,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
   },
-  tabText: {
-    color: '#a0a5b5',
-    fontSize: 16,
-    fontWeight: '600',
+  optionTitle: {
+    color: '#e2e8f0',
+    fontSize: 18,
+    fontWeight: '700',
   },
-  tabTextActive: {
-    color: '#0f121c',
+  selectedText: {
+    color: '#ffffff',
     fontWeight: '800',
   },
-  startButton: {
+  optionSubtitle: {
+    color: '#a0a5b5',
+    fontSize: 13,
+  },
+  continueButton: {
     backgroundColor: '#ffffff',
     paddingVertical: 16,
     borderRadius: CARD_RADIUS,
     alignItems: 'center',
   },
-  startText: {
+  continueText: {
     color: '#0f121c',
     fontSize: 18,
     fontWeight: '800',

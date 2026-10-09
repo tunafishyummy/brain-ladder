@@ -40,11 +40,18 @@ const LEVELS = [
 ];
 
 const DIFFICULTIES = ['Easy', 'Normal', 'Hard'];
+const TIMERS = [
+  { label: 'Off', value: 0 },
+  { label: '10s', value: 10 },
+  { label: '15s', value: 15 },
+  { label: '20s', value: 20 },
+];
 
 export default function LevelSelectScreen() {
   const router = useRouter();
   const [selectedLevel, setSelectedLevel] = useState('collections');
   const [difficultyIndex, setDifficultyIndex] = useState(1);
+  const [questionTimer, setQuestionTimer] = useState(15);
 
   const handlePrevDifficulty = () => {
     setDifficultyIndex((prev) => (prev > 0 ? prev - 1 : DIFFICULTIES.length - 1));
@@ -54,11 +61,14 @@ export default function LevelSelectScreen() {
     setDifficultyIndex((prev) => (prev < DIFFICULTIES.length - 1 ? prev + 1 : 0));
   };
 
-  
   const handleContinue = () => {
     router.push({
       pathname: '/playerselection',
-      params: { level: selectedLevel, difficulty: DIFFICULTIES[difficultyIndex] },
+      params: {
+        level: selectedLevel,
+        difficulty: DIFFICULTIES[difficultyIndex],
+        timer: questionTimer,
+      },
     });
   };
 
@@ -72,6 +82,7 @@ export default function LevelSelectScreen() {
               <Text style={styles.headerTitle}>SELECT LEVEL</Text>
             </View>
 
+            {/* Level Cards */}
             <View style={styles.levelsContainer}>
               {LEVELS.map((level) => {
                 const isSelected = selectedLevel === level.id;
@@ -98,6 +109,7 @@ export default function LevelSelectScreen() {
               })}
             </View>
 
+            {/* Difficulty Controls */}
             <View style={styles.difficultyBanner}>
               <Text style={styles.difficultyLabel}>DIFFICULTY</Text>
               <View style={styles.difficultyControls}>
@@ -111,6 +123,37 @@ export default function LevelSelectScreen() {
               </View>
             </View>
 
+            {/* Question Timer Controls */}
+            <View style={styles.timerBanner}>
+              <Text style={styles.timerLabel}>QUESTION TIMER</Text>
+              <View style={styles.timerGrid}>
+                {TIMERS.map((timer) => {
+                  const isSelected = questionTimer === timer.value;
+                  return (
+                    <TouchableOpacity
+                      key={timer.value}
+                      activeOpacity={0.8}
+                      onPress={() => setQuestionTimer(timer.value)}
+                      style={[
+                        styles.timerChip,
+                        isSelected && styles.selectedTimerChip,
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.timerChipText,
+                          isSelected && styles.selectedTimerText,
+                        ]}
+                      >
+                        {timer.label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </View>
+
+            {/* Continue Button */}
             <TouchableOpacity style={styles.continueButton} onPress={handleContinue} activeOpacity={0.9}>
               <Text style={styles.continueText}>NEXT</Text>
             </TouchableOpacity>
@@ -230,6 +273,47 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 20,
     fontWeight: '700',
+  },
+  timerBanner: {
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderRadius: CARD_RADIUS,
+    padding: PADDING,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.15)',
+    gap: 12,
+  },
+  timerLabel: {
+    color: '#8e94a5',
+    fontSize: 12,
+    fontWeight: '600',
+    letterSpacing: 1.5,
+    textAlign: 'center',
+  },
+  timerGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    gap: 8,
+  },
+  timerChip: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
+    alignItems: 'center',
+  },
+  selectedTimerChip: {
+    backgroundColor: '#ffffff',
+    borderColor: '#ffffff',
+  },
+  timerChipText: {
+    color: '#a0a5b5',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  selectedTimerText: {
+    color: '#0f121c',
   },
   continueButton: {
     backgroundColor: '#ffffff',
