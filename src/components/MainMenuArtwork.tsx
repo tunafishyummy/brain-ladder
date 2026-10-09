@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Image, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const MENU_ART = require('../../assets/images/mainmenuart.png');
 const MENU_LAD = require('../../assets/images/mainmenulad.png');
@@ -7,6 +8,7 @@ const MENU_ARM = require('../../assets/images/mainmenuladarm.png');
 const ART_SIZE = { width: 1350, height: 3000 };
 const ARM_SIZE = { width: 2600, height: 1200 };
 const PAGE_ASPECT = 9 / 20;
+const VIGNETTE_STEPS = 20;
 
 const ARM_PIVOT = { x: 159, y: 910 };
 const ARM_HINGE_ON_CANVAS = { x: -400, y: 1300 };
@@ -24,6 +26,7 @@ export default function MainMenuArtwork({
   zoomAnchor,
   isTransitioning,
 }: MainMenuArtworkProps) {
+  const insets = useSafeAreaInsets();
   const [screenSize, setScreenSize] = useState({ width: 0, height: 0 });
   const angle = useRef(new Animated.Value(0)).current;
   const pageWidth = Math.min(screenSize.width, screenSize.height * PAGE_ASPECT);
@@ -38,6 +41,8 @@ export default function MainMenuArtwork({
   const zoomOriginY = zoomAnchor?.y ?? pageHeight / 2;
   const artScale = zoomProgress.interpolate({ inputRange: [0, 1], outputRange: [1, 3.6] });
   const contentOpacity = zoomProgress.interpolate({ inputRange: [0, 0.18, 1], outputRange: [1, 0, 0] });
+  const vignetteHeight = Math.max(insets.top, 24);
+  const vignetteStep = vignetteHeight / VIGNETTE_STEPS;
 
   useEffect(() => {
     const animation = Animated.loop(Animated.sequence([
@@ -85,7 +90,6 @@ export default function MainMenuArtwork({
         pointerEvents={isTransitioning ? 'none' : 'box-none'}
         style={[StyleSheet.absoluteFill, { opacity: contentOpacity }]}
       >
-<<<<<<< HEAD
         <View
           style={{
             position: 'absolute',
@@ -97,10 +101,37 @@ export default function MainMenuArtwork({
         >
           {children}
         </View>
-=======
-        {children}
->>>>>>> c15298c10d21e6166ada23ea5d6925e0a550cb4e
       </Animated.View>
+
+      <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+        {Array.from({ length: VIGNETTE_STEPS }, (_, index) => {
+          const opacity = 0.6 * (1 - index / VIGNETTE_STEPS) ** 2;
+          return (
+            <React.Fragment key={index}>
+              <View
+                style={{
+                  position: 'absolute',
+                  top: index * vignetteStep,
+                  width: '100%',
+                  height: vignetteStep,
+                  backgroundColor: '#000',
+                  opacity,
+                }}
+              />
+              <View
+                style={{
+                  position: 'absolute',
+                  bottom: index * vignetteStep,
+                  width: '100%',
+                  height: vignetteStep,
+                  backgroundColor: '#000',
+                  opacity,
+                }}
+              />
+            </React.Fragment>
+          );
+        })}
+      </View>
     </View>
   );
 }

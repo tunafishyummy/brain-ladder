@@ -10,6 +10,7 @@ import {
   TouchableOpacity,
   useWindowDimensions,
   View,
+  type ViewStyle,
 } from 'react-native';
 import BookcaseBackground from '../components/BookcaseBackground';
 
@@ -428,7 +429,7 @@ export default function GameScreen() {
                   const isSelected = selectedIndex === index;
                   const isCorrectOption = currentQuestion.correctIndex === index;
 
-                  let optionStateStyle = styles.optionButton;
+                  let optionStateStyle: ViewStyle = {};
                   if (isAnswerCorrect !== null) {
                     if (isSelected) {
                       optionStateStyle = isAnswerCorrect ? styles.optionCorrect : styles.optionWrong;
