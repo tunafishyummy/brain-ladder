@@ -85,6 +85,7 @@ export default function MainMenuArtwork({
         pointerEvents={isTransitioning ? 'none' : 'box-none'}
         style={[StyleSheet.absoluteFill, { opacity: contentOpacity }]}
       >
+<<<<<<< HEAD
         <View
           style={{
             position: 'absolute',
@@ -96,6 +97,9 @@ export default function MainMenuArtwork({
         >
           {children}
         </View>
+=======
+        {children}
+>>>>>>> c15298c10d21e6166ada23ea5d6925e0a550cb4e
       </Animated.View>
     </View>
   );
