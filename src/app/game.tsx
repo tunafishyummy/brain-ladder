@@ -699,13 +699,12 @@ export default function GameScreen() {
               showsVerticalScrollIndicator={false}
             >
               <View style={styles.quizPopupGroup}>
-                <View style={styles.quizSceneCard}>
-                  <ImageBackground
-                    source={require('../../assets/images/bookcase.png')}
-                    style={styles.quizSceneBackground}
-                    imageStyle={styles.quizSceneBackgroundImage}
-                    resizeMode="cover"
-                  />
+                <ImageBackground
+                  source={require('../../assets/images/bookcase.png')}
+                  style={styles.quizSceneCard}
+                  imageStyle={styles.quizSceneBackgroundImage}
+                  resizeMode="cover"
+                >
                   <View pointerEvents="none" style={styles.quizSceneForeground}>
                     <Image
                       source={dialogueImage}
@@ -722,7 +721,7 @@ export default function GameScreen() {
                       </Text>
                     </View>
                   </View>
-                </View>
+                </ImageBackground>
                 <View style={styles.quizCard}>
               <Text style={styles.quizHeader}>
                 {pendingEvent?.type === 'ladder' ? '🪜 Ladder Challenge!' : '🐍 Snake Challenge!'}
@@ -1045,16 +1044,10 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 2,
     borderColor: '#475569',
-    backgroundColor: '#1e293b',
     overflow: 'visible',
   },
-  quizSceneBackground: {
-    ...StyleSheet.absoluteFillObject,
-    borderRadius: 14,
-    overflow: 'hidden',
-  },
   quizSceneBackgroundImage: {
-    borderRadius: 14,
+    borderRadius: 16,
   },
   quizSceneForeground: {
     ...StyleSheet.absoluteFillObject,
