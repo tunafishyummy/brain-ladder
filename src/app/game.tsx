@@ -1,6 +1,8 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
+  Animated,
+  Easing,
   Image,
   ImageBackground,
   Modal,
@@ -15,6 +17,26 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import BookcaseBackground from '../components/BookcaseBackground';
 
 const MAX_BOARD_SIZE = 380;
+const BOARD_FRAME_BORDER_WIDTH = 2;
+const BOARD_FRAME_SIDE_INSET = 8;
+const BOARD_FRAME_HEIGHT_RATIO = 1.2;
+const BOARD_RESTING_WIDTH_RATIO = 0.82;
+const BOARD_IMAGE_SCALE = 1;
+const BOARD_CAMERA_ZOOM = 1.45;
+const PLAYER_MOVEMENT_WARMUP_MS = 650;
+const PLAYER_MOVEMENT_COOLDOWN_MS = 500;
+const PLAYER_TILE_MOVE_MS = 150;
+const TILE_NUMBER_FONT_SIZE = 9;
+const TILE_NUMBER_FONT_WEIGHT = '900' as const;
+const TILE_NUMBER_WIDTH = 24;
+const TILE_NUMBER_HEIGHT = 18;
+const TILE_NUMBER_INSET = 3;
+const BOARD_FRAME = {
+  borderWidth: BOARD_FRAME_BORDER_WIDTH,
+  borderRadius: 10,
+  borderColor: '#334155',
+  backgroundColor: '#0f172a',
+};
 
 // Ladders (Going Up): landing tile -> top tile
 const LADDERS: { [key: number]: number } = {
@@ -81,6 +103,12 @@ type Player = {
   position: number;
 };
 
+type BoardMovement = {
+  playerId: string;
+  path: number[];
+  progress: Animated.Value;
+};
+
 type EventType = 'ladder' | 'snake';
 
 type PendingEvent = {
@@ -114,8 +142,17 @@ export default function GameScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ players?: string; playerColors?: string }>();
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
-  const boardSize = Math.min(screenWidth - 24, screenHeight * 0.46, MAX_BOARD_SIZE);
-  const cellSize = boardSize / 10;
+  const frameWidth = screenWidth - BOARD_FRAME_SIDE_INSET * 2;
+  const frameHeight = Math.min(frameWidth * BOARD_FRAME_HEIGHT_RATIO, screenHeight * 0.52);
+  const boardSize = Math.min(
+    frameWidth * BOARD_RESTING_WIDTH_RATIO,
+    frameHeight * BOARD_RESTING_WIDTH_RATIO,
+    MAX_BOARD_SIZE,
+  );
+  const gridSize = boardSize - BOARD_FRAME_BORDER_WIDTH * 2;
+  const boardOffsetX = (frameWidth - gridSize) / 2;
+  const boardOffsetY = (frameHeight - gridSize) / 2;
+  const cellSize = gridSize / 10;
   
   const playerCount = Math.min(3, Math.max(1, Number(params.players) || 3));
 
@@ -154,6 +191,10 @@ export default function GameScreen() {
   const [isAnswerCorrect, setIsAnswerCorrect] = useState<boolean | null>(null);
 
   const [showExitModal, setShowExitModal] = useState(false);
+  const [movement, setMovement] = useState<BoardMovement | null>(null);
+  const movementLocked = useRef(false);
+  const cameraScale = useRef(new Animated.Value(1)).current;
+  const cameraFollow = useRef(new Animated.Value(0)).current;
 
   const activePlayer = players[turnIndex] || players[0];
   const isModalVisible = pendingEvent !== null;
@@ -175,8 +216,78 @@ export default function GameScreen() {
     return { x, y };
   };
 
+  const animatePlayerPath = (playerId: string, path: number[], onComplete: () => void) => {
+    if (path.length < 2) {
+      onComplete();
+      return;
+    }
+
+    movementLocked.current = true;
+    cameraScale.setValue(1);
+    cameraFollow.setValue(0);
+    const progress = new Animated.Value(0);
+    setMovement({ playerId, path, progress });
+
+    requestAnimationFrame(() => {
+      const tileSteps = path.slice(1).map((_, index) => Animated.timing(progress, {
+        toValue: index + 1,
+        duration: PLAYER_TILE_MOVE_MS,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      }));
+
+      Animated.parallel([
+        Animated.timing(cameraScale, {
+          toValue: BOARD_CAMERA_ZOOM,
+          duration: PLAYER_MOVEMENT_WARMUP_MS,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.timing(cameraFollow, {
+          toValue: 1,
+          duration: PLAYER_MOVEMENT_WARMUP_MS,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+      ]).start(({ finished }) => {
+        if (!finished) {
+          movementLocked.current = false;
+          setMovement(null);
+          return;
+        }
+
+        Animated.sequence(tileSteps).start(({ finished: movementFinished }) => {
+          if (!movementFinished) {
+            movementLocked.current = false;
+            setMovement(null);
+            return;
+          }
+
+          Animated.parallel([
+            Animated.timing(cameraScale, {
+              toValue: 1,
+              duration: PLAYER_MOVEMENT_COOLDOWN_MS,
+              easing: Easing.inOut(Easing.cubic),
+              useNativeDriver: true,
+            }),
+            Animated.timing(cameraFollow, {
+              toValue: 0,
+              duration: PLAYER_MOVEMENT_COOLDOWN_MS,
+              easing: Easing.inOut(Easing.cubic),
+              useNativeDriver: true,
+            }),
+          ]).start(({ finished: resetFinished }) => {
+            movementLocked.current = false;
+            setMovement(null);
+            if (resetFinished) onComplete();
+          });
+        });
+      });
+    });
+  };
+
   const rollDice = () => {
-    if (isRolling || winner || isModalVisible || showExitModal) return;
+    if (isRolling || movementLocked.current || winner || isModalVisible || showExitModal) return;
     setIsRolling(true);
 
     const finalRoll = Math.floor(Math.random() * 6) + 1;
@@ -201,37 +312,27 @@ export default function GameScreen() {
 
   const movePlayer = (roll: number) => {
     const mover = players[turnIndex];
-    let newPos = mover.position + roll;
+    const newPos = Math.min(mover.position + roll, 100);
+    const path = Array.from(
+      { length: newPos - mover.position + 1 },
+      (_, index) => mover.position + index,
+    );
 
-    if (newPos >= 100) {
-      newPos = 100;
+    animatePlayerPath(mover.id, path, () => {
       const updated = [...players];
       updated[turnIndex] = { ...mover, position: newPos };
       setPlayers(updated);
-      setWinner(updated[turnIndex]);
-      return;
-    }
 
-    if (LADDERS[newPos]) {
-      const updated = [...players];
-      updated[turnIndex] = { ...mover, position: newPos };
-      setPlayers(updated);
-      openQuiz({ type: 'ladder', landedPos: newPos, target: LADDERS[newPos] });
-      return;
-    }
-
-    if (SNAKES[newPos]) {
-      const updated = [...players];
-      updated[turnIndex] = { ...mover, position: newPos };
-      setPlayers(updated);
-      openQuiz({ type: 'snake', landedPos: newPos, target: SNAKES[newPos] });
-      return;
-    }
-
-    const updated = [...players];
-    updated[turnIndex] = { ...mover, position: newPos };
-    setPlayers(updated);
-    passTurn();
+      if (newPos === 100) {
+        setWinner(updated[turnIndex]);
+      } else if (LADDERS[newPos]) {
+        openQuiz({ type: 'ladder', landedPos: newPos, target: LADDERS[newPos] });
+      } else if (SNAKES[newPos]) {
+        openQuiz({ type: 'snake', landedPos: newPos, target: SNAKES[newPos] });
+      } else {
+        passTurn();
+      }
+    });
   };
 
   const openQuiz = (event: PendingEvent) => {
@@ -250,42 +351,76 @@ export default function GameScreen() {
 
   const resolveQuiz = () => {
     if (!pendingEvent || isAnswerCorrect === null) return;
-
-    setPlayers((prevPlayers) => {
-      const updated = [...prevPlayers];
-      const player = { ...updated[turnIndex] };
-
-      if (pendingEvent.type === 'ladder') {
-        if (isAnswerCorrect) {
-          player.position = pendingEvent.target;
-        }
-      } else {
-        if (!isAnswerCorrect) {
-          player.position = pendingEvent.target;
-        }
-      }
-
-      updated[turnIndex] = player;
-      return updated;
-    });
-
+    const mover = players[turnIndex];
+    const target = (pendingEvent.type === 'ladder' && isAnswerCorrect)
+      || (pendingEvent.type === 'snake' && !isAnswerCorrect)
+      ? pendingEvent.target
+      : mover.position;
     setPendingEvent(null);
     setCurrentQuestion(null);
     setSelectedIndex(null);
     setIsAnswerCorrect(null);
-    passTurn();
+
+    if (target === mover.position) {
+      passTurn();
+      return;
+    }
+
+    animatePlayerPath(mover.id, [mover.position, target], () => {
+      const updated = [...players];
+      updated[turnIndex] = { ...mover, position: target };
+      setPlayers(updated);
+      passTurn();
+    });
   };
 
   const handleVictoryTap = () => {
     router.push('/stats');
   };
 
+  const movementPoints = movement?.path.map((position) => {
+    const { x, y } = getCoordinatesForPosition(position);
+    return { x: x + cellSize / 2, y: y + cellSize / 2 };
+  });
+  const movementRange = movementPoints?.map((_, index) => index);
+  const movementX = movement && movementPoints && movementRange
+    ? movement.progress.interpolate({
+      inputRange: movementRange,
+      outputRange: movementPoints.map(({ x }) => x),
+      extrapolate: 'clamp',
+    })
+    : null;
+  const movementY = movement && movementPoints && movementRange
+    ? movement.progress.interpolate({
+      inputRange: movementRange,
+      outputRange: movementPoints.map(({ y }) => y),
+      extrapolate: 'clamp',
+    })
+    : null;
+  const cameraTranslateX = movementX
+    ? Animated.multiply(
+      cameraFollow,
+      Animated.subtract(frameWidth / 2 - boardOffsetX, Animated.multiply(cameraScale, movementX)),
+    )
+    : 0;
+  const cameraTranslateY = movementY
+    ? Animated.multiply(
+      cameraFollow,
+      Animated.subtract(frameHeight / 2 - boardOffsetY, Animated.multiply(cameraScale, movementY)),
+    )
+    : 0;
+  const tileNumberScale = cameraScale.interpolate({
+    inputRange: [1, BOARD_CAMERA_ZOOM],
+    outputRange: [1, 1 / BOARD_CAMERA_ZOOM],
+    extrapolate: 'clamp',
+  });
+
   return (
     <BookcaseBackground>
       <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1 }}>
         <View style={styles.mainContainer}>
           {/* TOP BANNER & EXIT BUTTON */}
-          <View style={[styles.headerRow, { width: boardSize }]}>
+          <View style={[styles.headerRow, { width: frameWidth }]}>
             <TouchableOpacity
               style={styles.exitButton}
               onPress={() => setShowExitModal(true)}
@@ -301,37 +436,101 @@ export default function GameScreen() {
           </View>
 
           {/* BOARD */}
-          <View style={[styles.boardWrapper, { width: boardSize, height: boardSize }]}>
-            <ImageBackground
-              source={require('../../assets/images/board.png')}
-              style={styles.boardImage}
-              resizeMode="cover"
+          <View style={[styles.boardFrame, { width: frameWidth, height: frameHeight }]}>
+            <Animated.View
+              style={{
+                position: 'absolute',
+                left: boardOffsetX,
+                top: boardOffsetY,
+                width: gridSize,
+                height: gridSize,
+                transform: [{ translateX: cameraTranslateX }, { translateY: cameraTranslateY }],
+              }}
             >
-              {players.map((player) => {
-                const { x, y } = getCoordinatesForPosition(player.position);
-                return (
-                  <View
-                    key={player.id}
-                    style={[
-                      styles.playerTokenWrapper,
-                      {
-                        left: x + cellSize * 0.05,
-                        top: y + cellSize * 0.05,
-                        width: cellSize * 0.9,
-                        height: cellSize * 0.9,
-                        borderRadius: cellSize * 0.45,
-                        backgroundColor: player.color,
-                      },
-                    ]}
-                  >
-                    <Image
-                      source={getCharacterAssetForColor(player.color)}
-                      style={styles.playerToken}
-                    />
-                  </View>
-                );
-              })}
-            </ImageBackground>
+              <Animated.View
+                style={{
+                  width: gridSize,
+                  height: gridSize,
+                  transformOrigin: [0, 0, 0],
+                  transform: [{ scale: cameraScale }],
+                }}
+              >
+                <Image
+                  source={require('../../assets/images/board.png')}
+                  style={[styles.boardImage, { transform: [{ scale: BOARD_IMAGE_SCALE }] }]}
+                  resizeMode="cover"
+                />
+                {players.map((player) => {
+                  const markerSize = cellSize * 0.9;
+                  if (movement?.playerId === player.id && movementX !== null && movementY !== null) {
+                    return (
+                      <Animated.View
+                        key={player.id}
+                        style={[
+                          styles.playerTokenWrapper,
+                          {
+                            left: 0,
+                            top: 0,
+                            width: markerSize,
+                            height: markerSize,
+                            borderRadius: markerSize / 2,
+                            backgroundColor: player.color,
+                            transform: [
+                              { translateX: Animated.subtract(movementX, markerSize / 2) },
+                              { translateY: Animated.subtract(movementY, markerSize / 2) },
+                            ],
+                          },
+                        ]}
+                      >
+                        <Image source={getCharacterAssetForColor(player.color)} style={styles.playerToken} />
+                      </Animated.View>
+                    );
+                  }
+
+                  const { x, y } = getCoordinatesForPosition(player.position);
+                  return (
+                    <View
+                      key={player.id}
+                      style={[
+                        styles.playerTokenWrapper,
+                        {
+                          left: x + cellSize * 0.05,
+                          top: y + cellSize * 0.05,
+                          width: markerSize,
+                          height: markerSize,
+                          borderRadius: markerSize / 2,
+                          backgroundColor: player.color,
+                        },
+                      ]}
+                    >
+                      <Image source={getCharacterAssetForColor(player.color)} style={styles.playerToken} />
+                    </View>
+                  );
+                })}
+                {Array.from({ length: 100 }, (_, index) => index + 1).map((number) => {
+                  const { x, y } = getCoordinatesForPosition(number);
+                  return (
+                    <Animated.View
+                      key={number}
+                      pointerEvents="none"
+                      style={{
+                        position: 'absolute',
+                        left: x + cellSize - TILE_NUMBER_WIDTH - TILE_NUMBER_INSET,
+                        top: y + TILE_NUMBER_INSET,
+                        width: TILE_NUMBER_WIDTH,
+                        height: TILE_NUMBER_HEIGHT,
+                        alignItems: 'flex-end',
+                        zIndex: 5,
+                        transformOrigin: [TILE_NUMBER_WIDTH, 0, 0],
+                        transform: [{ scale: tileNumberScale }],
+                      }}
+                    >
+                      <Text style={styles.tileNumber}>{number}</Text>
+                    </Animated.View>
+                  );
+                })}
+              </Animated.View>
+            </Animated.View>
           </View>
 
           {/* DICE */}
@@ -551,13 +750,22 @@ const styles = StyleSheet.create({
   },
   turnText: { color: '#fff', fontSize: 18, fontWeight: 'bold', letterSpacing: 1 },
 
-  boardWrapper: {
-    borderWidth: 2,
-    borderColor: '#334155',
-    borderRadius: 10,
+  boardFrame: {
+    ...BOARD_FRAME,
     overflow: 'hidden',
+    alignSelf: 'center',
   },
-  boardImage: { width: '100%', height: '100%' },
+  boardImage: { position: 'absolute', width: '100%', height: '100%' },
+  tileNumber: {
+    color: '#fff',
+    fontSize: TILE_NUMBER_FONT_SIZE,
+    fontWeight: TILE_NUMBER_FONT_WEIGHT,
+    textAlign: 'right',
+    includeFontPadding: false,
+    textShadowColor: 'rgba(0,0,0,0.9)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+  },
 
   playerTokenWrapper: {
     position: 'absolute',
