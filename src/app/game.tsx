@@ -14,7 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import BookcaseBackground from '../components/BookcaseBackground';
 
-const MAX_BOARD_SIZE = 360;
+const MAX_BOARD_SIZE = 380;
 
 // Ladders (Going Up): landing tile -> top tile
 const LADDERS: { [key: number]: number } = {
@@ -32,7 +32,6 @@ const LADDERS: { [key: number]: number } = {
 const SNAKES: { [key: number]: number } = {
   29: 9,
   38: 15,
-  47: 5,
   53: 33,
   62: 37,
   86: 54,
@@ -115,7 +114,7 @@ export default function GameScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ players?: string; playerColors?: string }>();
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
-  const boardSize = Math.min(screenWidth - 32, screenHeight * 0.44, MAX_BOARD_SIZE);
+  const boardSize = Math.min(screenWidth - 24, screenHeight * 0.46, MAX_BOARD_SIZE);
   const cellSize = boardSize / 10;
   
   const playerCount = Math.min(3, Math.max(1, Number(params.players) || 3));

@@ -103,7 +103,7 @@ export default function MainMenuScreen() {
         </TouchableOpacity>
 
         <View
-          style={[styles.playContainer, { top: '29%', left: '42%', width: '38%' }]}
+          style={[styles.playContainer, { top: '29%', left: '48.3%', width: '38%' }]}
           onLayout={({ nativeEvent: { layout } }) =>
             setZoomAnchor({ x: layout.x + layout.width / 2, y: layout.y + layout.height / 2 })
           }
