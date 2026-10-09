@@ -1,6 +1,6 @@
 import { Stack } from 'expo-router';
-import { Image } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import { Image } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AudioProvider } from '../AudioContext';
 import { TransitionProvider } from '../TransitionContext';
@@ -15,7 +15,9 @@ export default function RootLayout() {
       <AudioProvider>
         <TransitionProvider>
           <StatusBar hidden />
-          <Stack screenOptions={{ headerShown: false }} />
+          <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#000' } }}>
+            <Stack.Screen name="mainmenu" options={{ animation: 'fade' }} />
+          </Stack>
         </TransitionProvider>
       </AudioProvider>
     </SafeAreaProvider>

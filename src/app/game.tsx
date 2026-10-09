@@ -1,4 +1,5 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useAudioPlayer } from 'expo-audio';
 import { useEffect, useRef, useState } from 'react';
 import {
   Alert,
@@ -16,9 +17,12 @@ import {
   type ViewStyle,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useAudio } from '../AudioContext';
 import BookcaseBackground from '../components/BookcaseBackground';
 import Dice3D, { type Dice3DHandle } from '../components/Dice3D';
 
+const DICE_ROLL_SOUND = require('../../assets/audio/dice-roll.mp3');
+const DICE_RESULT_SOUND = require('../../assets/audio/dice-result.mp3');
 const MAX_BOARD_SIZE = 380;
 const BOARD_FRAME_BORDER_WIDTH = 2;
 const BOARD_FRAME_SIDE_INSET = 8;
@@ -165,8 +169,11 @@ const getPlaceholderQuestion = (type: EventType): Question => {
 
 export default function GameScreen() {
   const router = useRouter();
+  const { masterVol, masterMute, sfxVol, sfxMute } = useAudio();
   const params = useLocalSearchParams<{ players?: string; playerColors?: string; level?: string }>();
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
+  const rollSoundPlayer = useAudioPlayer(DICE_ROLL_SOUND);
+  const resultSoundPlayer = useAudioPlayer(DICE_RESULT_SOUND);
   const frameWidth = screenWidth - BOARD_FRAME_SIDE_INSET * 2;
   const frameHeight = Math.min(frameWidth * BOARD_FRAME_HEIGHT_RATIO, screenHeight * 0.52);
   const boardSize = Math.min(
@@ -223,6 +230,14 @@ export default function GameScreen() {
   const movementLocked = useRef(false);
   const cameraScale = useRef(new Animated.Value(1)).current;
   const cameraFollow = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const sfxVolume = masterMute || sfxMute ? 0 : (masterVol / 100) * (sfxVol / 100);
+    rollSoundPlayer.volume = sfxVolume;
+    resultSoundPlayer.volume = sfxVolume;
+    rollSoundPlayer.loop = false;
+    resultSoundPlayer.loop = false;
+  }, [masterVol, masterMute, sfxVol, sfxMute, rollSoundPlayer, resultSoundPlayer]);
 
   const activePlayer = players[turnIndex] || players[0];
   const isModalVisible = pendingEvent !== null;
@@ -343,6 +358,9 @@ export default function GameScreen() {
   const rollDice = () => {
     if (!isDiceReady || isRolling || movementLocked.current || winner || isModalVisible || showExitModal) return;
     setIsRolling(true);
+    void rollSoundPlayer.seekTo(0).then(() => rollSoundPlayer.play()).catch((error: unknown) => {
+      console.error('Failed to play the dice rolling sound.', error);
+    });
 
     const finalRoll = Math.floor(Math.random() * 6) + 1;
     if (!diceRef.current?.roll(finalRoll)) {
@@ -612,6 +630,9 @@ export default function GameScreen() {
                 onReady={() => setIsDiceReady(true)}
                 onRollComplete={(value) => {
                   setIsRolling(false);
+                  void resultSoundPlayer.seekTo(0).then(() => resultSoundPlayer.play()).catch((error: unknown) => {
+                    console.error('Failed to play the dice result sound.', error);
+                  });
                   movePlayer(value);
                 }}
                 onError={() => {
