@@ -58,11 +58,11 @@ export default function PlayerSelectionScreen() {
               {/* Player 1 */}
               <View style={styles.avatarWrapper}>
                 <Image
-                  source={require('../../assets/images/Playerblue.png')}
+                  source={require('../../assets/images/Playergrey.png')}
                   style={[styles.avatarImage, { width: avatarSize, height: avatarSize * 1.625 }]}
                   resizeMode="contain"
                 />
-                <View style={[styles.playerBadge, { backgroundColor: '#3b82f6' }]}>
+                <View style={[styles.playerBadge, { backgroundColor: '#6b7280' }]}>
                   <Text style={styles.badgeText}>P1</Text>
                 </View>
               </View>
@@ -71,11 +71,11 @@ export default function PlayerSelectionScreen() {
               {playerCount >= 2 && (
                 <View style={styles.avatarWrapper}>
                   <Image
-                    source={require('../../assets/images/Playerblue.png')}
+                    source={require('../../assets/images/Playergrey.png')}
                     style={[styles.avatarImage, { width: avatarSize, height: avatarSize * 1.625 }]}
                     resizeMode="contain"
                   />
-                  <View style={[styles.playerBadge, { backgroundColor: '#ef4444' }]}>
+                  <View style={[styles.playerBadge, { backgroundColor: '#6b7280' }]}>
                     <Text style={styles.badgeText}>P2</Text>
                   </View>
                 </View>
@@ -85,11 +85,11 @@ export default function PlayerSelectionScreen() {
               {playerCount === 3 && (
                 <View style={styles.avatarWrapper}>
                   <Image
-                    source={require('../../assets/images/Playerblue.png')}
+                    source={require('../../assets/images/Playergrey.png')}
                     style={[styles.avatarImage, { width: avatarSize, height: avatarSize * 1.625 }]}
                     resizeMode="contain"
                   />
-                  <View style={[styles.playerBadge, { backgroundColor: '#10b981' }]}>
+                  <View style={[styles.playerBadge, { backgroundColor: '#6b7280' }]}>
                     <Text style={styles.badgeText}>P3</Text>
                   </View>
                 </View>

@@ -2,24 +2,45 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
   Image,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import BookcaseBackground from '../components/BookcaseBackground';
 
 const PADDING = 16;
 const CARD_RADIUS = 16;
 
 const COLOR_OPTIONS = [
-  { id: 'blue', hex: '#4b7bec', label: 'Blue' },
-  { id: 'red', hex: '#ff5252', label: 'Red' },
-  { id: 'green', hex: '#26de81', label: 'Green' },
-  { id: 'yellow', hex: '#fed330', label: 'Yellow' },
+  {
+    id: 'blue',
+    hex: '#4b7bec',
+    label: 'Blue',
+    image: require('../../assets/images/Playerblue.png'),
+  },
+  {
+    id: 'red',
+    hex: '#ff5252',
+    label: 'Red',
+    image: require('../../assets/images/Playerred.png'),
+  },
+  {
+    id: 'green',
+    hex: '#26de81',
+    label: 'Green',
+    image: require('../../assets/images/Playergreen.png'),
+  },
+  {
+    id: 'yellow',
+    hex: '#fed330',
+    label: 'Yellow',
+    image: require('../../assets/images/Playeryellow.png'),
+  },
 ];
+const NEUTRAL_PLAYER_IMAGE = require('../../assets/images/Playergrey.png');
 
 export default function CustomizeCharacterScreen() {
   const router = useRouter();
@@ -30,6 +51,7 @@ export default function CustomizeCharacterScreen() {
 
   // Active player index (0 = P1, 1 = P2, 2 = P3)
   const [activePlayerIndex, setActivePlayerIndex] = useState(0);
+  const [hoveredColor, setHoveredColor] = useState<string | null>(null);
 
   // Array storing assigned hex colors per player: e.g. ['#4b7bec', '#ff5252', null]
   const [selectedColors, setSelectedColors] = useState<(string | null)[]>(
@@ -38,10 +60,14 @@ export default function CustomizeCharacterScreen() {
 
   const currentPlayerNum = activePlayerIndex + 1;
   const currentSelection = selectedColors[activePlayerIndex];
+  const previewColor = hoveredColor || currentSelection;
+  const previewImage =
+    COLOR_OPTIONS.find((color) => color.hex === previewColor)?.image ?? NEUTRAL_PLAYER_IMAGE;
 
   // Back action: Goes to previous player's turn, or back to player selection screen if on P1
   const handleBack = () => {
     if (activePlayerIndex > 0) {
+      setHoveredColor(null);
       setActivePlayerIndex((prev) => prev - 1);
     } else {
       router.back();
@@ -66,6 +92,7 @@ export default function CustomizeCharacterScreen() {
 
     if (activePlayerIndex < totalPlayers - 1) {
       // Move to the next player's turn
+      setHoveredColor(null);
       setActivePlayerIndex((prev) => prev + 1);
     } else {
       // Last player has selected their color -> Forward to Game screen
@@ -81,7 +108,7 @@ export default function CustomizeCharacterScreen() {
 
   return (
     <BookcaseBackground>
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView edges={['top', 'bottom']} style={styles.container}>
         <ScrollView contentContainerStyle={styles.content}>
 
           {/* Header Banner with Back Button */}
@@ -95,7 +122,14 @@ export default function CustomizeCharacterScreen() {
             </TouchableOpacity>
 
             <View style={styles.bannerContainer}>
-              <Text style={styles.bannerTitle}>CUSTOMIZE CHARACTER</Text>
+              <Text
+                style={styles.bannerTitle}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.75}
+              >
+                CUSTOMIZE CHARACTER
+              </Text>
               <Text style={styles.bannerSubtitle}>
                 PLAYER {currentPlayerNum} OF {totalPlayers} TURN
               </Text>
@@ -106,7 +140,7 @@ export default function CustomizeCharacterScreen() {
           <View style={styles.previewCard}>
             <View style={styles.avatarWrapper}>
               <Image
-                source={require('../../assets/images/Playergreen.png')}
+                source={previewImage}
                 style={styles.avatarImage}
                 resizeMode="contain"
               />
@@ -150,6 +184,10 @@ export default function CustomizeCharacterScreen() {
                   key={item.id}
                   activeOpacity={isTakenByOther ? 1 : 0.8}
                   onPress={() => handleSelectColor(item.hex)}
+                  onPressIn={() => setHoveredColor(isTakenByOther ? null : item.hex)}
+                  onPressOut={() => setHoveredColor(null)}
+                  onMouseEnter={() => setHoveredColor(isTakenByOther ? null : item.hex)}
+                  onMouseLeave={() => setHoveredColor(null)}
                   style={[
                     styles.colorBox,
                     { backgroundColor: item.hex },
@@ -219,17 +257,16 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'rgba(255, 255, 255, 0.08)',
     borderRadius: CARD_RADIUS,
-    paddingVertical: 10,
+    paddingVertical: 12,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.15)',
     alignItems: 'center',
-    gap: 2,
   },
   bannerTitle: {
     color: '#ffffff',
-    fontSize: 16,
-    fontWeight: '800',
-    letterSpacing: 1.5,
+    fontSize: 20,
+    fontWeight: '700',
+    letterSpacing: 2,
   },
   bannerSubtitle: {
     color: '#a0a5b5',

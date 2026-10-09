@@ -1,11 +1,12 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Animated,
   Easing,
   Image,
   ImageBackground,
   Modal,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -31,12 +32,26 @@ const TILE_NUMBER_FONT_WEIGHT = '900' as const;
 const TILE_NUMBER_WIDTH = 24;
 const TILE_NUMBER_HEIGHT = 18;
 const TILE_NUMBER_INSET = 3;
+const TYPEWRITER_CHARACTER_INTERVAL_MS = 18;
+const QUIZ_SCENE_FALLBACK_HEIGHT = 260;
 const BOARD_FRAME = {
   borderWidth: BOARD_FRAME_BORDER_WIDTH,
   borderRadius: 10,
   borderColor: '#334155',
   backgroundColor: '#0f172a',
 };
+const DIALOGUE_FILES = {
+  Lad: {
+    Language: require('../data/dialogue/LadDialogueLanguage.json'),
+    Science: require('../data/dialogue/LadDialogueScience.json'),
+    History: require('../data/dialogue/LadDialogueHistory.json'),
+  },
+  Adder: {
+    Language: require('../data/dialogue/AdderDialogueLanguage.json'),
+    Science: require('../data/dialogue/AdderDialogueScience.json'),
+    History: require('../data/dialogue/AdderDialogueHistory.json'),
+  },
+} as const;
 
 // Ladders (Going Up): landing tile -> top tile
 const LADDERS: { [key: number]: number } = {
@@ -124,6 +139,19 @@ type Question = {
   correctIndex: number;
 };
 
+type DialogueSubject = 'Language' | 'Science' | 'History';
+type DialogueSection = 'Encounter' | 'CorrectAnswer' | 'IncorrectAnswer';
+
+const getRandomDialogueLine = (
+  eventType: EventType,
+  subject: DialogueSubject,
+  section: DialogueSection,
+) => {
+  const character = eventType === 'ladder' ? 'Lad' : 'Adder';
+  const lines: string[] = DIALOGUE_FILES[character][subject][section];
+  return lines.length ? lines[Math.floor(Math.random() * lines.length)] : '';
+};
+
 const getPlaceholderQuestion = (type: EventType): Question => {
   if (type === 'ladder') {
     return {
@@ -141,7 +169,7 @@ const getPlaceholderQuestion = (type: EventType): Question => {
 
 export default function GameScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ players?: string; playerColors?: string }>();
+  const params = useLocalSearchParams<{ players?: string; playerColors?: string; level?: string }>();
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const frameWidth = screenWidth - BOARD_FRAME_SIDE_INSET * 2;
   const frameHeight = Math.min(frameWidth * BOARD_FRAME_HEIGHT_RATIO, screenHeight * 0.52);
@@ -193,12 +221,37 @@ export default function GameScreen() {
 
   const [showExitModal, setShowExitModal] = useState(false);
   const [movement, setMovement] = useState<BoardMovement | null>(null);
+  const [quizCardHeight, setQuizCardHeight] = useState(0);
+  const [dialogueText, setDialogueText] = useState('');
+  const [typedDialogue, setTypedDialogue] = useState('');
   const movementLocked = useRef(false);
   const cameraScale = useRef(new Animated.Value(1)).current;
   const cameraFollow = useRef(new Animated.Value(0)).current;
 
   const activePlayer = players[turnIndex] || players[0];
   const isModalVisible = pendingEvent !== null;
+  const dialogueSubject = params.level === 'reading'
+    ? 'Language'
+    : params.level === 'research'
+      ? 'Science'
+      : 'History';
+  const dialogueImage = pendingEvent?.type === 'ladder'
+    ? require('../../assets/images/LogoLad.png')
+    : require('../../assets/images/LogoKnowItAdder.png');
+
+  useEffect(() => {
+    setTypedDialogue('');
+    if (!dialogueText) return;
+
+    let visibleCharacters = 0;
+    const timer = setInterval(() => {
+      visibleCharacters += 1;
+      setTypedDialogue(dialogueText.slice(0, visibleCharacters));
+      if (visibleCharacters >= dialogueText.length) clearInterval(timer);
+    }, TYPEWRITER_CHARACTER_INTERVAL_MS);
+
+    return () => clearInterval(timer);
+  }, [dialogueText]);
 
   const handleConfirmExit = () => {
     setShowExitModal(false);
@@ -230,12 +283,18 @@ export default function GameScreen() {
     setMovement({ playerId, path, progress });
 
     requestAnimationFrame(() => {
-      const tileSteps = path.slice(1).map((_, index) => Animated.timing(progress, {
-        toValue: index + 1,
-        duration: PLAYER_TILE_MOVE_MS,
-        easing: Easing.linear,
-        useNativeDriver: true,
-      }));
+      const tileSteps = path.slice(1).map((position, index) => {
+        const from = getCoordinatesForPosition(path[index]);
+        const to = getCoordinatesForPosition(position);
+        const distanceInTiles = Math.hypot(to.x - from.x, to.y - from.y) / cellSize;
+
+        return Animated.timing(progress, {
+          toValue: index + 1,
+          duration: Math.max(PLAYER_TILE_MOVE_MS, Math.round(distanceInTiles * PLAYER_TILE_MOVE_MS)),
+          easing: Easing.linear,
+          useNativeDriver: true,
+        });
+      });
 
       Animated.parallel([
         Animated.timing(cameraScale, {
@@ -320,12 +379,13 @@ export default function GameScreen() {
     );
 
     animatePlayerPath(mover.id, path, () => {
-      const updated = [...players];
-      updated[turnIndex] = { ...mover, position: newPos };
-      setPlayers(updated);
+      const updatedPlayer = { ...mover, position: newPos };
+      setPlayers((currentPlayers) => currentPlayers.map((player) =>
+        player.id === mover.id ? updatedPlayer : player,
+      ));
 
       if (newPos === 100) {
-        setWinner(updated[turnIndex]);
+        setWinner(updatedPlayer);
       } else if (LADDERS[newPos]) {
         openQuiz({ type: 'ladder', landedPos: newPos, target: LADDERS[newPos] });
       } else if (SNAKES[newPos]) {
@@ -337,6 +397,8 @@ export default function GameScreen() {
   };
 
   const openQuiz = (event: PendingEvent) => {
+    setQuizCardHeight(0);
+    setDialogueText(getRandomDialogueLine(event.type, dialogueSubject, 'Encounter'));
     setPendingEvent(event);
     setCurrentQuestion(getPlaceholderQuestion(event.type));
     setSelectedIndex(null);
@@ -344,34 +406,45 @@ export default function GameScreen() {
   };
 
   const handleAnswerSelect = (index: number) => {
-    if (!currentQuestion || isAnswerCorrect !== null) return;
+    if (!currentQuestion || !pendingEvent || isAnswerCorrect !== null) return;
     setSelectedIndex(index);
     const isCorrect = index === currentQuestion.correctIndex;
+    setDialogueText(getRandomDialogueLine(
+      pendingEvent.type,
+      dialogueSubject,
+      isCorrect ? 'CorrectAnswer' : 'IncorrectAnswer',
+    ));
     setIsAnswerCorrect(isCorrect);
   };
 
   const resolveQuiz = () => {
     if (!pendingEvent || isAnswerCorrect === null) return;
     const mover = players[turnIndex];
+    const startPosition = pendingEvent.landedPos;
     const target = (pendingEvent.type === 'ladder' && isAnswerCorrect)
       || (pendingEvent.type === 'snake' && !isAnswerCorrect)
       ? pendingEvent.target
-      : mover.position;
+      : startPosition;
     setPendingEvent(null);
     setCurrentQuestion(null);
     setSelectedIndex(null);
     setIsAnswerCorrect(null);
 
-    if (target === mover.position) {
+    if (target === startPosition) {
+      setPlayers((currentPlayers) => currentPlayers.map((player) =>
+        player.id === mover.id ? { ...player, position: startPosition } : player,
+      ));
       passTurn();
       return;
     }
 
-    animatePlayerPath(mover.id, [mover.position, target], () => {
-      const updated = [...players];
-      updated[turnIndex] = { ...mover, position: target };
-      setPlayers(updated);
-      passTurn();
+    animatePlayerPath(mover.id, [startPosition, target], () => {
+      const updatedPlayer = { ...mover, position: target };
+      setPlayers((currentPlayers) => currentPlayers.map((player) =>
+        player.id === mover.id ? updatedPlayer : player,
+      ));
+      if (target === 100) setWinner(updatedPlayer);
+      else passTurn();
     });
   };
 
@@ -617,7 +690,44 @@ export default function GameScreen() {
           onRequestClose={() => {}}
         >
           <View style={styles.modalOverlayContainer}>
-            <View style={styles.quizCard}>
+            <ScrollView
+              style={styles.quizPopupScrollView}
+              contentContainerStyle={styles.quizPopupScrollContent}
+              showsVerticalScrollIndicator={false}
+            >
+              <View style={styles.quizPopupGroup}>
+                <View
+                  style={[
+                    styles.quizSceneCard,
+                    { height: quizCardHeight || QUIZ_SCENE_FALLBACK_HEIGHT },
+                  ]}
+                >
+                  <ImageBackground
+                    source={require('../../assets/images/bookcase.png')}
+                    style={styles.quizSceneBackground}
+                    imageStyle={styles.quizSceneBackgroundImage}
+                    resizeMode="cover"
+                  />
+                  <View pointerEvents="none" style={styles.quizSceneForeground}>
+                    <Image
+                      source={dialogueImage}
+                      style={styles.quizCharacterImage}
+                      resizeMode="contain"
+                    />
+                    <View style={styles.quizDialogueBox}>
+                      <Text style={styles.quizDialogueText}>{typedDialogue}</Text>
+                    </View>
+                  </View>
+                </View>
+                <View
+                  style={styles.quizCard}
+                  onLayout={({ nativeEvent }) => {
+                    const measuredHeight = nativeEvent.layout.height;
+                    setQuizCardHeight((currentHeight) =>
+                      Math.abs(currentHeight - measuredHeight) > 1 ? measuredHeight : currentHeight,
+                    );
+                  }}
+                >
               <Text style={styles.quizHeader}>
                 {pendingEvent?.type === 'ladder' ? '🪜 Ladder Challenge!' : '🐍 Snake Challenge!'}
               </Text>
@@ -679,6 +789,8 @@ export default function GameScreen() {
                 </View>
               )}
             </View>
+              </View>
+            </ScrollView>
           </View>
         </Modal>
 
@@ -909,9 +1021,73 @@ const styles = StyleSheet.create({
     textShadowRadius: 3,
   },
 
-  quizCard: {
+  quizPopupScrollView: {
+    flex: 1,
+    width: '100%',
+  },
+  quizPopupScrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 20,
+  },
+  quizPopupGroup: {
     width: '88%',
     maxWidth: 420,
+    alignItems: 'center',
+    gap: 12,
+  },
+  quizSceneCard: {
+    width: '100%',
+    position: 'relative',
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: '#475569',
+    backgroundColor: '#1e293b',
+    overflow: 'visible',
+  },
+  quizSceneBackground: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: 14,
+    overflow: 'hidden',
+  },
+  quizSceneBackgroundImage: {
+    borderRadius: 14,
+  },
+  quizSceneForeground: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    padding: 16,
+    overflow: 'visible',
+  },
+  quizCharacterImage: {
+    position: 'absolute',
+    right: 6,
+    bottom: 30,
+    width: '70%',
+    aspectRatio: 1,
+    transform: [{ scale: 1.12 }],
+    zIndex: 1,
+  },
+  quizDialogueBox: {
+    width: '58%',
+    minHeight: 100,
+    justifyContent: 'center',
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.24)',
+    backgroundColor: 'rgba(15,23,42,0.86)',
+    zIndex: 2,
+  },
+  quizDialogueText: {
+    color: '#fff',
+    fontSize: 14,
+    lineHeight: 20,
+    fontWeight: '600',
+  },
+  quizCard: {
+    width: '100%',
     backgroundColor: '#1e293b',
     borderRadius: 16,
     padding: 20,
