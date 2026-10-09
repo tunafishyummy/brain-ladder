@@ -1,6 +1,7 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
+  Alert,
   Animated,
   Easing,
   Image,
@@ -16,6 +17,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import BookcaseBackground from '../components/BookcaseBackground';
+import Dice3D, { type Dice3DHandle } from '../components/Dice3D';
 
 const MAX_BOARD_SIZE = 380;
 const BOARD_FRAME_BORDER_WIDTH = 2;
@@ -77,15 +79,6 @@ const SNAKES: { [key: number]: number } = {
   86: 54,
   92: 70,
   97: 25,
-};
-
-const DICE_IMAGES: { [key: number]: any } = {
-  1: require('../../assets/images/dice1.png'),
-  2: require('../../assets/images/dice2.png'),
-  3: require('../../assets/images/dice3.png'),
-  4: require('../../assets/images/dice4.png'),
-  5: require('../../assets/images/dice5.png'),
-  6: require('../../assets/images/dice6.png'),
 };
 
 const COLOR_NAMES: { [key: string]: string } = {
@@ -213,8 +206,9 @@ export default function GameScreen() {
   });
 
   const [turnIndex, setTurnIndex] = useState(0);
-  const [diceValue, setDiceValue] = useState<number>(1);
   const [isRolling, setIsRolling] = useState(false);
+  const [isDiceReady, setIsDiceReady] = useState(false);
+  const diceRef = useRef<Dice3DHandle>(null);
   const [winner, setWinner] = useState<Player | null>(null);
 
   const [pendingEvent, setPendingEvent] = useState<PendingEvent | null>(null);
@@ -347,23 +341,14 @@ export default function GameScreen() {
   };
 
   const rollDice = () => {
-    if (isRolling || movementLocked.current || winner || isModalVisible || showExitModal) return;
+    if (!isDiceReady || isRolling || movementLocked.current || winner || isModalVisible || showExitModal) return;
     setIsRolling(true);
 
     const finalRoll = Math.floor(Math.random() * 6) + 1;
-
-    let steps = 0;
-    const interval = setInterval(() => {
-      setDiceValue(Math.floor(Math.random() * 6) + 1);
-      steps++;
-
-      if (steps > 10) {
-        clearInterval(interval);
-        setDiceValue(finalRoll);
-        setIsRolling(false);
-        movePlayer(finalRoll);
-      }
-    }, 60);
+    if (!diceRef.current?.roll(finalRoll)) {
+      setIsRolling(false);
+      return;
+    }
   };
 
   const passTurn = () => {
@@ -491,6 +476,7 @@ export default function GameScreen() {
     outputRange: [1, 1 / BOARD_CAMERA_ZOOM],
     extrapolate: 'clamp',
   });
+  const diceSize = Math.min(76, boardSize * 0.34);
 
   return (
     <BookcaseBackground>
@@ -615,16 +601,26 @@ export default function GameScreen() {
             <TouchableOpacity
               style={styles.diceButton}
               onPress={rollDice}
-              disabled={isRolling || !!winner || isModalVisible || showExitModal}
+              disabled={!isDiceReady || isRolling || !!winner || isModalVisible || showExitModal}
               activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel={isRolling ? 'Rolling die' : isDiceReady ? 'Roll one die' : 'Loading die'}
             >
-              <Image
-                source={DICE_IMAGES[diceValue]}
-                style={[
-                  styles.diceImage,
-                  { width: Math.min(52, boardSize * 0.15), height: Math.min(52, boardSize * 0.15) },
-                  isRolling && styles.diceRollingAnimation,
-                ]}
+              <Dice3D
+                ref={diceRef}
+                size={diceSize}
+                onReady={() => setIsDiceReady(true)}
+                onRollComplete={(value) => {
+                  setIsRolling(false);
+                  movePlayer(value);
+                }}
+                onError={() => {
+                  setIsDiceReady(false);
+                  Alert.alert(
+                    '3D die unavailable',
+                    'The die renderer could not start. Please restart the game and try again.',
+                  );
+                }}
               />
             </TouchableOpacity>
           </View>
@@ -904,13 +900,11 @@ const styles = StyleSheet.create({
     height: 56,
   },
   diceButton: {
-    width: 52,
-    height: 52,
+    minWidth: 72,
+    minHeight: 72,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  diceImage: { resizeMode: 'contain' },
-  diceRollingAnimation: { opacity: 0.6, transform: [{ scale: 0.95 }] },
 
   bottomBarContainer: {
     flexDirection: 'row',
