@@ -10,6 +10,7 @@ import {
   Modal,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
   TouchableOpacity,
   useWindowDimensions,
@@ -142,6 +143,35 @@ type Question = {
 type DialogueSubject = 'Language' | 'Science' | 'History';
 type DialogueSection = 'Encounter' | 'CorrectAnswer' | 'IncorrectAnswer';
 
+const QUESTION_BANKS: Partial<Record<DialogueSubject, Question[]>> = {
+  Language: require('../data/questions/language.json'),
+  Science: require('../data/questions/science.json'),
+  History: require('../data/questions/history.json'),
+};
+
+const shuffleQuestions = (questions: Question[]): Question[] => {
+  const shuffled = questions.map((question) => {
+    const options = question.options.map((text, index) => ({
+      text,
+      isCorrect: index === question.correctIndex,
+    }));
+    for (let index = options.length - 1; index > 0; index -= 1) {
+      const randomIndex = Math.floor(Math.random() * (index + 1));
+      [options[index], options[randomIndex]] = [options[randomIndex], options[index]];
+    }
+    return {
+      ...question,
+      options: options.map(({ text }) => text),
+      correctIndex: options.findIndex(({ isCorrect }) => isCorrect),
+    };
+  });
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const randomIndex = Math.floor(Math.random() * (index + 1));
+    [shuffled[index], shuffled[randomIndex]] = [shuffled[randomIndex], shuffled[index]];
+  }
+  return shuffled;
+};
+
 const getRandomDialogueLine = (
   eventType: EventType,
   subject: DialogueSubject,
@@ -222,6 +252,8 @@ export default function GameScreen() {
   const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [isAnswerCorrect, setIsAnswerCorrect] = useState<boolean | null>(null);
+  const [useQuestionBank, setUseQuestionBank] = useState(true);
+  const questionDeck = useRef<Question[]>([]);
 
   const [showExitModal, setShowExitModal] = useState(false);
   const [movement, setMovement] = useState<BoardMovement | null>(null);
@@ -246,9 +278,19 @@ export default function GameScreen() {
     : params.level === 'research'
       ? 'Science'
       : 'History';
+  const hasQuestionBank = Boolean(QUESTION_BANKS[dialogueSubject]?.length);
   const dialogueImage = pendingEvent?.type === 'ladder'
     ? require('../../assets/images/LogoLad.png')
     : require('../../assets/images/LogoKnowItAdder.png');
+
+  const getNextQuestion = (eventType: EventType): Question => {
+    const questions = QUESTION_BANKS[dialogueSubject];
+    if (!useQuestionBank || !questions?.length) return getPlaceholderQuestion(eventType);
+    if (questionDeck.current.length === 0) {
+      questionDeck.current = shuffleQuestions(questions);
+    }
+    return questionDeck.current.pop() ?? getPlaceholderQuestion(eventType);
+  };
 
   useEffect(() => {
     setTypedDialogue('');
@@ -402,7 +444,7 @@ export default function GameScreen() {
   const openQuiz = (event: PendingEvent) => {
     setDialogueText(getRandomDialogueLine(event.type, dialogueSubject, 'Encounter'));
     setPendingEvent(event);
-    setCurrentQuestion(getPlaceholderQuestion(event.type));
+    setCurrentQuestion(getNextQuestion(event.type));
     setSelectedIndex(null);
     setIsAnswerCorrect(null);
   };
@@ -513,6 +555,23 @@ export default function GameScreen() {
 
             <View style={[styles.turnBanner, { backgroundColor: activePlayer.color }]}>
               <Text style={styles.turnText}>{activePlayer.name}'s Turn</Text>
+            </View>
+            <View style={styles.questionModeControl}>
+              <Text style={styles.questionModeText}>
+                {!hasQuestionBank ? 'NO BANK' : useQuestionBank ? 'QUESTIONS' : 'DEMO'}
+              </Text>
+              <Switch
+                value={hasQuestionBank && useQuestionBank}
+                onValueChange={setUseQuestionBank}
+                disabled={!hasQuestionBank}
+                trackColor={{ false: '#64748b', true: '#15803d' }}
+                thumbColor="#ffffff"
+                accessibilityRole="switch"
+                accessibilityLabel="Question mode"
+                accessibilityHint={hasQuestionBank
+                  ? 'Turn off to use demo placeholder questions.'
+                  : `No ${dialogueSubject.toLowerCase()} question bank is available yet.`}
+              />
             </View>
           </View>
 
@@ -879,6 +938,21 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   turnText: { color: '#fff', fontSize: 18, fontWeight: 'bold', letterSpacing: 1 },
+  questionModeControl: {
+    minWidth: 108,
+    minHeight: 48,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 2,
+  },
+  questionModeText: {
+    width: 64,
+    color: '#fff',
+    fontSize: 9,
+    fontWeight: '800',
+    textAlign: 'center',
+  },
 
   boardFrame: {
     ...BOARD_FRAME,
