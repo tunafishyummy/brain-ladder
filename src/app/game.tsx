@@ -158,13 +158,13 @@ const getRandomDialogueLine = (
 const getPlaceholderQuestion = (type: EventType): Question => {
   if (type === 'ladder') {
     return {
-      prompt: 'Placeholder question â€” answer correctly to climb the ladder!',
+      prompt: 'Placeholder question — answer correctly to climb the ladder!',
       options: ['Option A', 'Option B', 'Option C', 'Option D'],
       correctIndex: 0,
     };
   }
   return {
-    prompt: 'Placeholder question â€” answer correctly to dodge the snake!',
+    prompt: 'Placeholder question — answer correctly to dodge the snake!',
     options: ['Option A', 'Option B', 'Option C', 'Option D'],
     correctIndex: 0,
   };
@@ -504,7 +504,7 @@ export default function GameScreen() {
               activeOpacity={0.7}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
-              <Text style={styles.exitIcon}>âœ•</Text>
+              <Text style={styles.exitIcon}>✕</Text>
             </TouchableOpacity>
 
             <View style={[styles.turnBanner, { backgroundColor: activePlayer.color }]}>
@@ -725,7 +725,7 @@ export default function GameScreen() {
                 </View>
                 <View style={styles.quizCard}>
               <Text style={styles.quizHeader}>
-                {pendingEvent?.type === 'ladder' ? 'ðŸªœ Ladder Challenge!' : 'ðŸ Snake Challenge!'}
+                {pendingEvent?.type === 'ladder' ? '🪜 Ladder Challenge!' : '🐍 Snake Challenge!'}
               </Text>
               <Text style={styles.quizSubheader}>
                 {pendingEvent?.type === 'ladder'
