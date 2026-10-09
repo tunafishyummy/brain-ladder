@@ -154,6 +154,7 @@ type Question = {
   prompt: string;
   options: string[];
   correctIndex: number;
+  hint?: string;
 };
 
 type DialogueSubject = 'Language' | 'Science' | 'History';
@@ -204,12 +205,14 @@ const getPlaceholderQuestion = (type: EventType): Question => {
       prompt: 'Placeholder question — answer correctly to climb the ladder!',
       options: ['Option A', 'Option B', 'Option C', 'Option D'],
       correctIndex: 0,
+      hint: 'This is a placeholder hint for testing purposes.',
     };
   }
   return {
     prompt: 'Placeholder question — answer correctly to dodge the snake!',
     options: ['Option A', 'Option B', 'Option C', 'Option D'],
     correctIndex: 0,
+    hint: 'This is a placeholder hint for testing purposes.',
   };
 };
 
@@ -261,12 +264,21 @@ export default function GameScreen() {
     });
   });
 
-  // --- 10 RANDOM POWER-UP BOXES ON BOARD (Tiles 2 to 99) ---
+  // --- 10 RANDOM POWER-UP BOXES ON BOARD (Excluding starting/landing snake & ladder tiles) ---
   const [powerUpTiles, setPowerUpTiles] = useState<number[]>(() => {
     const tiles: number[] = [];
+    const restrictedTiles = new Set([
+      1,
+      100,
+      ...Object.keys(LADDERS).map(Number),
+      ...Object.keys(SNAKES).map(Number),
+    ]);
+
     while (tiles.length < 10) {
       const rand = Math.floor(Math.random() * 98) + 2;
-      if (!tiles.includes(rand)) tiles.push(rand);
+      if (!restrictedTiles.has(rand) && !tiles.includes(rand)) {
+        tiles.push(rand);
+      }
     }
     return tiles;
   });
@@ -276,6 +288,7 @@ export default function GameScreen() {
   const [rouletteDisplayItem, setRouletteDisplayItem] = useState<'hint' | 'skip' | 'add-time' | 'refresh'>('hint');
   const [challengeSeconds, setChallengeSeconds] = useState(30);
   const [isChallengeActive, setIsChallengeActive] = useState(false);
+  const [hintMessage, setHintMessage] = useState<string | null>(null);
 
   const [turnIndex, setTurnIndex] = useState(0);
   const [isRolling, setIsRolling] = useState(false);
@@ -545,6 +558,7 @@ export default function GameScreen() {
     setCurrentQuestion(getNextQuestion(event.type));
     setSelectedIndex(null);
     setIsAnswerCorrect(null);
+    setHintMessage(null);
     setChallengeSeconds(30);
     setIsChallengeActive(true);
   };
@@ -578,7 +592,8 @@ export default function GameScreen() {
     setPlayers((curr) => curr.map((p) => (p.id === mover.id ? { ...p, powerUps: updatedPowerUps } : p)));
 
     if (powerUpType === 'hint' && currentQuestion) {
-      setSelectedIndex(currentQuestion.correctIndex);
+      const hint = currentQuestion.hint || `Hint: Focus on core concepts related to ${dialogueSubject}. Read the choices carefully!`;
+      setHintMessage(hint);
     } else if (powerUpType === 'skip') {
       if (currentQuestion) {
         setSelectedIndex(currentQuestion.correctIndex);
@@ -592,6 +607,7 @@ export default function GameScreen() {
       if (pendingEvent) {
         setCurrentQuestion(getNextQuestion(pendingEvent.type));
         setSelectedIndex(null);
+        setHintMessage(null);
       }
     }
   };
@@ -608,6 +624,7 @@ export default function GameScreen() {
     setCurrentQuestion(null);
     setSelectedIndex(null);
     setIsAnswerCorrect(null);
+    setHintMessage(null);
 
     if (target === startPosition) {
       setPlayers((currentPlayers) => currentPlayers.map((player) =>
@@ -988,6 +1005,13 @@ export default function GameScreen() {
                   </Text>
 
                   <Text style={styles.quizPrompt}>{currentQuestion?.prompt}</Text>
+
+                  {/* HINT BANNER */}
+                  {hintMessage && (
+                    <View style={styles.hintBanner}>
+                      <Text style={styles.hintBannerText}>💡 {hintMessage}</Text>
+                    </View>
+                  )}
 
                   <View style={styles.optionsGrid}>
                     {currentQuestion?.options.map((option, index) => {
@@ -1428,6 +1452,20 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 16,
     fontWeight: '600',
+  },
+  hintBanner: {
+    backgroundColor: '#334155',
+    borderWidth: 1.5,
+    borderColor: '#facc15',
+    borderRadius: 10,
+    padding: 10,
+    marginBottom: 14,
+  },
+  hintBannerText: {
+    color: '#fef08a',
+    fontSize: 13,
+    fontWeight: '700',
+    textAlign: 'center',
   },
   optionsGrid: {
     flexDirection: 'row',
