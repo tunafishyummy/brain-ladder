@@ -21,7 +21,7 @@ const BOARD_FRAME_BORDER_WIDTH = 2;
 const BOARD_FRAME_SIDE_INSET = 8;
 const BOARD_FRAME_HEIGHT_RATIO = 1.2;
 const BOARD_RESTING_WIDTH_RATIO = 0.82;
-const BOARD_IMAGE_SCALE = 1;
+const BOARD_IMAGE_SCALE = 1.06;
 const BOARD_CAMERA_ZOOM = 1.45;
 const PLAYER_MOVEMENT_WARMUP_MS = 650;
 const PLAYER_MOVEMENT_COOLDOWN_MS = 500;
@@ -89,6 +89,7 @@ const getCharacterAssetForColor = (color: string) => {
     case '#26de81':
       return require('../../assets/images/Playergreen.png');
     case '#fed330':
+      return require('../../assets/images/Playeryellow.png');
     case '#2563eb':
     case '#4b7bec':
     default:
