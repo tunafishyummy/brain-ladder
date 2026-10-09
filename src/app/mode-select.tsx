@@ -1,5 +1,6 @@
 import { useRouter } from 'expo-router';
-import { Image, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import BookcaseBackground from '../components/BookcaseBackground';
 
 const MODES = [
@@ -17,7 +18,7 @@ export default function ModeSelectScreen() {
 
   return (
     <BookcaseBackground>
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView edges={['top']} style={styles.container}>
         <ScrollView contentContainerStyle={styles.content}>
           <View style={styles.headerBanner}>
             <Text style={styles.headerTitle}>SELECT PLAYERS</Text>

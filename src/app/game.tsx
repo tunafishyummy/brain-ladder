@@ -4,7 +4,6 @@ import {
   Image,
   ImageBackground,
   Modal,
-  SafeAreaView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -12,6 +11,7 @@ import {
   View,
   type ViewStyle,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import BookcaseBackground from '../components/BookcaseBackground';
 
 const MAX_BOARD_SIZE = 360;
@@ -283,7 +283,7 @@ export default function GameScreen() {
 
   return (
     <BookcaseBackground>
-      <SafeAreaView style={{ flex: 1 }}>
+      <SafeAreaView edges={['top']} style={{ flex: 1 }}>
         <View style={styles.mainContainer}>
           {/* TOP BANNER & EXIT BUTTON */}
           <View style={[styles.headerRow, { width: boardSize }]}>
@@ -378,6 +378,8 @@ export default function GameScreen() {
         <Modal
           visible={showExitModal}
           transparent
+          statusBarTranslucent
+          navigationBarTranslucent
           animationType="fade"
           onRequestClose={() => setShowExitModal(false)}
         >
@@ -408,6 +410,8 @@ export default function GameScreen() {
         <Modal
           visible={isModalVisible}
           transparent
+          statusBarTranslucent
+          navigationBarTranslucent
           animationType="fade"
           onRequestClose={() => {}}
         >

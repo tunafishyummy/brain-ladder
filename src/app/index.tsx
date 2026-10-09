@@ -1,5 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useEffect } from 'react';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   ActivityIndicator,
   StyleSheet,
@@ -28,7 +29,7 @@ export default function SplashScreen() {
   return (
     <View style={styles.screenWrapper}>
       <BookcaseBackground>
-        <View style={styles.contentContainer}>
+        <SafeAreaView edges={['top']} style={styles.contentContainer}>
           <View style={styles.logoContainer}>
             <AnimatedLogoStack />
           </View>
@@ -36,7 +37,7 @@ export default function SplashScreen() {
             <ActivityIndicator size="large" color="#ffffff" style={styles.spinner} />
             <Text style={styles.loadingText}>Loading...</Text>
           </View>
-        </View>
+        </SafeAreaView>
       </BookcaseBackground>
     </View>
   );

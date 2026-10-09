@@ -7,13 +7,13 @@ import {
   Image,
   Modal,
   Platform,
-  SafeAreaView,
   StyleSheet,
   Text,
   TouchableOpacity,
   useWindowDimensions,
   View
 } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import MainMenuArtwork from '../components/MainMenuArtwork';
 import { useScreenTransition } from '../TransitionContext';
 // @ts-ignore SettingsScreen is maintained as JSX.
@@ -21,6 +21,7 @@ import SettingsScreen from '../components/SettingsScreen';
 
 export default function MainMenuScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
   const artworkWidth = Math.min(width, height * (9 / 20));
   const controlSize = Math.min(52, artworkWidth * 0.14);
@@ -92,9 +93,9 @@ export default function MainMenuScreen() {
       zoomAnchor={zoomAnchor}
       isTransitioning={isTransitioning}
     >
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView edges={['top']} style={styles.container}>
         <TouchableOpacity
-          style={styles.debugButton}
+          style={[styles.debugButton, { top: insets.top + 12 }]}
           onPress={handleReturnToSplash}
           activeOpacity={0.8}
         >
@@ -147,6 +148,8 @@ export default function MainMenuScreen() {
       <Modal
         visible={settingsVisible}
         transparent
+        statusBarTranslucent
+        navigationBarTranslucent
         animationType="fade"
         onRequestClose={() => setSettingsVisible(false)}
       >
@@ -160,6 +163,8 @@ export default function MainMenuScreen() {
       <Modal
         visible={exitPromptVisible}
         transparent
+        statusBarTranslucent
+        navigationBarTranslucent
         animationType="fade"
         onRequestClose={() => setExitPromptVisible(false)}
       >

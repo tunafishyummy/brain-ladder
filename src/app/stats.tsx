@@ -1,11 +1,11 @@
 import { useRouter } from 'expo-router';
 import {
-    SafeAreaView,
     StyleSheet,
     Text,
     TouchableOpacity,
     View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import BookcaseBackground from '../components/BookcaseBackground';
 
 export default function StatsScreen() {
@@ -13,7 +13,7 @@ export default function StatsScreen() {
 
 	return (
 		<BookcaseBackground>
-			<SafeAreaView style={styles.container}>
+			<SafeAreaView edges={['top']} style={styles.container}>
 				<Text style={styles.title}>Stats screen</Text>
 				<Text style={styles.subtitle}>statter screener</Text>
 				<TouchableOpacity

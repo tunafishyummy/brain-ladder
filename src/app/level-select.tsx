@@ -2,13 +2,13 @@ import { Stack, useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
   ImageBackground,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import BookcaseBackground from '../components/BookcaseBackground';
 
 // Constants
@@ -66,7 +66,7 @@ export default function LevelSelectScreen() {
     <BookcaseBackground>
       <Stack.Screen options={{ animation: 'none' }} />
       <View style={styles.centerWrapper}>
-        <SafeAreaView style={styles.container}>
+        <SafeAreaView edges={['top']} style={styles.container}>
           <ScrollView contentContainerStyle={styles.scrollContent}>
             <View style={styles.headerBanner}>
               <Text style={styles.headerTitle}>SELECT LEVEL</Text>
