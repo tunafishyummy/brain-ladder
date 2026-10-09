@@ -61,8 +61,8 @@ const QUIZ_SCENE_HEIGHT = QUIZ_DIALOGUE_BOX_HEIGHT + 36;
 const BOARD_FRAME = {
   borderWidth: BOARD_FRAME_BORDER_WIDTH,
   borderRadius: 10,
-  borderColor: '#334155',
-  backgroundColor: '#0f172a',
+  borderColor: '#0f0f0fb9',
+  backgroundColor: 'rgba(38, 38, 38, 0.69)',
 };
 const DIALOGUE_FILES = {
   Lad: {
