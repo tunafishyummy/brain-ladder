@@ -79,7 +79,7 @@ const DIALOGUE_FILES = {
 
 // Ladders (Going Up): landing tile -> top tile
 const LADDERS: { [key: number]: number } = {
-  2: 33,
+  2: 23,
   8: 34,
   20: 77,
   32: 68,
