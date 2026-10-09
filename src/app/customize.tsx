@@ -1,6 +1,7 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
+  Animated,
   Image,
   SafeAreaView,
   StyleSheet,
@@ -20,6 +21,12 @@ const COLOR_OPTIONS = [
   { id: 'yellow', hex: '#fed330', label: 'Yellow' },
 ];
 
+const PLAYER_ACCENT_COLORS: { [key: number]: string } = {
+  0: 'hsl(0, 0%, 37%)', // Player 1 - Default Blue Accent
+  1: 'hsl(0, 0%, 37%)', // Player 2 - Default Red Accent
+  2: 'hsl(0, 0%, 37%)', // Player 3 - Default Green Accent
+};
+
 export default function CustomizeCharacterScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
@@ -32,8 +39,35 @@ export default function CustomizeCharacterScreen() {
     Array(totalPlayers).fill(null)
   );
 
+  const fadeAnim = useRef(new Animated.Value(1)).current;
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+
   const currentPlayerNum = activePlayerIndex + 1;
   const currentSelection = selectedColors[activePlayerIndex];
+
+  // Dynamic header banner background color
+  const bannerBgColor =
+    currentSelection ||
+    PLAYER_ACCENT_COLORS[activePlayerIndex] ||
+    'rgba(255, 255, 255, 0.08)';
+
+  useEffect(() => {
+    fadeAnim.setValue(0.3);
+    scaleAnim.setValue(0.95);
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        friction: 6,
+        tension: 80,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [activePlayerIndex]);
 
   const handleBack = () => {
     if (activePlayerIndex > 0) {
@@ -75,7 +109,7 @@ export default function CustomizeCharacterScreen() {
       <SafeAreaView style={styles.container}>
         <View style={styles.content}>
 
-          {/* Header Banner with Back Button */}
+          {/* Header Banner with Dynamic Color Background */}
           <View style={styles.headerRow}>
             <TouchableOpacity
               style={styles.backButton}
@@ -85,7 +119,7 @@ export default function CustomizeCharacterScreen() {
               <Text style={styles.backArrow}>‹</Text>
             </TouchableOpacity>
 
-            <View style={styles.bannerContainer}>
+            <View style={[styles.bannerContainer, { backgroundColor: bannerBgColor }]}>
               <Text style={styles.bannerTitle}>CUSTOMIZE CHARACTER</Text>
               <Text style={styles.bannerSubtitle}>
                 PLAYER {currentPlayerNum} OF {totalPlayers} TURN
@@ -93,8 +127,30 @@ export default function CustomizeCharacterScreen() {
             </View>
           </View>
 
-          {/* Character Preview */}
-          <View style={styles.previewCard}>
+          {/* Smooth Character Preview & Instruction */}
+          <Animated.View
+            style={[
+              styles.previewCard,
+              { opacity: fadeAnim, transform: [{ scale: scaleAnim }] },
+            ]}
+          >
+            {/* Instruction Banner with Dynamic Highlight */}
+            <View style={styles.instructionBox}>
+              <Text style={styles.instructionText}>
+                <Text
+                  style={{
+                    color:
+                      currentSelection ||
+                      PLAYER_ACCENT_COLORS[activePlayerIndex] ||
+                      'hsl(0, 0%, 37%)',
+                    fontWeight: '800',
+                  }}
+                >
+                  Player {currentPlayerNum}
+                </Text>
+              </Text>
+            </View>
+
             <View style={styles.avatarWrapper}>
               <Image
                 source={require('../../assets/images/book.png')}
@@ -104,7 +160,12 @@ export default function CustomizeCharacterScreen() {
               <View
                 style={[
                   styles.playerBadge,
-                  { backgroundColor: currentSelection || 'rgba(255,255,255,0.2)' },
+                  {
+                    backgroundColor:
+                      currentSelection ||
+                      PLAYER_ACCENT_COLORS[activePlayerIndex] ||
+                      'rgba(255,255,255,0.2)',
+                  },
                 ]}
               >
                 <Text style={styles.badgeText}>P{currentPlayerNum}</Text>
@@ -118,7 +179,10 @@ export default function CustomizeCharacterScreen() {
                   key={idx}
                   style={[
                     styles.summaryDot,
-                    { backgroundColor: color || 'transparent' },
+                    {
+                      backgroundColor:
+                        color || PLAYER_ACCENT_COLORS[idx] || 'transparent',
+                    },
                     idx === activePlayerIndex && styles.activeSummaryDot,
                   ]}
                 >
@@ -126,7 +190,7 @@ export default function CustomizeCharacterScreen() {
                 </View>
               ))}
             </View>
-          </View>
+          </Animated.View>
 
           {/* Color Selection Grid */}
           <View style={styles.colorGrid}>
@@ -210,11 +274,10 @@ const styles = StyleSheet.create({
   },
   bannerContainer: {
     flex: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
     borderRadius: CARD_RADIUS,
     paddingVertical: 10,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
+    borderColor: 'rgba(255, 255, 255, 0.2)',
     alignItems: 'center',
     gap: 2,
   },
@@ -225,7 +288,8 @@ const styles = StyleSheet.create({
     letterSpacing: 1.5,
   },
   bannerSubtitle: {
-    color: '#a0a5b5',
+    color: '#ffffff',
+    opacity: 0.8,
     fontSize: 11,
     fontWeight: '600',
     letterSpacing: 1,
@@ -237,20 +301,36 @@ const styles = StyleSheet.create({
     borderRadius: CARD_RADIUS,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.1)',
-    justifyContent: 'center',
+    justifyContent: 'space-between',
     alignItems: 'center',
     padding: PADDING,
+  },
+  instructionBox: {
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
+    marginTop: 4,
+  },
+  instructionText: {
+    color: '#e2e8f0',
+    fontSize: 13,
+    fontWeight: '600',
+    textAlign: 'center',
   },
   avatarWrapper: {
     alignItems: 'center',
     justifyContent: 'center',
+    marginVertical: 8,
   },
   avatarImage: {
-    width: 100,
-    height: 140,
+    width: 90,
+    height: 120,
   },
   playerBadge: {
-    marginTop: 10,
+    marginTop: 8,
     paddingHorizontal: 16,
     paddingVertical: 6,
     borderRadius: 8,
@@ -263,7 +343,6 @@ const styles = StyleSheet.create({
   summaryRow: {
     flexDirection: 'row',
     gap: 12,
-    marginTop: 20,
   },
   summaryDot: {
     width: 32,
