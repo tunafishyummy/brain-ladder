@@ -188,7 +188,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   headerBanner: {
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: 'rgba(55, 58, 66, 0.92)',
     paddingVertical: 14,
     borderRadius: CARD_RADIUS,
     alignItems: 'center',
@@ -239,7 +239,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
   },
   difficultyBanner: {
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: 'rgba(55, 58, 66, 0.92)',
     borderRadius: CARD_RADIUS,
     padding: PADDING,
     borderWidth: 1,
@@ -275,7 +275,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   timerBanner: {
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: 'rgba(55, 58, 66, 0.92)',
     borderRadius: CARD_RADIUS,
     padding: PADDING,
     borderWidth: 1,
@@ -298,7 +298,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 10,
     borderRadius: 10,
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    backgroundColor: 'rgba(55, 58, 66, 0.92)',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.12)',
     alignItems: 'center',

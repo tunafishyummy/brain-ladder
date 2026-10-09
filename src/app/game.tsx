@@ -711,7 +711,7 @@ export default function GameScreen() {
     outputRange: [1, 1 / BOARD_CAMERA_ZOOM],
     extrapolate: 'clamp',
   });
-  const diceSize = Math.min(76, boardSize * 0.34);
+  const diceSize = Math.min(84, boardSize * 0.37);
 
   return (
     <BookcaseBackground>

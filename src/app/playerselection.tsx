@@ -1,12 +1,12 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
-  SafeAreaView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import BookcaseBackground from '../components/BookcaseBackground';
 
 const PADDING = 16;
@@ -39,7 +39,7 @@ export default function PlayerSelectionScreen() {
 
   return (
     <BookcaseBackground>
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView edges={['top', 'bottom']} style={styles.container}>
         <View style={styles.content}>
           {/* Header Banner */}
           <View style={styles.headerRow}>
@@ -116,7 +116,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: CARD_RADIUS,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: 'rgba(55, 58, 66, 0.92)',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.15)',
     justifyContent: 'center',
@@ -130,7 +130,7 @@ const styles = StyleSheet.create({
   },
   bannerContainer: {
     flex: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: 'rgba(55, 58, 66, 0.92)',
     borderRadius: CARD_RADIUS,
     paddingVertical: 14,
     borderWidth: 1,
@@ -160,7 +160,7 @@ const styles = StyleSheet.create({
   selectedOptionCard: {
     borderColor: '#ffffff',
     borderWidth: 2,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    backgroundColor: 'rgba(55, 58, 66, 0.92)',
   },
   optionTitle: {
     color: '#e2e8f0',

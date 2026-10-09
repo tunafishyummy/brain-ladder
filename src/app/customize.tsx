@@ -3,12 +3,12 @@ import { useEffect, useRef, useState } from 'react';
 import {
   Animated,
   Image,
-  SafeAreaView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import BookcaseBackground from '../components/BookcaseBackground';
 
 const PADDING = 16;
@@ -20,6 +20,14 @@ const COLOR_OPTIONS = [
   { id: 'green', hex: '#26de81', label: 'Green' },
   { id: 'yellow', hex: '#fed330', label: 'Yellow' },
 ];
+
+const DEFAULT_PLAYER_PREVIEW = require('../../assets/images/Playergrey.png');
+const PLAYER_PREVIEWS_BY_COLOR: Record<string, number> = {
+  '#4b7bec': require('../../assets/images/Playerblue.png'),
+  '#ff5252': require('../../assets/images/Playerred.png'),
+  '#26de81': require('../../assets/images/Playergreen.png'),
+  '#fed330': require('../../assets/images/Playeryellow.png'),
+};
 
 const PLAYER_ACCENT_COLORS: { [key: number]: string } = {
   0: 'hsl(0, 0%, 37%)', // Player 1 - Default Blue Accent
@@ -44,6 +52,10 @@ export default function CustomizeCharacterScreen() {
 
   const currentPlayerNum = activePlayerIndex + 1;
   const currentSelection = selectedColors[activePlayerIndex];
+  const previewColor = hoveredColor ?? currentSelection;
+  const previewImage = previewColor
+    ? PLAYER_PREVIEWS_BY_COLOR[previewColor]
+    : DEFAULT_PLAYER_PREVIEW;
 
   // Dynamic header banner background color
   const bannerBgColor =
@@ -52,6 +64,7 @@ export default function CustomizeCharacterScreen() {
     'rgba(255, 255, 255, 0.08)';
 
   useEffect(() => {
+    setHoveredColor(null);
     fadeAnim.setValue(0.3);
     scaleAnim.setValue(0.95);
     Animated.parallel([
@@ -106,7 +119,7 @@ export default function CustomizeCharacterScreen() {
 
   return (
     <BookcaseBackground>
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView edges={['top', 'bottom']} style={styles.container}>
         <View style={styles.content}>
 
           {/* Header Banner with Dynamic Color Background */}
@@ -153,7 +166,7 @@ export default function CustomizeCharacterScreen() {
 
             <View style={styles.avatarWrapper}>
               <Image
-                source={require('../../assets/images/book.png')}
+                source={previewImage}
                 style={styles.avatarImage}
                 resizeMode="contain"
               />
