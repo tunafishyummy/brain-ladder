@@ -93,7 +93,7 @@ export default function MainMenuScreen() {
       zoomAnchor={zoomAnchor}
       isTransitioning={isTransitioning}
     >
-      <SafeAreaView edges={['top']} style={styles.container}>
+      <SafeAreaView edges={['top', 'bottom']} style={styles.container}>
         <TouchableOpacity
           style={[styles.debugButton, { top: insets.top + 12 }]}
           onPress={handleReturnToSplash}
@@ -150,6 +150,7 @@ export default function MainMenuScreen() {
         transparent
         statusBarTranslucent
         navigationBarTranslucent
+        presentationStyle="overFullScreen"
         animationType="fade"
         onRequestClose={() => setSettingsVisible(false)}
       >
@@ -165,6 +166,7 @@ export default function MainMenuScreen() {
         transparent
         statusBarTranslucent
         navigationBarTranslucent
+        presentationStyle="overFullScreen"
         animationType="fade"
         onRequestClose={() => setExitPromptVisible(false)}
       >

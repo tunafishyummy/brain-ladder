@@ -81,7 +81,7 @@ export default function CustomizeCharacterScreen() {
 
   return (
     <BookcaseBackground>
-      <SafeAreaView edges={['top']} style={styles.container}>
+      <SafeAreaView edges={['top', 'bottom']} style={styles.container}>
         <ScrollView contentContainerStyle={styles.content}>
 
           {/* Header Banner with Back Button */}

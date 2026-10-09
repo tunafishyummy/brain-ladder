@@ -29,7 +29,7 @@ export default function SplashScreen() {
   return (
     <View style={styles.screenWrapper}>
       <BookcaseBackground>
-        <SafeAreaView edges={['top']} style={styles.contentContainer}>
+        <SafeAreaView edges={['top', 'bottom']} style={styles.contentContainer}>
           <View style={styles.logoContainer}>
             <AnimatedLogoStack />
           </View>

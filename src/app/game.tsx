@@ -4,7 +4,6 @@ import {
   Image,
   ImageBackground,
   Modal,
-  SafeAreaView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -12,6 +11,7 @@ import {
   View,
   type ViewStyle,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import BookcaseBackground from '../components/BookcaseBackground';
 
 const MAX_BOARD_SIZE = 360;
@@ -283,7 +283,7 @@ export default function GameScreen() {
 
   return (
     <BookcaseBackground>
-      <SafeAreaView style={{ flex: 1 }}>
+      <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1 }}>
         <View style={styles.mainContainer}>
           {/* TOP BANNER & EXIT BUTTON */}
           <View style={[styles.headerRow, { width: boardSize }]}>
@@ -378,6 +378,9 @@ export default function GameScreen() {
         <Modal
           visible={showExitModal}
           transparent
+          statusBarTranslucent
+          navigationBarTranslucent
+          presentationStyle="overFullScreen"
           animationType="fade"
           onRequestClose={() => setShowExitModal(false)}
         >
@@ -408,6 +411,9 @@ export default function GameScreen() {
         <Modal
           visible={isModalVisible}
           transparent
+          statusBarTranslucent
+          navigationBarTranslucent
+          presentationStyle="overFullScreen"
           animationType="fade"
           onRequestClose={() => {}}
         >
@@ -477,22 +483,26 @@ export default function GameScreen() {
           </View>
         </Modal>
 
-        {/* VICTORY POPUP */}
-        {winner && (
-          <TouchableOpacity style={styles.modalOverlayContainer} activeOpacity={1} onPress={handleVictoryTap}>
-            <ImageBackground
-              source={require('../../assets/images/victory-popup.png')}
-              style={styles.popupImageContainer}
-              resizeMode="contain"
-            >
-              <View style={styles.popupTextWrapper}>
-                <Text style={styles.victorySubtitle}>{winner.name} wins the game!</Text>
-                <Text style={styles.tapToContinueText}>Tap to Continue</Text>
-              </View>
-            </ImageBackground>
-          </TouchableOpacity>
-        )}
       </SafeAreaView>
+      {/* Keep the victory dimmer full-screen instead of clipping it to safe-area content. */}
+      {winner && (
+        <TouchableOpacity
+          style={[StyleSheet.absoluteFill, styles.modalOverlayContainer]}
+          activeOpacity={1}
+          onPress={handleVictoryTap}
+        >
+          <ImageBackground
+            source={require('../../assets/images/victory-popup.png')}
+            style={styles.popupImageContainer}
+            resizeMode="contain"
+          >
+            <View style={styles.popupTextWrapper}>
+              <Text style={styles.victorySubtitle}>{winner.name} wins the game!</Text>
+              <Text style={styles.tapToContinueText}>Tap to Continue</Text>
+            </View>
+          </ImageBackground>
+        </TouchableOpacity>
+      )}
     </BookcaseBackground>
   );
 }

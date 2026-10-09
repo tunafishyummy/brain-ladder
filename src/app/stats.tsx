@@ -13,7 +13,7 @@ export default function StatsScreen() {
 
 	return (
 		<BookcaseBackground>
-			<SafeAreaView edges={['top']} style={styles.container}>
+			<SafeAreaView edges={['top', 'bottom']} style={styles.container}>
 				<Text style={styles.title}>Stats screen</Text>
 				<Text style={styles.subtitle}>statter screener</Text>
 				<TouchableOpacity

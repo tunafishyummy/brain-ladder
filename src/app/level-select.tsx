@@ -66,7 +66,7 @@ export default function LevelSelectScreen() {
     <BookcaseBackground>
       <Stack.Screen options={{ animation: 'none' }} />
       <View style={styles.centerWrapper}>
-        <SafeAreaView edges={['top']} style={styles.container}>
+        <SafeAreaView edges={['top', 'bottom']} style={styles.container}>
           <ScrollView contentContainerStyle={styles.scrollContent}>
             <View style={styles.headerBanner}>
               <Text style={styles.headerTitle}>SELECT LEVEL</Text>

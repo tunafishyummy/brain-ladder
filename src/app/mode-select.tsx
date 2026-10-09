@@ -18,7 +18,7 @@ export default function ModeSelectScreen() {
 
   return (
     <BookcaseBackground>
-      <SafeAreaView edges={['top']} style={styles.container}>
+      <SafeAreaView edges={['top', 'bottom']} style={styles.container}>
         <ScrollView contentContainerStyle={styles.content}>
           <View style={styles.headerBanner}>
             <Text style={styles.headerTitle}>SELECT PLAYERS</Text>
