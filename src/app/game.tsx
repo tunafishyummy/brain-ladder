@@ -33,7 +33,10 @@ const TILE_NUMBER_WIDTH = 24;
 const TILE_NUMBER_HEIGHT = 18;
 const TILE_NUMBER_INSET = 3;
 const TYPEWRITER_CHARACTER_INTERVAL_MS = 18;
-const QUIZ_SCENE_FALLBACK_HEIGHT = 260;
+const DIALOGUE_LINE_HEIGHT = 20;
+const DIALOGUE_MAX_LINES = 3;
+const QUIZ_DIALOGUE_BOX_HEIGHT = DIALOGUE_LINE_HEIGHT * DIALOGUE_MAX_LINES + 26;
+const QUIZ_SCENE_HEIGHT = QUIZ_DIALOGUE_BOX_HEIGHT + 36;
 const BOARD_FRAME = {
   borderWidth: BOARD_FRAME_BORDER_WIDTH,
   borderRadius: 10,
@@ -155,13 +158,13 @@ const getRandomDialogueLine = (
 const getPlaceholderQuestion = (type: EventType): Question => {
   if (type === 'ladder') {
     return {
-      prompt: 'Placeholder question — answer correctly to climb the ladder!',
+      prompt: 'Placeholder question â€” answer correctly to climb the ladder!',
       options: ['Option A', 'Option B', 'Option C', 'Option D'],
       correctIndex: 0,
     };
   }
   return {
-    prompt: 'Placeholder question — answer correctly to dodge the snake!',
+    prompt: 'Placeholder question â€” answer correctly to dodge the snake!',
     options: ['Option A', 'Option B', 'Option C', 'Option D'],
     correctIndex: 0,
   };
@@ -221,7 +224,6 @@ export default function GameScreen() {
 
   const [showExitModal, setShowExitModal] = useState(false);
   const [movement, setMovement] = useState<BoardMovement | null>(null);
-  const [quizCardHeight, setQuizCardHeight] = useState(0);
   const [dialogueText, setDialogueText] = useState('');
   const [typedDialogue, setTypedDialogue] = useState('');
   const movementLocked = useRef(false);
@@ -281,21 +283,14 @@ export default function GameScreen() {
     cameraFollow.setValue(0);
     const progress = new Animated.Value(0);
     setMovement({ playerId, path, progress });
+    const movementDuration = path.slice(1).reduce((duration, position, index) => {
+      const from = getCoordinatesForPosition(path[index]);
+      const to = getCoordinatesForPosition(position);
+      const distanceInTiles = Math.hypot(to.x - from.x, to.y - from.y) / cellSize;
+      return duration + Math.max(PLAYER_TILE_MOVE_MS, Math.round(distanceInTiles * PLAYER_TILE_MOVE_MS));
+    }, 0);
 
     requestAnimationFrame(() => {
-      const tileSteps = path.slice(1).map((position, index) => {
-        const from = getCoordinatesForPosition(path[index]);
-        const to = getCoordinatesForPosition(position);
-        const distanceInTiles = Math.hypot(to.x - from.x, to.y - from.y) / cellSize;
-
-        return Animated.timing(progress, {
-          toValue: index + 1,
-          duration: Math.max(PLAYER_TILE_MOVE_MS, Math.round(distanceInTiles * PLAYER_TILE_MOVE_MS)),
-          easing: Easing.linear,
-          useNativeDriver: true,
-        });
-      });
-
       Animated.parallel([
         Animated.timing(cameraScale, {
           toValue: BOARD_CAMERA_ZOOM,
@@ -316,7 +311,12 @@ export default function GameScreen() {
           return;
         }
 
-        Animated.sequence(tileSteps).start(({ finished: movementFinished }) => {
+        Animated.timing(progress, {
+          toValue: path.length - 1,
+          duration: movementDuration,
+          easing: Easing.linear,
+          useNativeDriver: true,
+        }).start(({ finished: movementFinished }) => {
           if (!movementFinished) {
             movementLocked.current = false;
             setMovement(null);
@@ -338,8 +338,8 @@ export default function GameScreen() {
             }),
           ]).start(({ finished: resetFinished }) => {
             movementLocked.current = false;
-            setMovement(null);
             if (resetFinished) onComplete();
+            setMovement(null);
           });
         });
       });
@@ -397,7 +397,6 @@ export default function GameScreen() {
   };
 
   const openQuiz = (event: PendingEvent) => {
-    setQuizCardHeight(0);
     setDialogueText(getRandomDialogueLine(event.type, dialogueSubject, 'Encounter'));
     setPendingEvent(event);
     setCurrentQuestion(getPlaceholderQuestion(event.type));
@@ -408,7 +407,11 @@ export default function GameScreen() {
   const handleAnswerSelect = (index: number) => {
     if (!currentQuestion || !pendingEvent || isAnswerCorrect !== null) return;
     setSelectedIndex(index);
-    const isCorrect = index === currentQuestion.correctIndex;
+  };
+
+  const confirmAnswer = () => {
+    if (!currentQuestion || !pendingEvent || selectedIndex === null || isAnswerCorrect !== null) return;
+    const isCorrect = selectedIndex === currentQuestion.correctIndex;
     setDialogueText(getRandomDialogueLine(
       pendingEvent.type,
       dialogueSubject,
@@ -501,7 +504,7 @@ export default function GameScreen() {
               activeOpacity={0.7}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
-              <Text style={styles.exitIcon}>✕</Text>
+              <Text style={styles.exitIcon}>âœ•</Text>
             </TouchableOpacity>
 
             <View style={[styles.turnBanner, { backgroundColor: activePlayer.color }]}>
@@ -696,12 +699,7 @@ export default function GameScreen() {
               showsVerticalScrollIndicator={false}
             >
               <View style={styles.quizPopupGroup}>
-                <View
-                  style={[
-                    styles.quizSceneCard,
-                    { height: quizCardHeight || QUIZ_SCENE_FALLBACK_HEIGHT },
-                  ]}
-                >
+                <View style={styles.quizSceneCard}>
                   <ImageBackground
                     source={require('../../assets/images/bookcase.png')}
                     style={styles.quizSceneBackground}
@@ -715,21 +713,19 @@ export default function GameScreen() {
                       resizeMode="contain"
                     />
                     <View style={styles.quizDialogueBox}>
-                      <Text style={styles.quizDialogueText}>{typedDialogue}</Text>
+                      <Text
+                        style={styles.quizDialogueText}
+                        numberOfLines={DIALOGUE_MAX_LINES}
+                        ellipsizeMode="tail"
+                      >
+                        {typedDialogue}
+                      </Text>
                     </View>
                   </View>
                 </View>
-                <View
-                  style={styles.quizCard}
-                  onLayout={({ nativeEvent }) => {
-                    const measuredHeight = nativeEvent.layout.height;
-                    setQuizCardHeight((currentHeight) =>
-                      Math.abs(currentHeight - measuredHeight) > 1 ? measuredHeight : currentHeight,
-                    );
-                  }}
-                >
+                <View style={styles.quizCard}>
               <Text style={styles.quizHeader}>
-                {pendingEvent?.type === 'ladder' ? '🪜 Ladder Challenge!' : '🐍 Snake Challenge!'}
+                {pendingEvent?.type === 'ladder' ? 'ðŸªœ Ladder Challenge!' : 'ðŸ Snake Challenge!'}
               </Text>
               <Text style={styles.quizSubheader}>
                 {pendingEvent?.type === 'ladder'
@@ -751,6 +747,8 @@ export default function GameScreen() {
                     } else if (isCorrectOption) {
                       optionStateStyle = styles.optionCorrect;
                     }
+                  } else if (isSelected) {
+                    optionStateStyle = styles.optionSelected;
                   }
 
                   return (
@@ -767,27 +765,30 @@ export default function GameScreen() {
                 })}
               </View>
 
-              {isAnswerCorrect !== null && (
-                <View style={styles.resultBlock}>
-                  <Text
-                    style={[
-                      styles.resultText,
-                      isAnswerCorrect ? styles.resultCorrectText : styles.resultWrongText,
-                    ]}
-                  >
-                    {isAnswerCorrect
-                      ? pendingEvent?.type === 'ladder'
-                        ? 'Correct! Climbing the ladder.'
-                        : 'Correct! You dodged the snake.'
-                      : pendingEvent?.type === 'ladder'
-                        ? 'Not quite — staying put this turn.'
-                        : 'Not quite — sliding down the snake.'}
+              <View style={styles.resultBlock}>
+                <TouchableOpacity
+                  style={[
+                    styles.continueButton,
+                    isAnswerCorrect === null && selectedIndex === null && styles.continueButtonDisabled,
+                    isAnswerCorrect === true && styles.answerCorrectButton,
+                    isAnswerCorrect === false && styles.answerIncorrectButton,
+                  ]}
+                  onPress={isAnswerCorrect === null ? confirmAnswer : resolveQuiz}
+                  disabled={isAnswerCorrect === null && selectedIndex === null}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[
+                    styles.continueButtonText,
+                    isAnswerCorrect !== null && styles.answerResultButtonText,
+                  ]}>
+                    {isAnswerCorrect === null
+                      ? 'Confirm Answer'
+                      : isAnswerCorrect
+                        ? 'Correct!'
+                        : 'Incorrect!'}
                   </Text>
-                  <TouchableOpacity style={styles.continueButton} onPress={resolveQuiz} activeOpacity={0.8}>
-                    <Text style={styles.continueButtonText}>Continue</Text>
-                  </TouchableOpacity>
-                </View>
-              )}
+                </TouchableOpacity>
+              </View>
             </View>
               </View>
             </ScrollView>
@@ -1039,6 +1040,7 @@ const styles = StyleSheet.create({
   },
   quizSceneCard: {
     width: '100%',
+    height: QUIZ_SCENE_HEIGHT,
     position: 'relative',
     borderRadius: 16,
     borderWidth: 2,
@@ -1062,16 +1064,16 @@ const styles = StyleSheet.create({
   },
   quizCharacterImage: {
     position: 'absolute',
-    right: 6,
-    bottom: 30,
-    width: '70%',
+    right: 30,
+    bottom: -140,
+    width: 112,
     aspectRatio: 1,
-    transform: [{ scale: 1.12 }],
+    transform: [{ scale: 2 }],
     zIndex: 1,
   },
   quizDialogueBox: {
     width: '58%',
-    minHeight: 100,
+    height: QUIZ_DIALOGUE_BOX_HEIGHT,
     justifyContent: 'center',
     padding: 12,
     borderRadius: 12,
@@ -1083,7 +1085,7 @@ const styles = StyleSheet.create({
   quizDialogueText: {
     color: '#fff',
     fontSize: 14,
-    lineHeight: 20,
+    lineHeight: DIALOGUE_LINE_HEIGHT,
     fontWeight: '600',
   },
   quizCard: {
@@ -1140,6 +1142,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#166534',
     borderColor: '#22c55e',
   },
+  optionSelected: {
+    backgroundColor: '#475569',
+    borderColor: '#facc15',
+  },
   optionWrong: {
     backgroundColor: '#7f1d1d',
     borderColor: '#ef4444',
@@ -1155,14 +1161,6 @@ const styles = StyleSheet.create({
     marginTop: 16,
     alignItems: 'center',
   },
-  resultText: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    marginBottom: 12,
-    textAlign: 'center',
-  },
-  resultCorrectText: { color: '#4ade80' },
-  resultWrongText: { color: '#f87171' },
   continueButton: {
     minHeight: 44,
     backgroundColor: '#facc15',
@@ -1172,9 +1170,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  continueButtonDisabled: {
+    opacity: 0.45,
+  },
+  answerCorrectButton: {
+    backgroundColor: '#16a34a',
+  },
+  answerIncorrectButton: {
+    backgroundColor: '#dc2626',
+  },
   continueButtonText: {
     color: '#1e293b',
     fontWeight: 'bold',
     fontSize: 14,
+  },
+  answerResultButtonText: {
+    color: '#fff',
   },
 });
