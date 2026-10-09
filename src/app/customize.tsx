@@ -1,14 +1,14 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
-    Image,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Image,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import BookcaseBackground from '../components/BookcaseBackground';
 
 const PADDING = 16;
@@ -81,7 +81,7 @@ export default function CustomizeCharacterScreen() {
 
   return (
     <BookcaseBackground>
-      <SafeAreaView edges={['top', 'bottom']} style={styles.container}>
+      <SafeAreaView style={styles.container}>
         <ScrollView contentContainerStyle={styles.content}>
 
           {/* Header Banner with Back Button */}

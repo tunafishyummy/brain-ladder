@@ -10,8 +10,9 @@ const ARM_SIZE = { width: 2600, height: 1200 };
 const PAGE_ASPECT = 9 / 20;
 const VIGNETTE_STEPS = 20;
 
-const ARM_PIVOT = { x: 159, y: 910 };
-const ARM_HINGE_ON_CANVAS = { x: -400, y: 1300 };
+// PNG pixel coordinate that stays fixed during rotation; placement is independent.
+const ARM_PIVOT_PNG = { x: 444, y: 2310 };
+const ARM_POSITION_ON_CANVAS = { x: -540, y: 300 };
 
 type MainMenuArtworkProps = {
   children: React.ReactNode;
@@ -35,8 +36,10 @@ export default function MainMenuArtwork({
   const pageLeft = (screenSize.width - pageWidth) / 2;
   const pageTop = (screenSize.height - pageHeight) / 2;
   const armWidth = ARM_SIZE.width * scale;
-  const armLeft = (ARM_HINGE_ON_CANVAS.x - ARM_PIVOT.x) * scale;
-  const armTop = (ARM_HINGE_ON_CANVAS.y - ARM_PIVOT.y) * scale;
+  const pivotX = ARM_PIVOT_PNG.x;
+  const pivotY = ARM_PIVOT_PNG.y;
+  const armLeft = ARM_POSITION_ON_CANVAS.x * scale;
+  const armTop = ARM_POSITION_ON_CANVAS.y * scale;
   const zoomOriginX = zoomAnchor?.x ?? pageWidth / 2;
   const zoomOriginY = zoomAnchor?.y ?? pageHeight / 2;
   const artScale = zoomProgress.interpolate({ inputRange: [0, 1], outputRange: [1, 3.6] });
@@ -79,7 +82,7 @@ export default function MainMenuArtwork({
             top: armTop,
             width: armWidth,
             height: armWidth,
-            transformOrigin: [ARM_PIVOT.x * scale, ARM_PIVOT.y * scale, 0],
+            transformOrigin: [pivotX * scale, pivotY * scale, 0],
             transform: [{ rotate: armRotation }],
           }}
         />
