@@ -69,5 +69,5 @@ export function useScreenTransition() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  blackout: { ...StyleSheet.absoluteFillObject, zIndex: 100, backgroundColor: '#000' },
+  blackout: { ...StyleSheet.absoluteFill, zIndex: 100, backgroundColor: '#000' },
 });

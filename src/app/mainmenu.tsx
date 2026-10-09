@@ -11,10 +11,7 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-<<<<<<< HEAD
   useWindowDimensions,
-=======
->>>>>>> c15298c10d21e6166ada23ea5d6925e0a550cb4e
   View
 } from 'react-native';
 import MainMenuArtwork from '../components/MainMenuArtwork';
@@ -24,13 +21,10 @@ import SettingsScreen from '../components/SettingsScreen';
 
 export default function MainMenuScreen() {
   const router = useRouter();
-<<<<<<< HEAD
   const { width, height } = useWindowDimensions();
   const artworkWidth = Math.min(width, height * (9 / 20));
   const controlSize = Math.min(52, artworkWidth * 0.14);
   const playFontSize = Math.min(50, artworkWidth * 0.14);
-=======
->>>>>>> c15298c10d21e6166ada23ea5d6925e0a550cb4e
   const { fadeThroughBlack } = useScreenTransition();
   const zoomProgress = useRef(new Animated.Value(0)).current;
   const transitionStarted = useRef(false);
@@ -108,11 +102,7 @@ export default function MainMenuScreen() {
         </TouchableOpacity>
 
         <View
-<<<<<<< HEAD
           style={[styles.playContainer, { top: '29%', left: '42%', width: '38%' }]}
-=======
-          style={styles.playContainer}
->>>>>>> c15298c10d21e6166ada23ea5d6925e0a550cb4e
           onLayout={({ nativeEvent: { layout } }) =>
             setZoomAnchor({ x: layout.x + layout.width / 2, y: layout.y + layout.height / 2 })
           }
@@ -123,19 +113,11 @@ export default function MainMenuScreen() {
             disabled={isTransitioning}
             activeOpacity={0.8}
           >
-<<<<<<< HEAD
             <Text style={[styles.playText, { fontSize: playFontSize }]}>PLAY</Text>
           </TouchableOpacity>
         </View>
 
         <View style={[styles.bottomRow, { right: '7%', bottom: '2%', gap: artworkWidth * 0.045 }]}>
-=======
-            <Text style={styles.playText}>PLAY</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.bottomRow}>
->>>>>>> c15298c10d21e6166ada23ea5d6925e0a550cb4e
           <TouchableOpacity
             style={styles.iconButton}
             onPress={handleSettings}
@@ -143,19 +125,11 @@ export default function MainMenuScreen() {
           >
             <Image
               source={require('@/assets/images/settings.png')}
-<<<<<<< HEAD
               style={[styles.icon, { width: controlSize, height: controlSize }]}
             />
           </TouchableOpacity>
 
           <View pointerEvents="none" style={[styles.iconDivider, { height: controlSize + 20 }]} />
-=======
-              style={styles.icon}
-            />
-          </TouchableOpacity>
-
-          <View pointerEvents="none" style={styles.iconDivider} />
->>>>>>> c15298c10d21e6166ada23ea5d6925e0a550cb4e
 
           <TouchableOpacity
             style={styles.iconButton}
@@ -164,11 +138,7 @@ export default function MainMenuScreen() {
           >
             <Image
               source={require('@/assets/images/door.png')}
-<<<<<<< HEAD
               style={[styles.icon, { width: controlSize, height: controlSize }]}
-=======
-              style={styles.icon}
->>>>>>> c15298c10d21e6166ada23ea5d6925e0a550cb4e
             />
           </TouchableOpacity>
         </View>
@@ -220,13 +190,8 @@ const styles = StyleSheet.create({
   },
   debugButton: {
     position: 'absolute',
-<<<<<<< HEAD
     top: 12,
     left: 12,
-=======
-    top: 60,
-    left: 20,
->>>>>>> c15298c10d21e6166ada23ea5d6925e0a550cb4e
     zIndex: 3,
     backgroundColor: '#fff',
     borderWidth: 2,
@@ -239,32 +204,18 @@ const styles = StyleSheet.create({
   debugButtonText: {
     color: '#111827',
     fontWeight: '900',
-<<<<<<< HEAD
     fontSize: 11,
   },
   playContainer: {
     position: 'absolute',
     alignItems: 'center',
     justifyContent: 'center',
-=======
-    fontSize: 13,
-  },
-  playContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 240, // Adjusted from 550 so it stays safely within view on mobile
-    marginLeft: 135,
->>>>>>> c15298c10d21e6166ada23ea5d6925e0a550cb4e
   },
   playButton: {
     paddingHorizontal: 20,
     paddingVertical: 16,
   },
   playText: {
-<<<<<<< HEAD
-=======
-    fontSize: 50,
->>>>>>> c15298c10d21e6166ada23ea5d6925e0a550cb4e
     fontWeight: 'bold',
     color: '#FFD700',
     textShadowColor: 'rgba(0, 0, 0, 0.75)',
@@ -272,18 +223,10 @@ const styles = StyleSheet.create({
     textShadowRadius: 4,
   },
   bottomRow: {
-<<<<<<< HEAD
     position: 'absolute',
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-=======
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 40,
-    marginLeft: 200,
-    transform: [{ translateY: 155 }], // Reduced from 100 so it doesn't get clipped past the bottom edge
->>>>>>> c15298c10d21e6166ada23ea5d6925e0a550cb4e
   },
   iconDivider: {
     width: 2,
@@ -297,11 +240,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   icon: {
-<<<<<<< HEAD
-=======
-    width: 48,
-    height: 48,
->>>>>>> c15298c10d21e6166ada23ea5d6925e0a550cb4e
     resizeMode: 'contain',
   },
   modalBackdrop: {

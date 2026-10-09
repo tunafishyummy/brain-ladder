@@ -34,13 +34,8 @@ export default function MainMenuArtwork({
   const armWidth = ARM_SIZE.width * scale;
   const armLeft = (ARM_HINGE_ON_CANVAS.x - ARM_PIVOT.x) * scale;
   const armTop = (ARM_HINGE_ON_CANVAS.y - ARM_PIVOT.y) * scale;
-<<<<<<< HEAD
   const zoomOriginX = zoomAnchor?.x ?? pageWidth / 2;
   const zoomOriginY = zoomAnchor?.y ?? pageHeight / 2;
-=======
-  const zoomOriginX = (zoomAnchor?.x ?? screenSize.width / 2) - pageLeft;
-  const zoomOriginY = (zoomAnchor?.y ?? screenSize.height / 2) - pageTop;
->>>>>>> c15298c10d21e6166ada23ea5d6925e0a550cb4e
   const artScale = zoomProgress.interpolate({ inputRange: [0, 1], outputRange: [1, 3.6] });
   const contentOpacity = zoomProgress.interpolate({ inputRange: [0, 0.18, 1], outputRange: [1, 0, 0] });
 
@@ -90,7 +85,6 @@ export default function MainMenuArtwork({
         pointerEvents={isTransitioning ? 'none' : 'box-none'}
         style={[StyleSheet.absoluteFill, { opacity: contentOpacity }]}
       >
-<<<<<<< HEAD
         <View
           style={{
             position: 'absolute',
@@ -102,9 +96,6 @@ export default function MainMenuArtwork({
         >
           {children}
         </View>
-=======
-        {children}
->>>>>>> c15298c10d21e6166ada23ea5d6925e0a550cb4e
       </Animated.View>
     </View>
   );
