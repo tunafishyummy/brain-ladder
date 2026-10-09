@@ -1,8 +1,12 @@
 import { useAudioPlayer } from 'expo-audio';
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import { usePathname } from 'expo-router';
+import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
+import placeholder2Volume from './audio/Placeholder2Volume';
 
 // Local asset path relative to src/AudioContext.tsx
 const BACKGROUND_MUSIC = require('../assets/ost/Placeholder.mp3');
+const GAME_BACKGROUND_MUSIC = require('../assets/ost/Placeholder2.mp3');
+const GAME_MUSIC_ROUTES = ['/level-select', '/playerselection', '/customize', '/game'];
 
 type AudioContextType = {
   startAudio: () => void;
@@ -25,6 +29,7 @@ type AudioContextType = {
 const AudioContext = createContext<AudioContextType | null>(null);
 
 export function AudioProvider({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
   const [masterVol, setMasterVol] = useState(80);
   const [masterMute, setMasterMute] = useState(false);
   const [musicVol, setMusicVol] = useState(70);
@@ -33,20 +38,40 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
   const [sfxMute, setSfxMute] = useState(false);
   const [backgroundSpeed, setBackgroundSpeed] = useState(45);
 
-  const player = useAudioPlayer(BACKGROUND_MUSIC);
+  const menuPlayer = useAudioPlayer(BACKGROUND_MUSIC);
+  const gamePlayer = useAudioPlayer(GAME_BACKGROUND_MUSIC);
+  const activeTrack = GAME_MUSIC_ROUTES.includes(pathname.replace(/\/$/, '')) ? 'game' : 'menu';
+  const activeTrackRef = useRef(activeTrack);
+  const audioStartedRef = useRef(false);
 
-  // Auto-play and loop background music
+  // Keep both tracks looped; only the route's selected track plays.
   useEffect(() => {
-    if (player) {
-      player.loop = true;
+    menuPlayer.loop = true;
+    gamePlayer.loop = true;
+  }, [menuPlayer, gamePlayer]);
+
+  useEffect(() => {
+    if (activeTrackRef.current === activeTrack) return;
+
+    const previousPlayer = activeTrackRef.current === 'game' ? gamePlayer : menuPlayer;
+    const nextPlayer = activeTrack === 'game' ? gamePlayer : menuPlayer;
+    activeTrackRef.current = activeTrack;
+    previousPlayer.pause();
+
+    if (audioStartedRef.current) {
+      const targetVolume = masterMute || musicMute ? 0 : (masterVol / 100) * (musicVol / 100);
+      nextPlayer.volume = targetVolume * (activeTrack === 'game' ? placeholder2Volume : 1);
+      void nextPlayer.seekTo(0).then(() => nextPlayer.play()).catch((error: unknown) => {
+        console.error('Error switching background audio:', error);
+      });
     }
-  }, [player]);
+  }, [activeTrack, gamePlayer, masterMute, masterVol, menuPlayer, musicMute, musicVol]);
 
   const startAudio = () => {
     try {
-      if (player && !player.playing) {
-        player.play();
-      }
+      audioStartedRef.current = true;
+      const player = activeTrackRef.current === 'game' ? gamePlayer : menuPlayer;
+      if (!player.playing) player.play();
     } catch (error) {
       console.error('Error starting audio:', error);
     }
@@ -54,14 +79,12 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
 
   // Update volume  whenever any slider/mute state changes
   useEffect(() => {
-    if (player) {
-      const isMuted = masterMute || musicMute;
-      // Convert 0-100 values to a normalized 0.0 - 1.0 volume scale
-      const targetVolume = isMuted ? 0 : (masterVol / 100) * (musicVol / 100);
-      
-      player.volume = targetVolume;
-    }
-  }, [masterVol, masterMute, musicVol, musicMute, player]);
+    const isMuted = masterMute || musicMute;
+    // Convert 0-100 values to a normalized 0.0 - 1.0 volume scale.
+    const targetVolume = isMuted ? 0 : (masterVol / 100) * (musicVol / 100);
+    menuPlayer.volume = targetVolume;
+    gamePlayer.volume = targetVolume * placeholder2Volume;
+  }, [masterVol, masterMute, musicVol, musicMute, menuPlayer, gamePlayer]);
 
   return (
     <AudioContext.Provider
