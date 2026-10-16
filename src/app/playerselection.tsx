@@ -38,7 +38,7 @@ export default function PlayerSelectionScreen() {
   };
 
   return (
-    <BookcaseBackground>
+    <BookcaseBackground difficulty={params.difficulty}>
       <SafeAreaView edges={['top', 'bottom']} style={styles.container}>
         <View style={styles.content}>
           {/* Header Banner */}

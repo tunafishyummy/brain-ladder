@@ -39,7 +39,7 @@ const getCharacterAssetForColor = (color: string) => {
 
 export default function StatsScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ gameData?: string }>();
+  const params = useLocalSearchParams<{ gameData?: string; difficulty?: string }>();
 
   const stats: GameStats = params.gameData
     ? JSON.parse(params.gameData)
@@ -59,7 +59,7 @@ export default function StatsScreen() {
   const thirdPlace = sortedLeaderboard.find((p) => p.rank === 3);
 
   return (
-    <BookcaseBackground>
+    <BookcaseBackground difficulty={params.difficulty}>
       <SafeAreaView style={styles.safeArea}>
         <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
           

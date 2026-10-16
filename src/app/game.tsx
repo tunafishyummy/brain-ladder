@@ -12,6 +12,7 @@ import {
   StyleSheet,
   Switch,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
   useWindowDimensions,
@@ -19,7 +20,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAudio } from '../AudioContext';
-import BookcaseBackground from '../components/BookcaseBackground';
+import BookcaseBackground, { getBookcaseSource } from '../components/BookcaseBackground';
 import Dice3D, { type Dice3DHandle } from '../components/Dice3D';
 
 const DICE_ROLL_SOUND = require('../../assets/audio/dice-roll.mp3');
@@ -31,11 +32,19 @@ const ADD_TIME_IMG = require('../../assets/images/add-time.png');
 const REFRESH_IMG = require('../../assets/images/refresh.png');
 
 const POWER_UP_TYPES = ['hint', 'skip', 'add-time', 'refresh'] as const;
+type PowerUpType = typeof POWER_UP_TYPES[number];
+
 const POWER_UP_IMAGES = {
   hint: HINT_IMG,
   skip: SKIP_IMG,
   'add-time': ADD_TIME_IMG,
   refresh: REFRESH_IMG,
+};
+const POWER_UP_LABELS: Record<PowerUpType, string> = {
+  hint: 'Hint',
+  skip: 'Skip',
+  'add-time': 'Add Time',
+  refresh: 'Refresh',
 };
 
 const MAX_BOARD_SIZE = 380;
@@ -133,7 +142,7 @@ type Player = {
   name: string;
   color: string;
   position: number;
-  powerUps: ('hint' | 'skip' | 'add-time' | 'refresh')[];
+  powerUps: PowerUpType[];
 };
 
 type BoardMovement = {
@@ -150,11 +159,14 @@ type PendingEvent = {
   target: number;
 };
 
+type Difficulty = 'Easy' | 'Normal' | 'Hard';
+
 type Question = {
   prompt: string;
   options: string[];
   correctIndex: number;
   hint?: string;
+  difficulty?: Difficulty;
 };
 
 type DialogueSubject = 'Language' | 'Science' | 'History';
@@ -219,7 +231,13 @@ const getPlaceholderQuestion = (type: EventType): Question => {
 export default function GameScreen() {
   const router = useRouter();
   const { masterVol, masterMute, sfxVol, sfxMute } = useAudio();
-  const params = useLocalSearchParams<{ players?: string; playerColors?: string; level?: string; timer?: string }>();
+  const params = useLocalSearchParams<{
+    players?: string;
+    playerColors?: string;
+    level?: string;
+    timer?: string;
+    difficulty?: Difficulty;
+  }>();
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const rollSoundPlayer = useAudioPlayer(DICE_ROLL_SOUND);
   const resultSoundPlayer = useAudioPlayer(DICE_RESULT_SOUND);
@@ -235,9 +253,15 @@ export default function GameScreen() {
   const boardOffsetX = (frameWidth - gridSize) / 2;
   const boardOffsetY = (frameHeight - gridSize) / 2;
   const cellSize = gridSize / 10;
-  
   const playerCount = Math.min(3, Math.max(1, Number(params.players) || 3));
-  const isInfiniteTimer = params.timer === 'infinite';
+  const configuredTimer = Number(params.timer);
+  const challengeTimeLimit = Number.isFinite(configuredTimer) && params.timer !== ''
+    ? Math.max(0, configuredTimer)
+    : 15;
+  const isInfiniteTimer = params.timer === 'infinite' || challengeTimeLimit === 0;
+  const selectedDifficulty: Difficulty = params.difficulty === 'Easy' || params.difficulty === 'Hard'
+    ? params.difficulty
+    : 'Normal';
 
   const parsedColors: string[] = (() => {
     try {
@@ -263,15 +287,20 @@ export default function GameScreen() {
       };
     });
   });
+  const [debugMoveModalVisible, setDebugMoveModalVisible] = useState(false);
+  const [debugPlayerId, setDebugPlayerId] = useState('1');
+  const [debugTile, setDebugTile] = useState('1');
 
-  // --- 10 RANDOM POWER-UP BOXES ON BOARD (Excluding starting/landing snake & ladder tiles) ---
+  // --- 10 RANDOM POWER-UP BOXES ON BOARD (Excluding all ladder and snake endpoints) ---
   const [powerUpTiles, setPowerUpTiles] = useState<number[]>(() => {
     const tiles: number[] = [];
     const restrictedTiles = new Set([
       1,
       100,
       ...Object.keys(LADDERS).map(Number),
+      ...Object.values(LADDERS),
       ...Object.keys(SNAKES).map(Number),
+      ...Object.values(SNAKES),
     ]);
 
     while (tiles.length < 10) {
@@ -286,7 +315,7 @@ export default function GameScreen() {
   // --- ROULETTE & TIMER STATE ---
   const [rouletteModalVisible, setRouletteModalVisible] = useState(false);
   const [rouletteDisplayItem, setRouletteDisplayItem] = useState<'hint' | 'skip' | 'add-time' | 'refresh'>('hint');
-  const [challengeSeconds, setChallengeSeconds] = useState(30);
+  const [challengeSeconds, setChallengeSeconds] = useState(challengeTimeLimit);
   const [isChallengeActive, setIsChallengeActive] = useState(false);
   const [hintMessage, setHintMessage] = useState<string | null>(null);
 
@@ -353,6 +382,11 @@ export default function GameScreen() {
 
   const activePlayer = players[turnIndex] || players[0];
   const isModalVisible = pendingEvent !== null;
+  const parsedDebugTile = Number(debugTile);
+  const isDebugMoveValid = /^\d+$/.test(debugTile) && parsedDebugTile >= 1 && parsedDebugTile <= 100;
+  const isDebugMoveBlocked = isRolling || movement !== null || Boolean(
+    winner || isModalVisible || showExitModal || rouletteModalVisible,
+  );
   const dialogueSubject: DialogueSubject = params.level === 'reading'
     ? 'Language'
     : params.level === 'research'
@@ -364,10 +398,12 @@ export default function GameScreen() {
     : require('../../assets/images/LogoKnowItAdder.png');
 
   const getNextQuestion = (eventType: EventType): Question => {
-    const questions = QUESTION_BANKS[dialogueSubject];
-    if (!useQuestionBank || !questions?.length) return getPlaceholderQuestion(eventType);
+    const rawQuestions = QUESTION_BANKS[dialogueSubject];
+    if (!useQuestionBank || !rawQuestions?.length) return getPlaceholderQuestion(eventType);
     if (questionDeck.current.length === 0) {
-      questionDeck.current = shuffleQuestions(questions);
+      const filtered = rawQuestions.filter((q) => !q.difficulty || q.difficulty === selectedDifficulty);
+      const pool = filtered.length > 0 ? filtered : rawQuestions;
+      questionDeck.current = shuffleQuestions(pool);
     }
     return questionDeck.current.pop() ?? getPlaceholderQuestion(eventType);
   };
@@ -492,11 +528,11 @@ export default function GameScreen() {
     }
   };
 
-  const passTurn = () => {
-    setTurnIndex((prev) => (prev + 1) % players.length);
+  const passTurn = (fromIndex = turnIndex) => {
+    setTurnIndex((fromIndex + 1) % players.length);
   };
 
-  const triggerPowerUpRoulette = (mover: Player, newPos: number) => {
+  const triggerPowerUpRoulette = (mover: Player, newPos: number, moverIndex: number) => {
     setPowerUpTiles((prev) => prev.filter((t) => t !== newPos));
     setRouletteModalVisible(true);
 
@@ -516,40 +552,72 @@ export default function GameScreen() {
             curr.map((p) => (p.id === mover.id ? { ...p, powerUps: [...p.powerUps, finalAward] } : p))
           );
           if (newPos === 100) setWinner(mover);
-          else passTurn();
+          else passTurn(moverIndex);
         }, 800);
       }
     }, 100);
   };
 
-  const movePlayer = (roll: number) => {
-    const mover = players[turnIndex];
-    const newPos = Math.min(mover.position + roll, 100);
-    const path = Array.from(
-      { length: newPos - mover.position + 1 },
-      (_, index) => mover.position + index,
-    );
+  const movePlayer = (roll: number, moverIndex = turnIndex) => {
+    const mover = players[moverIndex];
+    if (!mover) return;
+    let newPos = mover.position;
+    let direction = 1;
+    const path = [newPos];
+    for (let step = 0; step < roll; step += 1) {
+      newPos += direction;
+      if (newPos >= 100) {
+        newPos = 100;
+        direction = -1;
+      } else if (newPos <= 1) {
+        newPos = 1;
+        direction = 1;
+      }
+      path.push(newPos);
+    }
 
     animatePlayerPath(mover.id, path, () => {
-      const updatedPlayer = { ...mover, position: newPos };
-      setPlayers((currentPlayers) => currentPlayers.map((player) =>
-        player.id === mover.id ? updatedPlayer : player,
-      ));
-
-      if (newPos === 100) {
-        setWinner(updatedPlayer);
-      } else if (powerUpTiles.includes(newPos)) {
-        triggerPowerUpRoulette(updatedPlayer, newPos);
-      } else if (LADDERS[newPos]) {
-        ladderClimbsRef.current += 1;
-        openQuiz({ type: 'ladder', landedPos: newPos, target: LADDERS[newPos] });
-      } else if (SNAKES[newPos]) {
-        snakeBitesRef.current += 1;
-        openQuiz({ type: 'snake', landedPos: newPos, target: SNAKES[newPos] });
-      } else {
-        passTurn();
-      }
+      resolvePlayerLanding(mover, moverIndex, newPos);
     });
+  };
+
+  const movePlayerToTile = (targetTile: number, moverIndex: number) => {
+    const mover = players[moverIndex];
+    if (!mover) return;
+    const direction = targetTile >= mover.position ? 1 : -1;
+    const path = [mover.position];
+    for (let tile = mover.position + direction; direction > 0 ? tile <= targetTile : tile >= targetTile; tile += direction) {
+      path.push(tile);
+    }
+
+    animatePlayerPath(mover.id, path, () => {
+      resolvePlayerLanding(mover, moverIndex, targetTile);
+    });
+  };
+
+  const openDebugMoveModal = () => {
+    if (isDebugMoveBlocked) return;
+    setDebugPlayerId(activePlayer.id);
+    setDebugTile(String(activePlayer.position));
+    setDebugMoveModalVisible(true);
+  };
+
+  const applyDebugMove = () => {
+    const moverIndex = players.findIndex((player) => player.id === debugPlayerId);
+    if (isDebugMoveBlocked || moverIndex < 0 || !isDebugMoveValid) return;
+    setDebugMoveModalVisible(false);
+    if (players[moverIndex].position === parsedDebugTile) return;
+    setTurnIndex(moverIndex);
+    movePlayerToTile(parsedDebugTile, moverIndex);
+  };
+
+  const giveDebugPowerUp = (powerUpType: PowerUpType) => {
+    if (isDebugMoveBlocked || !players.some((player) => player.id === debugPlayerId)) return;
+    setPlayers((currentPlayers) => currentPlayers.map((player) => (
+      player.id === debugPlayerId
+        ? { ...player, powerUps: [...player.powerUps, powerUpType] }
+        : player
+    )));
   };
 
   const openQuiz = (event: PendingEvent) => {
@@ -559,8 +627,27 @@ export default function GameScreen() {
     setSelectedIndex(null);
     setIsAnswerCorrect(null);
     setHintMessage(null);
-    setChallengeSeconds(30);
+    setChallengeSeconds(challengeTimeLimit);
     setIsChallengeActive(true);
+  };
+
+  const resolvePlayerLanding = (mover: Player, moverIndex: number, newPos: number) => {
+    const updatedPlayer = { ...mover, position: newPos };
+    setPlayers((currentPlayers) => currentPlayers.map((player) =>
+      player.id === mover.id ? updatedPlayer : player,
+    ));
+
+    if (newPos === 100) {
+      setWinner(updatedPlayer);
+    } else if (powerUpTiles.includes(newPos)) {
+      triggerPowerUpRoulette(updatedPlayer, newPos, moverIndex);
+    } else if (LADDERS[newPos]) {
+      openQuiz({ type: 'ladder', landedPos: newPos, target: LADDERS[newPos] });
+    } else if (SNAKES[newPos]) {
+      openQuiz({ type: 'snake', landedPos: newPos, target: SNAKES[newPos] });
+    } else {
+      passTurn(moverIndex);
+    }
   };
 
   const handleAnswerSelect = (index: number) => {
@@ -581,7 +668,7 @@ export default function GameScreen() {
     setIsAnswerCorrect(isCorrect);
   };
 
-  const usePowerUp = (powerUpType: 'hint' | 'skip' | 'add-time' | 'refresh') => {
+  const usePowerUp = (powerUpType: PowerUpType) => {
     const mover = players[turnIndex];
     if (!mover.powerUps.includes(powerUpType) || isAnswerCorrect !== null) return;
 
@@ -616,10 +703,9 @@ export default function GameScreen() {
     if (!pendingEvent || isAnswerCorrect === null) return;
     const mover = players[turnIndex];
     const startPosition = pendingEvent.landedPos;
-    const target = (pendingEvent.type === 'ladder' && isAnswerCorrect)
-      || (pendingEvent.type === 'snake' && !isAnswerCorrect)
-      ? pendingEvent.target
-      : startPosition;
+    const target = pendingEvent.type === 'ladder'
+      ? isAnswerCorrect ? pendingEvent.target : startPosition
+      : isAnswerCorrect ? Math.min(startPosition + 1, 100) : pendingEvent.target;
     setPendingEvent(null);
     setCurrentQuestion(null);
     setSelectedIndex(null);
@@ -639,6 +725,8 @@ export default function GameScreen() {
       setPlayers((currentPlayers) => currentPlayers.map((player) =>
         player.id === mover.id ? updatedPlayer : player,
       ));
+      if (pendingEvent.type === 'ladder' && isAnswerCorrect) {ladderClimbsRef.current += 1;}
+      else if (pendingEvent.type === 'snake' && !isAnswerCorrect) {snakeBitesRef.current += 1;}
       if (target === 100) setWinner(updatedPlayer);
       else passTurn();
     });
@@ -671,7 +759,7 @@ export default function GameScreen() {
 
     router.push({
       pathname: '/stats',
-      params: { gameData: JSON.stringify(gameStats) },
+      params: { gameData: JSON.stringify(gameStats), difficulty: selectedDifficulty },
     });
   };
 
@@ -714,7 +802,7 @@ export default function GameScreen() {
   const diceSize = Math.min(84, boardSize * 0.37);
 
   return (
-    <BookcaseBackground>
+    <BookcaseBackground difficulty={selectedDifficulty}>
       <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1 }}>
         <View style={styles.mainContainer}>
           {/* TOP BANNER & EXIT BUTTON */}
@@ -822,18 +910,23 @@ export default function GameScreen() {
                   }
 
                   const { x, y } = getCoordinatesForPosition(player.position);
+                  const playersOnTile = players.filter((otherPlayer) => otherPlayer.position === player.position);
+                  const stackIndex = playersOnTile.findIndex((otherPlayer) => otherPlayer.id === player.id);
+                  const stackOffset = (playersOnTile.length - 1) / 2 - stackIndex;
                   return (
                     <View
                       key={player.id}
                       style={[
                         styles.playerTokenWrapper,
                         {
-                          left: x + cellSize * 0.05,
+                          left: x + cellSize * 0.05 + stackOffset * markerSize * 0.5,
                           top: y + cellSize * 0.05,
                           width: markerSize,
                           height: markerSize,
                           borderRadius: markerSize / 2,
                           backgroundColor: player.color,
+                          zIndex: stackIndex + 1,
+                          elevation: 5 + stackIndex,
                         },
                       ]}
                     >
@@ -895,6 +988,16 @@ export default function GameScreen() {
                 }}
               />
             </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.debugMoveButton, isDebugMoveBlocked && styles.debugMoveButtonDisabled]}
+              onPress={openDebugMoveModal}
+              disabled={isDebugMoveBlocked}
+              activeOpacity={0.75}
+              accessibilityRole="button"
+              accessibilityLabel="Open debug movement controls"
+            >
+              <Text style={styles.debugMoveButtonText}>DEBUG</Text>
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -924,6 +1027,91 @@ export default function GameScreen() {
               <Text style={styles.rouletteTitle}>🎁 Power-Up Acquired!</Text>
               <Image source={POWER_UP_IMAGES[rouletteDisplayItem]} style={styles.rouletteImage} resizeMode="contain" />
               <Text style={styles.rouletteSubtitle}>Spinning...</Text>
+            </View>
+          </View>
+        </Modal>
+
+        {/* DEBUG MOVEMENT */}
+        <Modal
+          visible={debugMoveModalVisible}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setDebugMoveModalVisible(false)}
+        >
+          <View style={styles.modalOverlayContainer}>
+            <View style={styles.debugMoveCard}>
+              <Text style={styles.debugMoveTitle}>Debug</Text>
+              <View style={styles.debugPlayerChoices}>
+                {players.map((player) => {
+                  const isSelected = player.id === debugPlayerId;
+                  return (
+                    <TouchableOpacity
+                      key={player.id}
+                      style={[
+                        styles.debugPlayerChoice,
+                        { borderColor: player.color },
+                        isSelected && { backgroundColor: player.color },
+                      ]}
+                      onPress={() => setDebugPlayerId(player.id)}
+                      activeOpacity={0.75}
+                    >
+                      <Text style={[styles.debugPlayerChoiceText, isSelected && styles.debugPlayerChoiceTextSelected]}>
+                        {player.name}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+              <Text style={styles.debugMoveLabel}>
+                Give a Power-up to {players.find((player) => player.id === debugPlayerId)?.name ?? 'selected player'}
+              </Text>
+              <View style={styles.debugPowerUpChoices}>
+                {POWER_UP_TYPES.map((powerUpType) => {
+                  const count = players
+                    .find((player) => player.id === debugPlayerId)
+                    ?.powerUps.filter((item) => item === powerUpType).length ?? 0;
+                  return (
+                    <TouchableOpacity
+                      key={powerUpType}
+                      style={styles.debugPowerUpChoice}
+                      onPress={() => giveDebugPowerUp(powerUpType)}
+                      activeOpacity={0.75}
+                    >
+                      <Image source={POWER_UP_IMAGES[powerUpType]} style={styles.debugPowerUpIcon} resizeMode="contain" />
+                      <Text style={styles.debugPowerUpChoiceText}>
+                        Give {POWER_UP_LABELS[powerUpType]} ({count})
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+              <Text style={styles.debugMoveLabel}>Destination tile (1–100)</Text>
+              <TextInput
+                style={styles.debugMoveInput}
+                value={debugTile}
+                onChangeText={(value) => setDebugTile(value.replace(/\D/g, '').slice(0, 3))}
+                keyboardType="number-pad"
+                maxLength={3}
+                selectTextOnFocus
+                accessibilityLabel="Destination tile"
+              />
+              <View style={styles.exitActions}>
+                <TouchableOpacity
+                  style={[styles.exitBtn, styles.debugMoveConfirm, !isDebugMoveValid && styles.debugMoveConfirmDisabled]}
+                  onPress={applyDebugMove}
+                  disabled={!isDebugMoveValid}
+                  activeOpacity={0.75}
+                >
+                  <Text style={styles.exitBtnText}>MOVE</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.exitBtn}
+                  onPress={() => setDebugMoveModalVisible(false)}
+                  activeOpacity={0.75}
+                >
+                  <Text style={styles.exitBtnText}>CANCEL</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
         </Modal>
@@ -971,7 +1159,7 @@ export default function GameScreen() {
             >
               <View style={styles.quizPopupGroup}>
                 <ImageBackground
-                  source={require('../../assets/images/bookcase.png')}
+                  source={getBookcaseSource(selectedDifficulty)}
                   style={styles.quizSceneCard}
                   imageStyle={styles.quizSceneBackgroundImage}
                   resizeMode="cover"
@@ -1211,9 +1399,32 @@ const styles = StyleSheet.create({
     resizeMode: 'contain',
   },
   diceSection: {
+    position: 'relative',
+    width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
     height: 56,
+  },
+  debugMoveButton: {
+    position: 'absolute',
+    right: 8,
+    top: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: 8,
+    backgroundColor: '#facc15',
+    borderWidth: 1,
+    borderColor: '#fff7b2',
+    elevation: 5,
+  },
+  debugMoveButtonDisabled: {
+    opacity: 0.45,
+  },
+  debugMoveButtonText: {
+    color: '#1b2338',
+    fontSize: 11,
+    fontWeight: '900',
+    letterSpacing: 0.5,
   },
   diceButton: {
     minWidth: 72,
@@ -1278,6 +1489,110 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#facc15',
     fontWeight: '700',
+  },
+  debugMoveCard: {
+    width: '88%',
+    maxWidth: 380,
+    backgroundColor: '#1b2338',
+    borderRadius: 16,
+    padding: 22,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#facc15',
+    elevation: 12,
+  },
+  debugMoveTitle: {
+    color: '#ffffff',
+    fontSize: 22,
+    fontWeight: '900',
+    marginBottom: 6,
+  },
+  debugPlayerChoices: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 8,
+    width: '100%',
+    marginBottom: 18,
+  },
+  debugPlayerChoice: {
+    minWidth: 84,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 8,
+    borderWidth: 2,
+    alignItems: 'center',
+    backgroundColor: '#27334d',
+  },
+  debugPlayerChoiceText: {
+    color: '#ffffff',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  debugPlayerChoiceTextSelected: {
+    color: '#111827',
+  },
+  debugPowerUpChoices: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    gap: 8,
+    width: '100%',
+    marginTop: -10,
+    marginBottom: 14,
+  },
+  debugPowerUpChoice: {
+    width: '48%',
+    minHeight: 54,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#64748b',
+    backgroundColor: '#27334d',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  debugPowerUpIcon: {
+    width: 26,
+    height: 26,
+    flexShrink: 0,
+  },
+  debugPowerUpChoiceText: {
+    flexShrink: 1,
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  debugMoveLabel: {
+    width: '100%',
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '700',
+    marginBottom: 20,
+  },
+  debugMoveInput: {
+    width: '100%',
+    height: 48,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#64748b',
+    backgroundColor: '#ffffff',
+    color: '#111827',
+    fontSize: 20,
+    fontWeight: '700',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  debugMoveConfirm: {
+    backgroundColor: '#facc15',
+    borderColor: '#facc15',
+  },
+  debugMoveConfirmDisabled: {
+    opacity: 0.45,
   },
   exitCard: {
     width: '88%',
