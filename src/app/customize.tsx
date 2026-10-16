@@ -1,8 +1,8 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
+  Animated,
   Image,
-  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -15,68 +15,82 @@ const PADDING = 16;
 const CARD_RADIUS = 16;
 
 const COLOR_OPTIONS = [
-  {
-    id: 'blue',
-    hex: '#4b7bec',
-    label: 'Blue',
-    image: require('../../assets/images/Playerblue.png'),
-  },
-  {
-    id: 'red',
-    hex: '#ff5252',
-    label: 'Red',
-    image: require('../../assets/images/Playerred.png'),
-  },
-  {
-    id: 'green',
-    hex: '#26de81',
-    label: 'Green',
-    image: require('../../assets/images/Playergreen.png'),
-  },
-  {
-    id: 'yellow',
-    hex: '#fed330',
-    label: 'Yellow',
-    image: require('../../assets/images/Playeryellow.png'),
-  },
+  { id: 'blue', hex: '#4b7bec', label: 'Blue' },
+  { id: 'red', hex: '#ff5252', label: 'Red' },
+  { id: 'green', hex: '#26de81', label: 'Green' },
+  { id: 'yellow', hex: '#fed330', label: 'Yellow' },
 ];
-const NEUTRAL_PLAYER_IMAGE = require('../../assets/images/Playergrey.png');
+
+const DEFAULT_PLAYER_PREVIEW = require('../../assets/images/Playergrey.png');
+const PLAYER_PREVIEWS_BY_COLOR: Record<string, number> = {
+  '#4b7bec': require('../../assets/images/Playerblue.png'),
+  '#ff5252': require('../../assets/images/Playerred.png'),
+  '#26de81': require('../../assets/images/Playergreen.png'),
+  '#fed330': require('../../assets/images/Playeryellow.png'),
+};
+
+const PLAYER_ACCENT_COLORS: { [key: number]: string } = {
+  0: 'hsl(0, 0%, 37%)', // Player 1 - Default Blue Accent
+  1: 'hsl(0, 0%, 37%)', // Player 2 - Default Red Accent
+  2: 'hsl(0, 0%, 37%)', // Player 3 - Default Green Accent
+};
 
 export default function CustomizeCharacterScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
-  
-  // Total players passed from playerselection.tsx
-  const totalPlayers = Number(params.players || 1);
 
-  // Active player index (0 = P1, 1 = P2, 2 = P3)
+  const totalPlayers = Number(params.players || 1);
   const [activePlayerIndex, setActivePlayerIndex] = useState(0);
   const [hoveredColor, setHoveredColor] = useState<string | null>(null);
 
-  // Array storing assigned hex colors per player: e.g. ['#4b7bec', '#ff5252', null]
   const [selectedColors, setSelectedColors] = useState<(string | null)[]>(
     Array(totalPlayers).fill(null)
   );
 
+  const fadeAnim = useRef(new Animated.Value(1)).current;
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+
   const currentPlayerNum = activePlayerIndex + 1;
   const currentSelection = selectedColors[activePlayerIndex];
-  const previewColor = hoveredColor || currentSelection;
-  const previewImage =
-    COLOR_OPTIONS.find((color) => color.hex === previewColor)?.image ?? NEUTRAL_PLAYER_IMAGE;
+  const previewColor = hoveredColor ?? currentSelection;
+  const previewImage = previewColor
+    ? PLAYER_PREVIEWS_BY_COLOR[previewColor]
+    : DEFAULT_PLAYER_PREVIEW;
 
-  // Back action: Goes to previous player's turn, or back to player selection screen if on P1
+  // Dynamic header banner background color
+  const bannerBgColor =
+    currentSelection ||
+    PLAYER_ACCENT_COLORS[activePlayerIndex] ||
+    'rgba(255, 255, 255, 0.08)';
+
+  useEffect(() => {
+    setHoveredColor(null);
+    fadeAnim.setValue(0.3);
+    scaleAnim.setValue(0.95);
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        friction: 6,
+        tension: 80,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [activePlayerIndex]);
+
   const handleBack = () => {
     if (activePlayerIndex > 0) {
-      setHoveredColor(null);
       setActivePlayerIndex((prev) => prev - 1);
     } else {
       router.back();
     }
   };
 
-  // Handle color click for current active player
   const handleSelectColor = (hex: string) => {
-    // Prevent selecting a color already claimed by another player
     const isTakenByOther = selectedColors.some(
       (color, idx) => color === hex && idx !== activePlayerIndex
     );
@@ -91,11 +105,8 @@ export default function CustomizeCharacterScreen() {
     if (!currentSelection) return;
 
     if (activePlayerIndex < totalPlayers - 1) {
-      // Move to the next player's turn
-      setHoveredColor(null);
       setActivePlayerIndex((prev) => prev + 1);
     } else {
-      // Last player has selected their color -> Forward to Game screen
       router.push({
         pathname: '/game',
         params: {
@@ -109,35 +120,50 @@ export default function CustomizeCharacterScreen() {
   return (
     <BookcaseBackground>
       <SafeAreaView edges={['top', 'bottom']} style={styles.container}>
-        <ScrollView contentContainerStyle={styles.content}>
+        <View style={styles.content}>
 
-          {/* Header Banner with Back Button */}
+          {/* Header Banner with Dynamic Color Background */}
           <View style={styles.headerRow}>
-            <TouchableOpacity 
-              style={styles.backButton} 
+            <TouchableOpacity
+              style={styles.backButton}
               onPress={handleBack}
               activeOpacity={0.7}
             >
               <Text style={styles.backArrow}>‹</Text>
             </TouchableOpacity>
 
-            <View style={styles.bannerContainer}>
-              <Text
-                style={styles.bannerTitle}
-                numberOfLines={1}
-                adjustsFontSizeToFit
-                minimumFontScale={0.75}
-              >
-                CUSTOMIZE CHARACTER
-              </Text>
+            <View style={[styles.bannerContainer, { backgroundColor: bannerBgColor }]}>
+              <Text style={styles.bannerTitle}>CUSTOMIZE CHARACTER</Text>
               <Text style={styles.bannerSubtitle}>
                 PLAYER {currentPlayerNum} OF {totalPlayers} TURN
               </Text>
             </View>
           </View>
 
-          {/* Character Preview */}
-          <View style={styles.previewCard}>
+          {/* Smooth Character Preview & Instruction */}
+          <Animated.View
+            style={[
+              styles.previewCard,
+              { opacity: fadeAnim, transform: [{ scale: scaleAnim }] },
+            ]}
+          >
+            {/* Instruction Banner with Dynamic Highlight */}
+            <View style={styles.instructionBox}>
+              <Text style={styles.instructionText}>
+                <Text
+                  style={{
+                    color:
+                      currentSelection ||
+                      PLAYER_ACCENT_COLORS[activePlayerIndex] ||
+                      'hsl(0, 0%, 37%)',
+                    fontWeight: '800',
+                  }}
+                >
+                  Player {currentPlayerNum}
+                </Text>
+              </Text>
+            </View>
+
             <View style={styles.avatarWrapper}>
               <Image
                 source={previewImage}
@@ -147,7 +173,12 @@ export default function CustomizeCharacterScreen() {
               <View
                 style={[
                   styles.playerBadge,
-                  { backgroundColor: currentSelection || 'rgba(255,255,255,0.2)' },
+                  {
+                    backgroundColor:
+                      currentSelection ||
+                      PLAYER_ACCENT_COLORS[activePlayerIndex] ||
+                      'rgba(255,255,255,0.2)',
+                  },
                 ]}
               >
                 <Text style={styles.badgeText}>P{currentPlayerNum}</Text>
@@ -161,7 +192,10 @@ export default function CustomizeCharacterScreen() {
                   key={idx}
                   style={[
                     styles.summaryDot,
-                    { backgroundColor: color || 'transparent' },
+                    {
+                      backgroundColor:
+                        color || PLAYER_ACCENT_COLORS[idx] || 'transparent',
+                    },
                     idx === activePlayerIndex && styles.activeSummaryDot,
                   ]}
                 >
@@ -169,7 +203,7 @@ export default function CustomizeCharacterScreen() {
                 </View>
               ))}
             </View>
-          </View>
+          </Animated.View>
 
           {/* Color Selection Grid */}
           <View style={styles.colorGrid}>
@@ -184,9 +218,7 @@ export default function CustomizeCharacterScreen() {
                   key={item.id}
                   activeOpacity={isTakenByOther ? 1 : 0.8}
                   onPress={() => handleSelectColor(item.hex)}
-                  onPressIn={() => setHoveredColor(isTakenByOther ? null : item.hex)}
-                  onPressOut={() => setHoveredColor(null)}
-                  onMouseEnter={() => setHoveredColor(isTakenByOther ? null : item.hex)}
+                  onMouseEnter={() => setHoveredColor(item.hex)}
                   onMouseLeave={() => setHoveredColor(null)}
                   style={[
                     styles.colorBox,
@@ -217,7 +249,7 @@ export default function CustomizeCharacterScreen() {
             </Text>
           </TouchableOpacity>
 
-        </ScrollView>
+        </View>
       </SafeAreaView>
     </BookcaseBackground>
   );
@@ -228,7 +260,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    flexGrow: 1,
+    flex: 1,
     padding: PADDING,
     justifyContent: 'space-between',
   },
@@ -255,46 +287,63 @@ const styles = StyleSheet.create({
   },
   bannerContainer: {
     flex: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
     borderRadius: CARD_RADIUS,
-    paddingVertical: 12,
+    paddingVertical: 10,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
+    borderColor: 'rgba(255, 255, 255, 0.2)',
     alignItems: 'center',
+    gap: 2,
   },
   bannerTitle: {
     color: '#ffffff',
-    fontSize: 20,
-    fontWeight: '700',
-    letterSpacing: 2,
+    fontSize: 16,
+    fontWeight: '800',
+    letterSpacing: 1.5,
   },
   bannerSubtitle: {
-    color: '#a0a5b5',
+    color: '#ffffff',
+    opacity: 0.8,
     fontSize: 11,
     fontWeight: '600',
     letterSpacing: 1,
   },
   previewCard: {
-    minHeight: 265,
+    flex: 1,
     marginVertical: PADDING,
     backgroundColor: 'rgba(15, 18, 28, 0.72)',
     borderRadius: CARD_RADIUS,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.1)',
-    justifyContent: 'center',
+    justifyContent: 'space-between',
     alignItems: 'center',
     padding: PADDING,
+  },
+  instructionBox: {
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
+    marginTop: 4,
+  },
+  instructionText: {
+    color: '#e2e8f0',
+    fontSize: 13,
+    fontWeight: '600',
+    textAlign: 'center',
   },
   avatarWrapper: {
     alignItems: 'center',
     justifyContent: 'center',
+    marginVertical: 8,
   },
   avatarImage: {
-    width: 100,
-    height: 140,
+    width: 90,
+    height: 120,
   },
   playerBadge: {
-    marginTop: 10,
+    marginTop: 8,
     paddingHorizontal: 16,
     paddingVertical: 6,
     borderRadius: 8,
@@ -307,7 +356,6 @@ const styles = StyleSheet.create({
   summaryRow: {
     flexDirection: 'row',
     gap: 12,
-    marginTop: 20,
   },
   summaryDot: {
     width: 32,
@@ -350,6 +398,7 @@ const styles = StyleSheet.create({
     opacity: 0.25,
   },
   takenOverlay: {
+    ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0, 0, 0, 0.6)',
     justifyContent: 'center',
     alignItems: 'center',
