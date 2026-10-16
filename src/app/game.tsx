@@ -20,7 +20,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAudio } from '../AudioContext';
-import BookcaseBackground from '../components/BookcaseBackground';
+import BookcaseBackground, { getBookcaseSource } from '../components/BookcaseBackground';
 import Dice3D, { type Dice3DHandle } from '../components/Dice3D';
 
 const DICE_ROLL_SOUND = require('../../assets/audio/dice-roll.mp3');
@@ -159,12 +159,14 @@ type PendingEvent = {
   target: number;
 };
 
+type Difficulty = 'Easy' | 'Normal' | 'Hard';
+
 type Question = {
   prompt: string;
   options: string[];
   correctIndex: number;
   hint?: string;
-  difficulty?: 'Easy' | 'Normal' | 'Hard';
+  difficulty?: Difficulty;
 };
 
 type DialogueSubject = 'Language' | 'Science' | 'History';
@@ -229,7 +231,13 @@ const getPlaceholderQuestion = (type: EventType): Question => {
 export default function GameScreen() {
   const router = useRouter();
   const { masterVol, masterMute, sfxVol, sfxMute } = useAudio();
-  const params = useLocalSearchParams<{ players?: string; playerColors?: string; level?: string; difficulty?: string; timer?: string }>();
+  const params = useLocalSearchParams<{
+    players?: string;
+    playerColors?: string;
+    level?: string;
+    timer?: string;
+    difficulty?: Difficulty;
+  }>();
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const rollSoundPlayer = useAudioPlayer(DICE_ROLL_SOUND);
   const resultSoundPlayer = useAudioPlayer(DICE_RESULT_SOUND);
@@ -245,14 +253,15 @@ export default function GameScreen() {
   const boardOffsetX = (frameWidth - gridSize) / 2;
   const boardOffsetY = (frameHeight - gridSize) / 2;
   const cellSize = gridSize / 10;
-  
   const playerCount = Math.min(3, Math.max(1, Number(params.players) || 3));
-  const selectedDifficulty = params.difficulty || 'Normal';
   const configuredTimer = Number(params.timer);
   const challengeTimeLimit = Number.isFinite(configuredTimer) && params.timer !== ''
     ? Math.max(0, configuredTimer)
     : 15;
   const isInfiniteTimer = params.timer === 'infinite' || challengeTimeLimit === 0;
+  const selectedDifficulty: Difficulty = params.difficulty === 'Easy' || params.difficulty === 'Hard'
+    ? params.difficulty
+    : 'Normal';
 
   const parsedColors: string[] = (() => {
     try {
@@ -391,7 +400,6 @@ export default function GameScreen() {
   const getNextQuestion = (eventType: EventType): Question => {
     const rawQuestions = QUESTION_BANKS[dialogueSubject];
     if (!useQuestionBank || !rawQuestions?.length) return getPlaceholderQuestion(eventType);
-    
     if (questionDeck.current.length === 0) {
       const filtered = rawQuestions.filter((q) => !q.difficulty || q.difficulty === selectedDifficulty);
       const pool = filtered.length > 0 ? filtered : rawQuestions;
@@ -751,7 +759,7 @@ export default function GameScreen() {
 
     router.push({
       pathname: '/stats',
-      params: { gameData: JSON.stringify(gameStats) },
+      params: { gameData: JSON.stringify(gameStats), difficulty: selectedDifficulty },
     });
   };
 
@@ -794,7 +802,7 @@ export default function GameScreen() {
   const diceSize = Math.min(84, boardSize * 0.37);
 
   return (
-    <BookcaseBackground>
+    <BookcaseBackground difficulty={selectedDifficulty}>
       <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1 }}>
         <View style={styles.mainContainer}>
           {/* TOP BANNER & EXIT BUTTON */}
@@ -902,18 +910,23 @@ export default function GameScreen() {
                   }
 
                   const { x, y } = getCoordinatesForPosition(player.position);
+                  const playersOnTile = players.filter((otherPlayer) => otherPlayer.position === player.position);
+                  const stackIndex = playersOnTile.findIndex((otherPlayer) => otherPlayer.id === player.id);
+                  const stackOffset = (playersOnTile.length - 1) / 2 - stackIndex;
                   return (
                     <View
                       key={player.id}
                       style={[
                         styles.playerTokenWrapper,
                         {
-                          left: x + cellSize * 0.05,
+                          left: x + cellSize * 0.05 + stackOffset * markerSize * 0.5,
                           top: y + cellSize * 0.05,
                           width: markerSize,
                           height: markerSize,
                           borderRadius: markerSize / 2,
                           backgroundColor: player.color,
+                          zIndex: stackIndex + 1,
+                          elevation: 5 + stackIndex,
                         },
                       ]}
                     >
@@ -1146,7 +1159,7 @@ export default function GameScreen() {
             >
               <View style={styles.quizPopupGroup}>
                 <ImageBackground
-                  source={require('../../assets/images/bookcase.png')}
+                  source={getBookcaseSource(selectedDifficulty)}
                   style={styles.quizSceneCard}
                   imageStyle={styles.quizSceneBackgroundImage}
                   resizeMode="cover"

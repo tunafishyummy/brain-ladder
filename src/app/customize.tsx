@@ -118,7 +118,7 @@ export default function CustomizeCharacterScreen() {
   };
 
   return (
-    <BookcaseBackground>
+    <BookcaseBackground difficulty={params.difficulty}>
       <SafeAreaView edges={['top', 'bottom']} style={styles.container}>
         <View style={styles.content}>
 
