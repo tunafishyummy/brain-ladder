@@ -909,18 +909,23 @@ export default function GameScreen() {
                   }
 
                   const { x, y } = getCoordinatesForPosition(player.position);
+                  const playersOnTile = players.filter((otherPlayer) => otherPlayer.position === player.position);
+                  const stackIndex = playersOnTile.findIndex((otherPlayer) => otherPlayer.id === player.id);
+                  const stackOffset = (playersOnTile.length - 1) / 2 - stackIndex;
                   return (
                     <View
                       key={player.id}
                       style={[
                         styles.playerTokenWrapper,
                         {
-                          left: x + cellSize * 0.05,
+                          left: x + cellSize * 0.05 + stackOffset * markerSize * 0.5,
                           top: y + cellSize * 0.05,
                           width: markerSize,
                           height: markerSize,
                           borderRadius: markerSize / 2,
                           backgroundColor: player.color,
+                          zIndex: stackIndex + 1,
+                          elevation: 5 + stackIndex,
                         },
                       ]}
                     >
