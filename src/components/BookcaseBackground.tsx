@@ -62,6 +62,7 @@ export default function BookcaseBackground({
               key={tile}
               source={bookcaseSource}
               resizeMode="cover"
+              fadeDuration={0}
               style={{ position: 'absolute', left: (tile % columns) * tileWidth, top: Math.floor(tile / columns) * tileHeight, width: tileWidth, height: tileHeight }}
             />
           ))}
