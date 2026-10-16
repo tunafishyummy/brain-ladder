@@ -164,6 +164,7 @@ type Question = {
   options: string[];
   correctIndex: number;
   hint?: string;
+  difficulty?: 'Easy' | 'Normal' | 'Hard';
 };
 
 type DialogueSubject = 'Language' | 'Science' | 'History';
@@ -228,7 +229,7 @@ const getPlaceholderQuestion = (type: EventType): Question => {
 export default function GameScreen() {
   const router = useRouter();
   const { masterVol, masterMute, sfxVol, sfxMute } = useAudio();
-  const params = useLocalSearchParams<{ players?: string; playerColors?: string; level?: string; timer?: string }>();
+  const params = useLocalSearchParams<{ players?: string; playerColors?: string; level?: string; difficulty?: string; timer?: string }>();
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const rollSoundPlayer = useAudioPlayer(DICE_ROLL_SOUND);
   const resultSoundPlayer = useAudioPlayer(DICE_RESULT_SOUND);
@@ -246,10 +247,11 @@ export default function GameScreen() {
   const cellSize = gridSize / 10;
   
   const playerCount = Math.min(3, Math.max(1, Number(params.players) || 3));
+  const selectedDifficulty = params.difficulty || 'Normal';
   const configuredTimer = Number(params.timer);
   const challengeTimeLimit = Number.isFinite(configuredTimer) && params.timer !== ''
     ? Math.max(0, configuredTimer)
-    : 30;
+    : 15;
   const isInfiniteTimer = params.timer === 'infinite' || challengeTimeLimit === 0;
 
   const parsedColors: string[] = (() => {
@@ -280,14 +282,16 @@ export default function GameScreen() {
   const [debugPlayerId, setDebugPlayerId] = useState('1');
   const [debugTile, setDebugTile] = useState('1');
 
-  // --- 10 RANDOM POWER-UP BOXES ON BOARD (Excluding starting/landing snake & ladder tiles) ---
+  // --- 10 RANDOM POWER-UP BOXES ON BOARD (Excluding all ladder and snake endpoints) ---
   const [powerUpTiles, setPowerUpTiles] = useState<number[]>(() => {
     const tiles: number[] = [];
     const restrictedTiles = new Set([
       1,
       100,
       ...Object.keys(LADDERS).map(Number),
+      ...Object.values(LADDERS),
       ...Object.keys(SNAKES).map(Number),
+      ...Object.values(SNAKES),
     ]);
 
     while (tiles.length < 10) {
@@ -385,10 +389,13 @@ export default function GameScreen() {
     : require('../../assets/images/LogoKnowItAdder.png');
 
   const getNextQuestion = (eventType: EventType): Question => {
-    const questions = QUESTION_BANKS[dialogueSubject];
-    if (!useQuestionBank || !questions?.length) return getPlaceholderQuestion(eventType);
+    const rawQuestions = QUESTION_BANKS[dialogueSubject];
+    if (!useQuestionBank || !rawQuestions?.length) return getPlaceholderQuestion(eventType);
+    
     if (questionDeck.current.length === 0) {
-      questionDeck.current = shuffleQuestions(questions);
+      const filtered = rawQuestions.filter((q) => !q.difficulty || q.difficulty === selectedDifficulty);
+      const pool = filtered.length > 0 ? filtered : rawQuestions;
+      questionDeck.current = shuffleQuestions(pool);
     }
     return questionDeck.current.pop() ?? getPlaceholderQuestion(eventType);
   };
