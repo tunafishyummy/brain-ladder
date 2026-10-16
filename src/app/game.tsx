@@ -237,7 +237,11 @@ export default function GameScreen() {
   const cellSize = gridSize / 10;
   
   const playerCount = Math.min(3, Math.max(1, Number(params.players) || 3));
-  const isInfiniteTimer = params.timer === 'infinite';
+  const configuredTimer = Number(params.timer);
+  const challengeTimeLimit = Number.isFinite(configuredTimer) && params.timer !== ''
+    ? Math.max(0, configuredTimer)
+    : 30;
+  const isInfiniteTimer = params.timer === 'infinite' || challengeTimeLimit === 0;
 
   const parsedColors: string[] = (() => {
     try {
@@ -286,7 +290,7 @@ export default function GameScreen() {
   // --- ROULETTE & TIMER STATE ---
   const [rouletteModalVisible, setRouletteModalVisible] = useState(false);
   const [rouletteDisplayItem, setRouletteDisplayItem] = useState<'hint' | 'skip' | 'add-time' | 'refresh'>('hint');
-  const [challengeSeconds, setChallengeSeconds] = useState(30);
+  const [challengeSeconds, setChallengeSeconds] = useState(challengeTimeLimit);
   const [isChallengeActive, setIsChallengeActive] = useState(false);
   const [hintMessage, setHintMessage] = useState<string | null>(null);
 
@@ -524,11 +528,14 @@ export default function GameScreen() {
 
   const movePlayer = (roll: number) => {
     const mover = players[turnIndex];
-    const newPos = Math.min(mover.position + roll, 100);
-    const path = Array.from(
-      { length: newPos - mover.position + 1 },
-      (_, index) => mover.position + index,
-    );
+    let newPos = mover.position;
+    let direction = 1;
+    const path = [newPos];
+    for (let step = 0; step < roll; step += 1) {
+      newPos += direction;
+      if (newPos === 100) direction = -1;
+      path.push(newPos);
+    }
 
     animatePlayerPath(mover.id, path, () => {
       const updatedPlayer = { ...mover, position: newPos };
@@ -559,7 +566,7 @@ export default function GameScreen() {
     setSelectedIndex(null);
     setIsAnswerCorrect(null);
     setHintMessage(null);
-    setChallengeSeconds(30);
+    setChallengeSeconds(challengeTimeLimit);
     setIsChallengeActive(true);
   };
 
@@ -616,10 +623,9 @@ export default function GameScreen() {
     if (!pendingEvent || isAnswerCorrect === null) return;
     const mover = players[turnIndex];
     const startPosition = pendingEvent.landedPos;
-    const target = (pendingEvent.type === 'ladder' && isAnswerCorrect)
-      || (pendingEvent.type === 'snake' && !isAnswerCorrect)
-      ? pendingEvent.target
-      : startPosition;
+    const target = pendingEvent.type === 'ladder'
+      ? isAnswerCorrect ? pendingEvent.target : startPosition
+      : isAnswerCorrect ? Math.min(startPosition + 1, 100) : pendingEvent.target;
     setPendingEvent(null);
     setCurrentQuestion(null);
     setSelectedIndex(null);
