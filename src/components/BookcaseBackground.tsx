@@ -3,13 +3,31 @@ import { Animated, Easing, Image, StyleSheet, useWindowDimensions, View } from '
 import { useAudio } from '../AudioContext';
 
 const BOOKCASE = require('../../assets/images/bookcase.png');
+const EASY_BOOKCASE = require('../../assets/images/easybookcase.png');
+const NORMAL_BOOKCASE = require('../../assets/images/normalbookcase.png');
+const HARD_BOOKCASE = require('../../assets/images/hardbookcase.png');
 const BOOKCASE_SIZE = { width: 1024, height: 1536 };
 const BACKGROUND_ZOOM = 2.5;
 
+export const getBookcaseSource = (difficulty?: string | string[]) => {
+  const selectedDifficulty = Array.isArray(difficulty) ? difficulty[0] : difficulty;
+  if (selectedDifficulty === 'Easy') return EASY_BOOKCASE;
+  if (selectedDifficulty === 'Hard') return HARD_BOOKCASE;
+  if (selectedDifficulty === 'Normal') return NORMAL_BOOKCASE;
+  return BOOKCASE;
+};
+
 /** Shared, gently scrolling bookcase backdrop for every app route. */
-export default function BookcaseBackground({ children }: { children: React.ReactNode }) {
+export default function BookcaseBackground({
+  children,
+  difficulty,
+}: {
+  children: React.ReactNode;
+  difficulty?: string | string[];
+}) {
   const { width, height } = useWindowDimensions();
   const { backgroundSpeed } = useAudio();
+  const bookcaseSource = getBookcaseSource(difficulty);
   const offset = useRef(new Animated.Value(0)).current;
   const imageScale = (Math.min(width, height) / Math.max(BOOKCASE_SIZE.width, BOOKCASE_SIZE.height)) * BACKGROUND_ZOOM;
   const tileWidth = BOOKCASE_SIZE.width * imageScale;
@@ -42,7 +60,7 @@ export default function BookcaseBackground({ children }: { children: React.React
           {Array.from({ length: rows * columns }, (_, tile) => (
             <Image
               key={tile}
-              source={BOOKCASE}
+              source={bookcaseSource}
               resizeMode="cover"
               style={{ position: 'absolute', left: (tile % columns) * tileWidth, top: Math.floor(tile / columns) * tileHeight, width: tileWidth, height: tileHeight }}
             />

@@ -73,7 +73,7 @@ export default function LevelSelectScreen() {
   };
 
   return (
-    <BookcaseBackground>
+    <BookcaseBackground difficulty={DIFFICULTIES[difficultyIndex]}>
       <Stack.Screen options={{ animation: 'none' }} />
       <View style={styles.centerWrapper}>
         <SafeAreaView edges={['top', 'bottom']} style={styles.container}>

@@ -20,7 +20,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAudio } from '../AudioContext';
-import BookcaseBackground from '../components/BookcaseBackground';
+import BookcaseBackground, { getBookcaseSource } from '../components/BookcaseBackground';
 import Dice3D, { type Dice3DHandle } from '../components/Dice3D';
 
 const DICE_ROLL_SOUND = require('../../assets/audio/dice-roll.mp3');
@@ -159,11 +159,14 @@ type PendingEvent = {
   target: number;
 };
 
+type Difficulty = 'Easy' | 'Normal' | 'Hard';
+
 type Question = {
   prompt: string;
   options: string[];
   correctIndex: number;
   hint?: string;
+  difficulty?: Exclude<Difficulty, 'Easy'>;
 };
 
 type DialogueSubject = 'Language' | 'Science' | 'History';
@@ -228,7 +231,13 @@ const getPlaceholderQuestion = (type: EventType): Question => {
 export default function GameScreen() {
   const router = useRouter();
   const { masterVol, masterMute, sfxVol, sfxMute } = useAudio();
-  const params = useLocalSearchParams<{ players?: string; playerColors?: string; level?: string; timer?: string }>();
+  const params = useLocalSearchParams<{
+    players?: string;
+    playerColors?: string;
+    level?: string;
+    timer?: string;
+    difficulty?: Difficulty;
+  }>();
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const rollSoundPlayer = useAudioPlayer(DICE_ROLL_SOUND);
   const resultSoundPlayer = useAudioPlayer(DICE_RESULT_SOUND);
@@ -251,6 +260,9 @@ export default function GameScreen() {
     ? Math.max(0, configuredTimer)
     : 30;
   const isInfiniteTimer = params.timer === 'infinite' || challengeTimeLimit === 0;
+  const selectedDifficulty: Difficulty = params.difficulty === 'Easy' || params.difficulty === 'Hard'
+    ? params.difficulty
+    : 'Normal';
 
   const parsedColors: string[] = (() => {
     try {
@@ -385,7 +397,9 @@ export default function GameScreen() {
     : require('../../assets/images/LogoKnowItAdder.png');
 
   const getNextQuestion = (eventType: EventType): Question => {
-    const questions = QUESTION_BANKS[dialogueSubject];
+    const questions = QUESTION_BANKS[dialogueSubject]?.filter(
+      (question) => !question.difficulty || question.difficulty === selectedDifficulty,
+    );
     if (!useQuestionBank || !questions?.length) return getPlaceholderQuestion(eventType);
     if (questionDeck.current.length === 0) {
       questionDeck.current = shuffleQuestions(questions);
@@ -744,7 +758,7 @@ export default function GameScreen() {
 
     router.push({
       pathname: '/stats',
-      params: { gameData: JSON.stringify(gameStats) },
+      params: { gameData: JSON.stringify(gameStats), difficulty: selectedDifficulty },
     });
   };
 
@@ -787,7 +801,7 @@ export default function GameScreen() {
   const diceSize = Math.min(84, boardSize * 0.37);
 
   return (
-    <BookcaseBackground>
+    <BookcaseBackground difficulty={selectedDifficulty}>
       <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1 }}>
         <View style={styles.mainContainer}>
           {/* TOP BANNER & EXIT BUTTON */}
@@ -1139,7 +1153,7 @@ export default function GameScreen() {
             >
               <View style={styles.quizPopupGroup}>
                 <ImageBackground
-                  source={require('../../assets/images/bookcase.png')}
+                  source={getBookcaseSource(selectedDifficulty)}
                   style={styles.quizSceneCard}
                   imageStyle={styles.quizSceneBackgroundImage}
                   resizeMode="cover"
