@@ -12,6 +12,7 @@ import {
   StyleSheet,
   Switch,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
   useWindowDimensions,
@@ -31,11 +32,19 @@ const ADD_TIME_IMG = require('../../assets/images/add-time.png');
 const REFRESH_IMG = require('../../assets/images/refresh.png');
 
 const POWER_UP_TYPES = ['hint', 'skip', 'add-time', 'refresh'] as const;
+type PowerUpType = typeof POWER_UP_TYPES[number];
+
 const POWER_UP_IMAGES = {
   hint: HINT_IMG,
   skip: SKIP_IMG,
   'add-time': ADD_TIME_IMG,
   refresh: REFRESH_IMG,
+};
+const POWER_UP_LABELS: Record<PowerUpType, string> = {
+  hint: 'Hint',
+  skip: 'Skip',
+  'add-time': 'Add Time',
+  refresh: 'Refresh',
 };
 
 const MAX_BOARD_SIZE = 380;
@@ -133,7 +142,7 @@ type Player = {
   name: string;
   color: string;
   position: number;
-  powerUps: ('hint' | 'skip' | 'add-time' | 'refresh')[];
+  powerUps: PowerUpType[];
 };
 
 type BoardMovement = {
@@ -267,6 +276,9 @@ export default function GameScreen() {
       };
     });
   });
+  const [debugMoveModalVisible, setDebugMoveModalVisible] = useState(false);
+  const [debugPlayerId, setDebugPlayerId] = useState('1');
+  const [debugTile, setDebugTile] = useState('1');
 
   // --- 10 RANDOM POWER-UP BOXES ON BOARD (Excluding starting/landing snake & ladder tiles) ---
   const [powerUpTiles, setPowerUpTiles] = useState<number[]>(() => {
@@ -357,6 +369,11 @@ export default function GameScreen() {
 
   const activePlayer = players[turnIndex] || players[0];
   const isModalVisible = pendingEvent !== null;
+  const parsedDebugTile = Number(debugTile);
+  const isDebugMoveValid = /^\d+$/.test(debugTile) && parsedDebugTile >= 1 && parsedDebugTile <= 100;
+  const isDebugMoveBlocked = isRolling || movement !== null || Boolean(
+    winner || isModalVisible || showExitModal || rouletteModalVisible,
+  );
   const dialogueSubject: DialogueSubject = params.level === 'reading'
     ? 'Language'
     : params.level === 'research'
@@ -496,11 +513,11 @@ export default function GameScreen() {
     }
   };
 
-  const passTurn = () => {
-    setTurnIndex((prev) => (prev + 1) % players.length);
+  const passTurn = (fromIndex = turnIndex) => {
+    setTurnIndex((fromIndex + 1) % players.length);
   };
 
-  const triggerPowerUpRoulette = (mover: Player, newPos: number) => {
+  const triggerPowerUpRoulette = (mover: Player, newPos: number, moverIndex: number) => {
     setPowerUpTiles((prev) => prev.filter((t) => t !== newPos));
     setRouletteModalVisible(true);
 
@@ -520,43 +537,72 @@ export default function GameScreen() {
             curr.map((p) => (p.id === mover.id ? { ...p, powerUps: [...p.powerUps, finalAward] } : p))
           );
           if (newPos === 100) setWinner(mover);
-          else passTurn();
+          else passTurn(moverIndex);
         }, 800);
       }
     }, 100);
   };
 
-  const movePlayer = (roll: number) => {
-    const mover = players[turnIndex];
+  const movePlayer = (roll: number, moverIndex = turnIndex) => {
+    const mover = players[moverIndex];
+    if (!mover) return;
     let newPos = mover.position;
     let direction = 1;
     const path = [newPos];
     for (let step = 0; step < roll; step += 1) {
       newPos += direction;
-      if (newPos === 100) direction = -1;
+      if (newPos >= 100) {
+        newPos = 100;
+        direction = -1;
+      } else if (newPos <= 1) {
+        newPos = 1;
+        direction = 1;
+      }
       path.push(newPos);
     }
 
     animatePlayerPath(mover.id, path, () => {
-      const updatedPlayer = { ...mover, position: newPos };
-      setPlayers((currentPlayers) => currentPlayers.map((player) =>
-        player.id === mover.id ? updatedPlayer : player,
-      ));
-
-      if (newPos === 100) {
-        setWinner(updatedPlayer);
-      } else if (powerUpTiles.includes(newPos)) {
-        triggerPowerUpRoulette(updatedPlayer, newPos);
-      } else if (LADDERS[newPos]) {
-        ladderClimbsRef.current += 1;
-        openQuiz({ type: 'ladder', landedPos: newPos, target: LADDERS[newPos] });
-      } else if (SNAKES[newPos]) {
-        snakeBitesRef.current += 1;
-        openQuiz({ type: 'snake', landedPos: newPos, target: SNAKES[newPos] });
-      } else {
-        passTurn();
-      }
+      resolvePlayerLanding(mover, moverIndex, newPos);
     });
+  };
+
+  const movePlayerToTile = (targetTile: number, moverIndex: number) => {
+    const mover = players[moverIndex];
+    if (!mover) return;
+    const direction = targetTile >= mover.position ? 1 : -1;
+    const path = [mover.position];
+    for (let tile = mover.position + direction; direction > 0 ? tile <= targetTile : tile >= targetTile; tile += direction) {
+      path.push(tile);
+    }
+
+    animatePlayerPath(mover.id, path, () => {
+      resolvePlayerLanding(mover, moverIndex, targetTile);
+    });
+  };
+
+  const openDebugMoveModal = () => {
+    if (isDebugMoveBlocked) return;
+    setDebugPlayerId(activePlayer.id);
+    setDebugTile(String(activePlayer.position));
+    setDebugMoveModalVisible(true);
+  };
+
+  const applyDebugMove = () => {
+    const moverIndex = players.findIndex((player) => player.id === debugPlayerId);
+    if (isDebugMoveBlocked || moverIndex < 0 || !isDebugMoveValid) return;
+    setDebugMoveModalVisible(false);
+    if (players[moverIndex].position === parsedDebugTile) return;
+    setTurnIndex(moverIndex);
+    movePlayerToTile(parsedDebugTile, moverIndex);
+  };
+
+  const giveDebugPowerUp = (powerUpType: PowerUpType) => {
+    if (isDebugMoveBlocked || !players.some((player) => player.id === debugPlayerId)) return;
+    setPlayers((currentPlayers) => currentPlayers.map((player) => (
+      player.id === debugPlayerId
+        ? { ...player, powerUps: [...player.powerUps, powerUpType] }
+        : player
+    )));
   };
 
   const openQuiz = (event: PendingEvent) => {
@@ -568,6 +614,25 @@ export default function GameScreen() {
     setHintMessage(null);
     setChallengeSeconds(challengeTimeLimit);
     setIsChallengeActive(true);
+  };
+
+  const resolvePlayerLanding = (mover: Player, moverIndex: number, newPos: number) => {
+    const updatedPlayer = { ...mover, position: newPos };
+    setPlayers((currentPlayers) => currentPlayers.map((player) =>
+      player.id === mover.id ? updatedPlayer : player,
+    ));
+
+    if (newPos === 100) {
+      setWinner(updatedPlayer);
+    } else if (powerUpTiles.includes(newPos)) {
+      triggerPowerUpRoulette(updatedPlayer, newPos, moverIndex);
+    } else if (LADDERS[newPos]) {
+      openQuiz({ type: 'ladder', landedPos: newPos, target: LADDERS[newPos] });
+    } else if (SNAKES[newPos]) {
+      openQuiz({ type: 'snake', landedPos: newPos, target: SNAKES[newPos] });
+    } else {
+      passTurn(moverIndex);
+    }
   };
 
   const handleAnswerSelect = (index: number) => {
@@ -588,7 +653,7 @@ export default function GameScreen() {
     setIsAnswerCorrect(isCorrect);
   };
 
-  const usePowerUp = (powerUpType: 'hint' | 'skip' | 'add-time' | 'refresh') => {
+  const usePowerUp = (powerUpType: PowerUpType) => {
     const mover = players[turnIndex];
     if (!mover.powerUps.includes(powerUpType) || isAnswerCorrect !== null) return;
 
@@ -645,6 +710,8 @@ export default function GameScreen() {
       setPlayers((currentPlayers) => currentPlayers.map((player) =>
         player.id === mover.id ? updatedPlayer : player,
       ));
+      if (pendingEvent.type === 'ladder' && isAnswerCorrect) {ladderClimbsRef.current += 1;}
+      else if (pendingEvent.type === 'snake' && !isAnswerCorrect) {snakeBitesRef.current += 1;}
       if (target === 100) setWinner(updatedPlayer);
       else passTurn();
     });
@@ -901,6 +968,16 @@ export default function GameScreen() {
                 }}
               />
             </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.debugMoveButton, isDebugMoveBlocked && styles.debugMoveButtonDisabled]}
+              onPress={openDebugMoveModal}
+              disabled={isDebugMoveBlocked}
+              activeOpacity={0.75}
+              accessibilityRole="button"
+              accessibilityLabel="Open debug movement controls"
+            >
+              <Text style={styles.debugMoveButtonText}>DEBUG</Text>
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -930,6 +1007,91 @@ export default function GameScreen() {
               <Text style={styles.rouletteTitle}>🎁 Power-Up Acquired!</Text>
               <Image source={POWER_UP_IMAGES[rouletteDisplayItem]} style={styles.rouletteImage} resizeMode="contain" />
               <Text style={styles.rouletteSubtitle}>Spinning...</Text>
+            </View>
+          </View>
+        </Modal>
+
+        {/* DEBUG MOVEMENT */}
+        <Modal
+          visible={debugMoveModalVisible}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setDebugMoveModalVisible(false)}
+        >
+          <View style={styles.modalOverlayContainer}>
+            <View style={styles.debugMoveCard}>
+              <Text style={styles.debugMoveTitle}>Debug</Text>
+              <View style={styles.debugPlayerChoices}>
+                {players.map((player) => {
+                  const isSelected = player.id === debugPlayerId;
+                  return (
+                    <TouchableOpacity
+                      key={player.id}
+                      style={[
+                        styles.debugPlayerChoice,
+                        { borderColor: player.color },
+                        isSelected && { backgroundColor: player.color },
+                      ]}
+                      onPress={() => setDebugPlayerId(player.id)}
+                      activeOpacity={0.75}
+                    >
+                      <Text style={[styles.debugPlayerChoiceText, isSelected && styles.debugPlayerChoiceTextSelected]}>
+                        {player.name}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+              <Text style={styles.debugMoveLabel}>
+                Give a Power-up to {players.find((player) => player.id === debugPlayerId)?.name ?? 'selected player'}
+              </Text>
+              <View style={styles.debugPowerUpChoices}>
+                {POWER_UP_TYPES.map((powerUpType) => {
+                  const count = players
+                    .find((player) => player.id === debugPlayerId)
+                    ?.powerUps.filter((item) => item === powerUpType).length ?? 0;
+                  return (
+                    <TouchableOpacity
+                      key={powerUpType}
+                      style={styles.debugPowerUpChoice}
+                      onPress={() => giveDebugPowerUp(powerUpType)}
+                      activeOpacity={0.75}
+                    >
+                      <Image source={POWER_UP_IMAGES[powerUpType]} style={styles.debugPowerUpIcon} resizeMode="contain" />
+                      <Text style={styles.debugPowerUpChoiceText}>
+                        Give {POWER_UP_LABELS[powerUpType]} ({count})
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+              <Text style={styles.debugMoveLabel}>Destination tile (1–100)</Text>
+              <TextInput
+                style={styles.debugMoveInput}
+                value={debugTile}
+                onChangeText={(value) => setDebugTile(value.replace(/\D/g, '').slice(0, 3))}
+                keyboardType="number-pad"
+                maxLength={3}
+                selectTextOnFocus
+                accessibilityLabel="Destination tile"
+              />
+              <View style={styles.exitActions}>
+                <TouchableOpacity
+                  style={[styles.exitBtn, styles.debugMoveConfirm, !isDebugMoveValid && styles.debugMoveConfirmDisabled]}
+                  onPress={applyDebugMove}
+                  disabled={!isDebugMoveValid}
+                  activeOpacity={0.75}
+                >
+                  <Text style={styles.exitBtnText}>MOVE</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.exitBtn}
+                  onPress={() => setDebugMoveModalVisible(false)}
+                  activeOpacity={0.75}
+                >
+                  <Text style={styles.exitBtnText}>CANCEL</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
         </Modal>
@@ -1217,9 +1379,32 @@ const styles = StyleSheet.create({
     resizeMode: 'contain',
   },
   diceSection: {
+    position: 'relative',
+    width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
     height: 56,
+  },
+  debugMoveButton: {
+    position: 'absolute',
+    right: 8,
+    top: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: 8,
+    backgroundColor: '#facc15',
+    borderWidth: 1,
+    borderColor: '#fff7b2',
+    elevation: 5,
+  },
+  debugMoveButtonDisabled: {
+    opacity: 0.45,
+  },
+  debugMoveButtonText: {
+    color: '#1b2338',
+    fontSize: 11,
+    fontWeight: '900',
+    letterSpacing: 0.5,
   },
   diceButton: {
     minWidth: 72,
@@ -1284,6 +1469,110 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#facc15',
     fontWeight: '700',
+  },
+  debugMoveCard: {
+    width: '88%',
+    maxWidth: 380,
+    backgroundColor: '#1b2338',
+    borderRadius: 16,
+    padding: 22,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#facc15',
+    elevation: 12,
+  },
+  debugMoveTitle: {
+    color: '#ffffff',
+    fontSize: 22,
+    fontWeight: '900',
+    marginBottom: 6,
+  },
+  debugPlayerChoices: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 8,
+    width: '100%',
+    marginBottom: 18,
+  },
+  debugPlayerChoice: {
+    minWidth: 84,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 8,
+    borderWidth: 2,
+    alignItems: 'center',
+    backgroundColor: '#27334d',
+  },
+  debugPlayerChoiceText: {
+    color: '#ffffff',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  debugPlayerChoiceTextSelected: {
+    color: '#111827',
+  },
+  debugPowerUpChoices: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    gap: 8,
+    width: '100%',
+    marginTop: -10,
+    marginBottom: 14,
+  },
+  debugPowerUpChoice: {
+    width: '48%',
+    minHeight: 54,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#64748b',
+    backgroundColor: '#27334d',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  debugPowerUpIcon: {
+    width: 26,
+    height: 26,
+    flexShrink: 0,
+  },
+  debugPowerUpChoiceText: {
+    flexShrink: 1,
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  debugMoveLabel: {
+    width: '100%',
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '700',
+    marginBottom: 20,
+  },
+  debugMoveInput: {
+    width: '100%',
+    height: 48,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#64748b',
+    backgroundColor: '#ffffff',
+    color: '#111827',
+    fontSize: 20,
+    fontWeight: '700',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  debugMoveConfirm: {
+    backgroundColor: '#facc15',
+    borderColor: '#facc15',
+  },
+  debugMoveConfirmDisabled: {
+    opacity: 0.45,
   },
   exitCard: {
     width: '88%',
