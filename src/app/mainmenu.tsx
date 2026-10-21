@@ -184,7 +184,7 @@ export default function MainMenuScreen() {
           >
             <Image
               source={require('@/assets/images/settings.png')}
-              style={[styles.icon, { width: controlSize, height: controlSize }]}
+              style={[styles.icon, { width: controlSize, height: controlSize, transform: [{ rotate: '-10deg' }] }]}
             />
           </TouchableOpacity>
 
@@ -195,7 +195,7 @@ export default function MainMenuScreen() {
           >
             <Image
               source={require('@/assets/images/door.png')}
-              style={[styles.icon, { width: controlSize, height: controlSize }]}
+              style={[styles.icon, { width: controlSize, height: controlSize, transform: [{ rotate: '10deg' }] }]}
             />
           </TouchableOpacity>
         </View>
