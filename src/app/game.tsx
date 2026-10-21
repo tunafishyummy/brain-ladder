@@ -1032,7 +1032,14 @@ export default function GameScreen() {
         </View>
 
         {/* POWER-UP ROULETTE MODAL */}
-        <Modal visible={rouletteModalVisible} transparent animationType="fade">
+        <Modal
+          visible={rouletteModalVisible}
+          transparent
+          animationType="fade"
+          presentationStyle="overFullScreen"
+          statusBarTranslucent
+          navigationBarTranslucent
+        >
           <View style={styles.modalOverlayContainer}>
             <View style={styles.rouletteCard}>
               <Text style={styles.rouletteTitle}>🎁 Power-Up Acquired!</Text>
