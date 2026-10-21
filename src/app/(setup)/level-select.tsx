@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
+  Image,
   ImageBackground,
   ScrollView,
   StyleSheet,
@@ -21,21 +22,18 @@ const LEVELS = [
     title: 'The Reading Wing',
     subtitle: 'Language',
     color: '#a3e635',
-    image: require('../../../assets/images/english.jpg'),
   },
   {
     id: 'research',
     title: 'The Research Corner',
     subtitle: 'Science & Technology',
     color: '#60a5fa',
-    image: require('../../../assets/images/science.jpg'),
   },
   {
     id: 'collections',
     title: 'The Old Collections',
     subtitle: 'World History',
     color: '#f87171',
-    image: require('../../../assets/images/history.jpg'),
   },
 ];
 
@@ -86,11 +84,19 @@ export default function LevelSelectScreen() {
         <View style={styles.content}>
           <View style={styles.headerRow}>
             <TouchableOpacity style={styles.backButton} onPress={handleBack} activeOpacity={0.7}>
-              <Text style={styles.backArrow}>‹</Text>
+              <Image
+                source={require('../../../assets/images/Backbutton.png')}
+                style={styles.backArrowImage}
+                resizeMode="contain"
+              />
             </TouchableOpacity>
-            <View style={styles.headerBanner}>
+            <ImageBackground
+              source={require('../../../assets/images/woodframe6to1.png')}
+              resizeMode="stretch"
+              style={styles.headerBanner}
+            >
               <Text style={styles.headerTitle}>SELECT LEVEL</Text>
-            </View>
+            </ImageBackground>
           </View>
 
           <ScrollView
@@ -107,9 +113,17 @@ export default function LevelSelectScreen() {
                     key={level.id}
                     activeOpacity={0.85}
                     onPress={() => setSelectedLevel(level.id)}
-                    style={[styles.levelCardWrapper, isSelected && styles.selectedCardBorder]}
+                    style={[
+                      styles.levelCardWrapper,
+                      !isSelected && styles.unselectedLevelCard,
+                      isSelected && styles.selectedCardBorder,
+                    ]}
                   >
-                    <ImageBackground source={level.image} style={styles.background}>
+                    <ImageBackground
+                      source={require('../../../assets/images/woodframe4to1.png')}
+                      resizeMode="stretch"
+                      style={styles.background}
+                    >
                       <View style={styles.cardOverlay}>
                         <View>
                           <Text style={[styles.levelTitle, { color: level.color }]}>
@@ -126,7 +140,11 @@ export default function LevelSelectScreen() {
             </View>
 
             {/* Difficulty Controls */}
-            <View style={styles.difficultyBanner}>
+            <ImageBackground
+              source={require('../../../assets/images/woodframe4to1.png')}
+              resizeMode="stretch"
+              style={styles.difficultyBanner}
+            >
               <Text style={styles.difficultyLabel}>DIFFICULTY</Text>
               <View style={styles.difficultyControls}>
                 <TouchableOpacity onPress={handlePrevDifficulty} style={styles.arrowButton}>
@@ -137,10 +155,14 @@ export default function LevelSelectScreen() {
                   <Text style={styles.arrowText}>›</Text>
                 </TouchableOpacity>
               </View>
-            </View>
+            </ImageBackground>
 
             {/* Question Timer Controls */}
-            <View style={styles.timerBanner}>
+            <ImageBackground
+              source={require('../../../assets/images/woodframe4to1.png')}
+              resizeMode="stretch"
+              style={styles.timerBanner}
+            >
               <Text style={styles.timerLabel}>QUESTION TIMER</Text>
               <View style={styles.timerGrid}>
                 {TIMERS.map((timer) => {
@@ -167,12 +189,18 @@ export default function LevelSelectScreen() {
                   );
                 })}
               </View>
-            </View>
+            </ImageBackground>
 
           </ScrollView>
 
-          <TouchableOpacity style={styles.continueButton} onPress={handleContinue} activeOpacity={0.9}>
-            <Text style={styles.continueText}>NEXT</Text>
+          <TouchableOpacity onPress={handleContinue} activeOpacity={0.9}>
+            <ImageBackground
+              source={require('../../../assets/images/woodframe6to1.png')}
+              resizeMode="stretch"
+              style={styles.continueButton}
+            >
+              <Text style={styles.continueText}>NEXT</Text>
+            </ImageBackground>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -204,17 +232,12 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: CARD_RADIUS,
-    backgroundColor: 'rgba(55, 58, 66, 0.92)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  backArrow: {
-    color: '#ffffff',
-    fontSize: 28,
-    fontWeight: '300',
-    marginTop: -2,
+  backArrowImage: {
+    width: 44,
+    height: 30,
   },
   optionsScroll: {
     flex: 1,
@@ -226,15 +249,11 @@ const styles = StyleSheet.create({
     gap: PADDING,
   },
   headerBanner: {
-    backgroundColor: 'rgba(55, 58, 66, 0.92)',
     flex: 1,
     minHeight: 48,
     paddingVertical: 12,
-    borderRadius: CARD_RADIUS,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
   },
   headerTitle: {
     color: '#ffffff',
@@ -248,10 +267,9 @@ const styles = StyleSheet.create({
   },
   levelCardWrapper: {
     height: 96,
-    borderRadius: CARD_RADIUS,
-    overflow: 'hidden',
-    borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
+  },
+  unselectedLevelCard: {
+    opacity: 0.55,
   },
   selectedCardBorder: {
     borderColor: '#ffffff',
@@ -259,7 +277,6 @@ const styles = StyleSheet.create({
   },
   cardOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(15, 18, 28, 0.72)',
     paddingHorizontal: PADDING,
     flexDirection: 'row',
     alignItems: 'center',
@@ -281,11 +298,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
   },
   difficultyBanner: {
-    backgroundColor: 'rgba(55, 58, 66, 0.92)',
-    borderRadius: CARD_RADIUS,
     padding: PADDING,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
     gap: 8,
   },
   difficultyLabel: {
@@ -317,11 +330,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   timerBanner: {
-    backgroundColor: 'rgba(55, 58, 66, 0.92)',
-    borderRadius: CARD_RADIUS,
     padding: PADDING,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
     gap: 12,
   },
   timerLabel: {
@@ -358,13 +367,11 @@ const styles = StyleSheet.create({
     color: '#0f121c',
   },
   continueButton: {
-    backgroundColor: '#ffffff',
     paddingVertical: 16,
-    borderRadius: CARD_RADIUS,
     alignItems: 'center',
   },
   continueText: {
-    color: '#0f121c',
+    color: '#ffffff',
     fontSize: 18,
     fontWeight: '800',
     letterSpacing: 1,

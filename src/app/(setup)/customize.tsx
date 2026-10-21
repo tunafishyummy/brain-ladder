@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import {
   Animated,
   Image,
+  ImageBackground,
   ScrollView,
   StyleSheet,
   Text,
@@ -56,12 +57,6 @@ export default function CustomizeCharacterScreen() {
   const previewImage = previewColor
     ? PLAYER_PREVIEWS_BY_COLOR[previewColor]
     : DEFAULT_PLAYER_PREVIEW;
-
-  // Dynamic header banner background color
-  const bannerBgColor =
-    currentSelection ||
-    PLAYER_ACCENT_COLORS[activePlayerIndex] ||
-    'rgba(255, 255, 255, 0.08)';
 
   useEffect(() => {
     setHoveredColor(null);
@@ -130,15 +125,23 @@ export default function CustomizeCharacterScreen() {
               onPress={handleBack}
               activeOpacity={0.7}
             >
-              <Text style={styles.backArrow}>‹</Text>
+              <Image
+                source={require('../../../assets/images/Backbutton.png')}
+                style={styles.backArrowImage}
+                resizeMode="contain"
+              />
             </TouchableOpacity>
 
-            <View style={[styles.bannerContainer, { backgroundColor: bannerBgColor }]}>
+            <ImageBackground
+              source={require('../../../assets/images/woodframe6to1.png')}
+              resizeMode="stretch"
+              style={styles.bannerContainer}
+            >
               <Text style={styles.bannerTitle}>CUSTOMIZE CHARACTER</Text>
               <Text style={styles.bannerSubtitle}>
                 PLAYER {currentPlayerNum} OF {totalPlayers} TURN
               </Text>
-            </View>
+            </ImageBackground>
           </View>
 
           <ScrollView
@@ -246,14 +249,20 @@ export default function CustomizeCharacterScreen() {
 
           {/* Continue / Next Player Button */}
           <TouchableOpacity
-            style={[styles.actionButton, !currentSelection && styles.disabledButton]}
+            style={!currentSelection && styles.disabledButton}
             onPress={handleNextOrStart}
             disabled={!currentSelection}
             activeOpacity={0.9}
           >
-            <Text style={styles.actionText}>
-              {activePlayerIndex < totalPlayers - 1 ? 'NEXT PLAYER' : 'START GAME'}
-            </Text>
+            <ImageBackground
+              source={require('../../../assets/images/woodframe6to1.png')}
+              resizeMode="stretch"
+              style={styles.actionButton}
+            >
+              <Text style={styles.actionText}>
+                {activePlayerIndex < totalPlayers - 1 ? 'NEXT PLAYER' : 'START GAME'}
+              </Text>
+            </ImageBackground>
           </TouchableOpacity>
 
         </View>
@@ -291,25 +300,18 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: CARD_RADIUS,
-    backgroundColor: 'rgba(55, 58, 66, 0.92)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  backArrow: {
-    color: '#ffffff',
-    fontSize: 28,
-    fontWeight: '300',
-    marginTop: -2,
+  backArrowImage: {
+    width: 44,
+    height: 30,
   },
   bannerContainer: {
     flex: 1,
-    borderRadius: CARD_RADIUS,
     paddingVertical: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: 2,
   },
   bannerTitle: {
@@ -425,16 +427,14 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   actionButton: {
-    backgroundColor: '#ffffff',
     paddingVertical: 16,
-    borderRadius: CARD_RADIUS,
     alignItems: 'center',
   },
   disabledButton: {
     opacity: 0.4,
   },
   actionText: {
-    color: '#0f121c',
+    color: '#ffffff',
     fontSize: 18,
     fontWeight: '800',
     letterSpacing: 1,

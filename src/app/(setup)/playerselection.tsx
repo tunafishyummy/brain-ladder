@@ -1,6 +1,8 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
+  Image,
+  ImageBackground,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -46,12 +48,20 @@ export default function PlayerSelectionScreen() {
               onPress={handleBack}
               activeOpacity={0.7}
             >
-              <Text style={styles.backArrow}>‹</Text>
+              <Image
+                source={require('../../../assets/images/Backbutton.png')}
+                style={styles.backArrowImage}
+                resizeMode="contain"
+              />
             </TouchableOpacity>
 
-            <View style={styles.bannerContainer}>
+            <ImageBackground
+              source={require('../../../assets/images/woodframe6to1.png')}
+              resizeMode="stretch"
+              style={styles.bannerContainer}
+            >
               <Text style={styles.bannerTitle}>SELECT PLAYERS</Text>
-            </View>
+            </ImageBackground>
           </View>
 
           {/* Player Count Selection Cards */}
@@ -64,31 +74,39 @@ export default function PlayerSelectionScreen() {
                   activeOpacity={0.85}
                   onPress={() => setSelectedCount(opt.count)}
                   style={[
-                    styles.optionCard,
-                    isSelected && styles.selectedOptionCard,
+                    styles.optionCardTouch,
+                    !isSelected && styles.unselectedOptionCard,
                   ]}
                 >
-                  <Text
-                    style={[
-                      styles.optionTitle,
-                      isSelected && styles.selectedText,
-                    ]}
+                  <ImageBackground
+                    source={require('../../../assets/images/woodframe4to1.png')}
+                    resizeMode="stretch"
+                    style={styles.optionCard}
                   >
-                    {opt.label}
-                  </Text>
-                  <Text style={styles.optionSubtitle}>{opt.subtitle}</Text>
+                    <Text
+                      style={[
+                        styles.optionTitle,
+                        isSelected && styles.selectedText,
+                      ]}
+                    >
+                      {opt.label}
+                    </Text>
+                    <Text style={styles.optionSubtitle}>{opt.subtitle}</Text>
+                  </ImageBackground>
                 </TouchableOpacity>
               );
             })}
           </View>
 
           {/* Continue Button */}
-          <TouchableOpacity
-            style={styles.continueButton}
-            onPress={handleContinue}
-            activeOpacity={0.9}
-          >
-            <Text style={styles.continueText}>NEXT</Text>
+          <TouchableOpacity onPress={handleContinue} activeOpacity={0.9}>
+            <ImageBackground
+              source={require('../../../assets/images/woodframe6to1.png')}
+              resizeMode="stretch"
+              style={styles.continueButton}
+            >
+              <Text style={styles.continueText}>NEXT</Text>
+            </ImageBackground>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -116,26 +134,18 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: CARD_RADIUS,
-    backgroundColor: 'rgba(55, 58, 66, 0.92)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  backArrow: {
-    color: '#ffffff',
-    fontSize: 28,
-    fontWeight: '300',
-    marginTop: -2,
+  backArrowImage: {
+    width: 44,
+    height: 30,
   },
   bannerContainer: {
     flex: 1,
-    backgroundColor: 'rgba(55, 58, 66, 0.92)',
-    borderRadius: CARD_RADIUS,
     paddingVertical: 14,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
     alignItems: 'center',
+    justifyContent: 'center',
   },
   bannerTitle: {
     color: '#ffffff',
@@ -147,20 +157,17 @@ const styles = StyleSheet.create({
     gap: 16,
     marginVertical: PADDING,
   },
+  optionCardTouch: {
+    width: '100%',
+  },
+  unselectedOptionCard: {
+    opacity: 0.55,
+  },
   optionCard: {
-    backgroundColor: 'rgba(15, 18, 28, 0.72)',
     paddingVertical: 20,
     paddingHorizontal: PADDING,
-    borderRadius: CARD_RADIUS,
-    borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
     alignItems: 'center',
     gap: 4,
-  },
-  selectedOptionCard: {
-    borderColor: '#ffffff',
-    borderWidth: 2,
-    backgroundColor: 'rgba(55, 58, 66, 0.92)',
   },
   optionTitle: {
     color: '#e2e8f0',
@@ -176,13 +183,11 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
   continueButton: {
-    backgroundColor: '#ffffff',
     paddingVertical: 16,
-    borderRadius: CARD_RADIUS,
     alignItems: 'center',
   },
   continueText: {
-    color: '#0f121c',
+    color: '#ffffff',
     fontSize: 18,
     fontWeight: '800',
     letterSpacing: 1,
