@@ -5,10 +5,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 const MENU_ART = require('../../assets/images/mainmenuart.png');
 const MENU_LAD = require('../../assets/images/mainmenulad.png');
 const MENU_ARM = require('../../assets/images/mainmenuladarm.png');
+const LEAVES = require('../../assets/images/leaves.png');
 const ART_SIZE = { width: 1350, height: 3000 };
 const ARM_SIZE = { width: 2600, height: 1200 };
 const PAGE_ASPECT = 9 / 20;
 const VIGNETTE_STEPS = 20;
+const LEAF_TOP_RATIO = -0.04;
 
 // PNG pixel coordinate that stays fixed during rotation; placement is independent.
 const ARM_PIVOT_PNG = { x: 444, y: 2310 };
@@ -33,6 +35,10 @@ export default function MainMenuArtwork({
   const pageWidth = Math.min(screenSize.width, screenSize.height * PAGE_ASPECT);
   const pageHeight = pageWidth / PAGE_ASPECT;
   const scale = pageWidth / ART_SIZE.width;
+  const leafWidth = pageWidth * 0.56;
+  const leafHeight = leafWidth * (1024 / 1536);
+  const leafTop = pageHeight * LEAF_TOP_RATIO;
+  const leafInset = leafWidth * 0.3;
   const pageLeft = (screenSize.width - pageWidth) / 2;
   const pageTop = (screenSize.height - pageHeight) / 2;
   const armWidth = ARM_SIZE.width * scale;
@@ -104,6 +110,31 @@ export default function MainMenuArtwork({
         >
           {children}
         </View>
+        <Image
+          source={LEAVES}
+          resizeMode="contain"
+          pointerEvents="none"
+          style={{
+            position: 'absolute',
+            top: leafTop,
+            left: -leafInset,
+            width: leafWidth,
+            height: leafHeight,
+          }}
+        />
+        <Image
+          source={LEAVES}
+          resizeMode="contain"
+          pointerEvents="none"
+          style={{
+            position: 'absolute',
+            top: leafTop,
+            right: -leafInset,
+            width: leafWidth,
+            height: leafHeight,
+            transform: [{ scaleX: -1 }],
+          }}
+        />
       </Animated.View>
 
       <View pointerEvents="none" style={StyleSheet.absoluteFill}>

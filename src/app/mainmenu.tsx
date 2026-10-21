@@ -1,5 +1,5 @@
 import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Animated,
   BackHandler,
@@ -19,19 +19,54 @@ import { useScreenTransition } from '../TransitionContext';
 // @ts-ignore SettingsScreen is maintained as JSX.
 import SettingsScreen from '../components/SettingsScreen';
 
+const PLAY_IMG = require('../../assets/images/Play.png');
+const PLAY_GLOW_IMG = require('../../assets/images/play-glow.png');
+
 export default function MainMenuScreen() {
   const router = useRouter();
   const { width, height } = useWindowDimensions();
   const artworkWidth = Math.min(width, height * (9 / 20));
   const controlSize = Math.min(220, artworkWidth * 0.4);
-  const playFontSize = Math.min(50, artworkWidth * 0.14);
+  const playImageWidth = artworkWidth * 0.48;
+  const playImageHeight = playImageWidth * (716 / 1549);
   const { fadeThroughBlack } = useScreenTransition();
   const zoomProgress = useRef(new Animated.Value(0)).current;
+  const playRock = useRef(new Animated.Value(0)).current;
   const transitionStarted = useRef(false);
   const [settingsVisible, setSettingsVisible] = useState(false);
   const [exitPromptVisible, setExitPromptVisible] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [zoomAnchor, setZoomAnchor] = useState<{ x: number; y: number }>();
+
+  useEffect(() => {
+    const rocking = Animated.loop(Animated.sequence([
+      Animated.timing(playRock, {
+        toValue: 1,
+        duration: 900,
+        easing: Easing.inOut(Easing.ease),
+        useNativeDriver: true,
+      }),
+      Animated.timing(playRock, {
+        toValue: -1,
+        duration: 1800,
+        easing: Easing.inOut(Easing.ease),
+        useNativeDriver: true,
+      }),
+      Animated.timing(playRock, {
+        toValue: 0,
+        duration: 900,
+        easing: Easing.inOut(Easing.ease),
+        useNativeDriver: true,
+      }),
+    ]));
+    rocking.start();
+    return () => rocking.stop();
+  }, [playRock]);
+
+  const playRotation = playRock.interpolate({
+    inputRange: [-1, 0, 1],
+    outputRange: ['-2.5deg', '0deg', '2.5deg'],
+  });
 
   useFocusEffect(
     useCallback(() => {
@@ -113,7 +148,27 @@ export default function MainMenuScreen() {
             disabled={isTransitioning}
             activeOpacity={0.8}
           >
-            <Text style={[styles.playText, { fontSize: playFontSize }]}>PLAY</Text>
+            <Image
+              source={PLAY_GLOW_IMG}
+              resizeMode="contain"
+              pointerEvents="none"
+              style={[
+                styles.playGlowImage,
+                { width: playImageWidth, height: playImageHeight },
+              ]}
+            />
+            <Animated.Image
+              source={PLAY_IMG}
+              resizeMode="contain"
+              style={[
+                styles.playImage,
+                {
+                  width: playImageWidth,
+                  height: playImageHeight,
+                  transform: [{ rotate: playRotation }],
+                },
+              ]}
+            />
           </TouchableOpacity>
         </View>
 
@@ -221,15 +276,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   playButton: {
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  playText: {
-    fontWeight: 'bold',
-    color: '#FFD700',
-    textShadowColor: 'rgba(0, 0, 0, 0.75)',
-    textShadowOffset: { width: 1, height: 2 },
-    textShadowRadius: 4,
+  playImage: {
+    alignSelf: 'center',
+  },
+  playGlowImage: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
   },
   bottomRow: {
     position: 'absolute',
