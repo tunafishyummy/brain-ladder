@@ -30,6 +30,10 @@ const HINT_IMG = require('../../assets/images/hint.png');
 const SKIP_IMG = require('../../assets/images/skip.png');
 const ADD_TIME_IMG = require('../../assets/images/add-time.png');
 const REFRESH_IMG = require('../../assets/images/refresh.png');
+const ADDER_DIALOGUE_IMG = require('../../assets/images/AdderDialogue.png');
+const LAD_DIALOGUE_IMG = require('../../assets/images/LadDialogue.png');
+const LAD_DIALOGUE_CHEER_IMG = require('../../assets/images/LadDialogueCheer.png');
+const LAD_DIALOGUE_SHOCK_IMG = require('../../assets/images/LadDialogueShock.png');
 
 const POWER_UP_TYPES = ['hint', 'skip', 'add-time', 'refresh'] as const;
 type PowerUpType = typeof POWER_UP_TYPES[number];
@@ -350,6 +354,11 @@ export default function GameScreen() {
   const availablePowerUps = POWER_UP_TYPES.filter(
     (pType) => !(pType === 'add-time' && isInfiniteTimer)
   );
+  const dialogueSubject: DialogueSubject = params.level === 'reading'
+    ? 'Language'
+    : params.level === 'research'
+      ? 'Science'
+      : 'History';
 
   // Challenge timer countdown effect
   useEffect(() => {
@@ -359,6 +368,9 @@ export default function GameScreen() {
         setChallengeSeconds((prev) => {
           if (prev <= 1) {
             clearInterval(timer);
+            if (pendingEvent) {
+              setDialogueText(getRandomDialogueLine(pendingEvent.type, dialogueSubject, 'IncorrectAnswer'));
+            }
             setIsAnswerCorrect(false);
             setIsChallengeActive(false);
             return 0;
@@ -368,7 +380,7 @@ export default function GameScreen() {
       }, 1000);
     }
     return () => clearInterval(timer);
-  }, [isChallengeActive, isInfiniteTimer]);
+  }, [isChallengeActive, isInfiniteTimer, pendingEvent, dialogueSubject]);
 
   useEffect(() => {
     const sfxVolume = masterMute || sfxMute ? 0 : (masterVol / 100) * (sfxVol / 100);
@@ -385,15 +397,14 @@ export default function GameScreen() {
   const isDebugMoveBlocked = isRolling || movement !== null || Boolean(
     winner || isModalVisible || showExitModal || rouletteModalVisible,
   );
-  const dialogueSubject: DialogueSubject = params.level === 'reading'
-    ? 'Language'
-    : params.level === 'research'
-      ? 'Science'
-      : 'History';
   const hasQuestionBank = Boolean(QUESTION_BANKS[dialogueSubject]?.length);
   const dialogueImage = pendingEvent?.type === 'ladder'
-    ? require('../../assets/images/LogoLad.png')
-    : require('../../assets/images/LogoKnowItAdder.png');
+    ? isAnswerCorrect === true
+      ? LAD_DIALOGUE_CHEER_IMG
+      : isAnswerCorrect === false
+        ? LAD_DIALOGUE_SHOCK_IMG
+        : LAD_DIALOGUE_IMG
+    : ADDER_DIALOGUE_IMG;
 
   const getNextQuestion = (eventType: EventType): Question => {
     const rawQuestions = QUESTION_BANKS[dialogueSubject];
@@ -1158,21 +1169,28 @@ export default function GameScreen() {
               showsVerticalScrollIndicator={false}
             >
               <View style={styles.quizPopupGroup}>
-                <ImageBackground
-                  source={getBookcaseSource(selectedDifficulty)}
-                  style={styles.quizSceneCard}
-                  imageStyle={styles.quizSceneBackgroundImage}
-                  resizeMode="cover"
-                >
-                  <View pointerEvents="none" style={styles.quizSceneForeground}>
-                    <Image source={dialogueImage} style={styles.quizCharacterImage} resizeMode="contain" />
-                    <View style={styles.quizDialogueBox}>
-                      <Text style={styles.quizDialogueText} numberOfLines={DIALOGUE_MAX_LINES} ellipsizeMode="tail">
-                        {typedDialogue}
-                      </Text>
+                <View style={styles.quizSceneStage}>
+                  <ImageBackground
+                    source={getBookcaseSource(selectedDifficulty)}
+                    style={styles.quizSceneCard}
+                    imageStyle={styles.quizSceneBackgroundImage}
+                    resizeMode="cover"
+                  >
+                    <View pointerEvents="none" style={styles.quizSceneForeground}>
+                      <View style={styles.quizDialogueBox}>
+                        <Text style={styles.quizDialogueText} numberOfLines={DIALOGUE_MAX_LINES} ellipsizeMode="tail">
+                          {typedDialogue}
+                        </Text>
+                      </View>
                     </View>
-                  </View>
-                </ImageBackground>
+                  </ImageBackground>
+                  <Image
+                    source={dialogueImage}
+                    style={styles.quizCharacterImage}
+                    resizeMode="contain"
+                    pointerEvents="none"
+                  />
+                </View>
 
                 {/* TIMER DISPLAY */}
                 {!isInfiniteTimer && (
@@ -1690,13 +1708,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
   },
+  quizSceneStage: {
+    position: 'relative',
+    width: '100%',
+    height: QUIZ_SCENE_HEIGHT,
+    zIndex: 2,
+    elevation: 2,
+  },
   quizSceneCard: {
     width: '100%',
     height: QUIZ_SCENE_HEIGHT,
     borderRadius: 16,
     borderWidth: 2,
     borderColor: '#475569',
-    overflow: 'visible',
+    overflow: 'hidden',
+    zIndex: 0,
   },
   quizSceneBackgroundImage: {
     borderRadius: 16,
@@ -1709,15 +1735,16 @@ const styles = StyleSheet.create({
   },
   quizCharacterImage: {
     position: 'absolute',
-    right: '8%',
-    bottom: '-115%',
-    width: '31%',
+    right: '4%',
+    top: '-330%',
+    width: '46%',
     aspectRatio: 1,
-    transform: [{ scale: 2 }],
-    zIndex: 1,
+    zIndex: 3,
+    elevation: 3,
+    transform: [{ scale: 1.5 }],
   },
   quizDialogueBox: {
-    width: '58%',
+    width: '45%',
     height: QUIZ_DIALOGUE_BOX_HEIGHT,
     justifyContent: 'center',
     padding: 12,
@@ -1757,6 +1784,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.4,
     shadowRadius: 10,
     elevation: 10,
+    zIndex: 5,
+    position: 'relative',
   },
   quizHeader: {
     fontSize: 20,
