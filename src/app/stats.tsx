@@ -206,37 +206,23 @@ const styles = StyleSheet.create({
   headerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'space-between',
     width: '100%',
     maxWidth: 380,
     marginBottom: 16,
-    position: 'relative',
-    height: 90,
-    overflow: 'visible',
   },
-  // Adjust scaling & position for snake character here:
+  // Each decoration scales with the available header width.
   snakeHeaderImage: {
-    width: 180,
-    height: 120,
-    position: 'absolute',
-    left: -20,
-    top: -30,
-    zIndex: 10,
+    width: '20%',
+    aspectRatio: 1,
   },
-  // Adjust scaling & position for ladder character here:
   ladderHeaderImage: {
-    width: 120,
-    height: 150,
-    position: 'absolute',
-    right: -16,
-    top: -30,
-    zIndex: 10,
+    width: '20%',
+    aspectRatio: 1,
   },
-  // Adjust scaling for the GAME SUMMARY title banner here:
   gameSummaryTitleImage: {
-    width: 600,
-    height: 200,
-    zIndex: 5,
+    width: '60%',
+    aspectRatio: 3,
   },
   podiumCard: {
     width: '100%',

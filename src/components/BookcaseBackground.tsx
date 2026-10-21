@@ -56,14 +56,23 @@ export default function BookcaseBackground({
   return (
     <View style={styles.root}>
       <View pointerEvents="none" style={StyleSheet.absoluteFill}>
-        <Animated.View style={{ width: columns * tileWidth, height: rows * tileHeight, transform: [{ translateX }, { translateY }] }}>
+        <Animated.View
+          style={{
+            width: columns * tileWidth,
+            height: rows * tileHeight,
+            flexDirection: 'row',
+            flexWrap: 'wrap',
+            alignContent: 'flex-start',
+            transform: [{ translateX }, { translateY }],
+          }}
+        >
           {Array.from({ length: rows * columns }, (_, tile) => (
             <Image
               key={tile}
               source={bookcaseSource}
               resizeMode="cover"
               fadeDuration={0}
-              style={{ position: 'absolute', left: (tile % columns) * tileWidth, top: Math.floor(tile / columns) * tileHeight, width: tileWidth, height: tileHeight }}
+              style={{ width: tileWidth, height: tileHeight, flexShrink: 0 }}
             />
           ))}
         </Animated.View>

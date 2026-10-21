@@ -13,7 +13,7 @@ import {
   useWindowDimensions,
   View
 } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import MainMenuArtwork from '../components/MainMenuArtwork';
 import { useScreenTransition } from '../TransitionContext';
 // @ts-ignore SettingsScreen is maintained as JSX.
@@ -21,7 +21,6 @@ import SettingsScreen from '../components/SettingsScreen';
 
 export default function MainMenuScreen() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
   const artworkWidth = Math.min(width, height * (9 / 20));
   const controlSize = Math.min(52, artworkWidth * 0.14);
@@ -95,7 +94,7 @@ export default function MainMenuScreen() {
     >
       <SafeAreaView edges={['top', 'bottom']} style={styles.container}>
         <TouchableOpacity
-          style={[styles.debugButton, { top: insets.top + 12 }]}
+          style={styles.debugButton}
           onPress={handleReturnToSplash}
           activeOpacity={0.8}
         >
@@ -192,13 +191,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     zIndex: 2,
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     alignItems: 'center',
   },
   debugButton: {
-    position: 'absolute',
-    top: 12,
-    left: 12,
+    alignSelf: 'flex-start',
+    marginTop: 12,
+    marginLeft: 12,
     zIndex: 3,
     backgroundColor: '#fff',
     borderWidth: 2,

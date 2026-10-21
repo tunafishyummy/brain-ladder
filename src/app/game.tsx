@@ -250,8 +250,6 @@ export default function GameScreen() {
     MAX_BOARD_SIZE,
   );
   const gridSize = boardSize - BOARD_FRAME_BORDER_WIDTH * 2;
-  const boardOffsetX = (frameWidth - gridSize) / 2;
-  const boardOffsetY = (frameHeight - gridSize) / 2;
   const cellSize = gridSize / 10;
   const playerCount = Math.min(3, Math.max(1, Number(params.players) || 3));
   const configuredTimer = Number(params.timer);
@@ -785,13 +783,13 @@ export default function GameScreen() {
   const cameraTranslateX = movementX
     ? Animated.multiply(
         cameraFollow,
-        Animated.subtract(frameWidth / 2 - boardOffsetX, Animated.multiply(cameraScale, movementX)),
+        Animated.subtract(gridSize / 2, Animated.multiply(cameraScale, movementX)),
       )
     : 0;
   const cameraTranslateY = movementY
     ? Animated.multiply(
         cameraFollow,
-        Animated.subtract(frameHeight / 2 - boardOffsetY, Animated.multiply(cameraScale, movementY)),
+        Animated.subtract(gridSize / 2, Animated.multiply(cameraScale, movementY)),
       )
     : 0;
   const tileNumberScale = cameraScale.interpolate({
@@ -837,9 +835,6 @@ export default function GameScreen() {
           <View style={[styles.boardFrame, { width: frameWidth, height: frameHeight }]}>
             <Animated.View
               style={{
-                position: 'absolute',
-                left: boardOffsetX,
-                top: boardOffsetY,
                 width: gridSize,
                 height: gridSize,
                 transform: [{ translateX: cameraTranslateX }, { translateY: cameraTranslateY }],
@@ -962,42 +957,47 @@ export default function GameScreen() {
 
           {/* 3D DICE SECTION */}
           <View style={styles.diceSection}>
-            <TouchableOpacity
-              style={styles.diceButton}
-              onPress={rollDice}
-              disabled={!isDiceReady || isRolling || !!winner || isModalVisible || showExitModal || rouletteModalVisible}
-              activeOpacity={0.7}
-            >
-              <Dice3D
-                ref={diceRef}
-                size={diceSize}
-                onReady={() => setIsDiceReady(true)}
-                onRollComplete={(value) => {
-                  setIsRolling(false);
-                  void resultSoundPlayer.seekTo(0).then(() => resultSoundPlayer.play()).catch((error: unknown) => {
-                    console.error('Failed to play the dice result sound.', error);
-                  });
-                  movePlayer(value);
-                }}
-                onError={() => {
-                  setIsDiceReady(false);
-                  Alert.alert(
-                    '3D die unavailable',
-                    'The die renderer could not start. Please restart the game and try again.',
-                  );
-                }}
-              />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.debugMoveButton, isDebugMoveBlocked && styles.debugMoveButtonDisabled]}
-              onPress={openDebugMoveModal}
-              disabled={isDebugMoveBlocked}
-              activeOpacity={0.75}
-              accessibilityRole="button"
-              accessibilityLabel="Open debug movement controls"
-            >
-              <Text style={styles.debugMoveButtonText}>DEBUG</Text>
-            </TouchableOpacity>
+            <View style={styles.diceSide} />
+            <View style={styles.diceCenter}>
+              <TouchableOpacity
+                style={styles.diceButton}
+                onPress={rollDice}
+                disabled={!isDiceReady || isRolling || !!winner || isModalVisible || showExitModal || rouletteModalVisible}
+                activeOpacity={0.7}
+              >
+                <Dice3D
+                  ref={diceRef}
+                  size={diceSize}
+                  onReady={() => setIsDiceReady(true)}
+                  onRollComplete={(value) => {
+                    setIsRolling(false);
+                    void resultSoundPlayer.seekTo(0).then(() => resultSoundPlayer.play()).catch((error: unknown) => {
+                      console.error('Failed to play the dice result sound.', error);
+                    });
+                    movePlayer(value);
+                  }}
+                  onError={() => {
+                    setIsDiceReady(false);
+                    Alert.alert(
+                      '3D die unavailable',
+                      'The die renderer could not start. Please restart the game and try again.',
+                    );
+                  }}
+                />
+              </TouchableOpacity>
+            </View>
+            <View style={[styles.diceSide, styles.diceActionSide]}>
+              <TouchableOpacity
+                style={[styles.debugMoveButton, isDebugMoveBlocked && styles.debugMoveButtonDisabled]}
+                onPress={openDebugMoveModal}
+                disabled={isDebugMoveBlocked}
+                activeOpacity={0.75}
+                accessibilityRole="button"
+                accessibilityLabel="Open debug movement controls"
+              >
+                <Text style={styles.debugMoveButtonText}>DEBUG</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
 
@@ -1369,6 +1369,8 @@ const styles = StyleSheet.create({
     ...BOARD_FRAME,
     overflow: 'hidden',
     alignSelf: 'center',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   boardImage: { position: 'absolute', width: '100%', height: '100%' },
   tileNumber: {
@@ -1399,16 +1401,23 @@ const styles = StyleSheet.create({
     resizeMode: 'contain',
   },
   diceSection: {
-    position: 'relative',
+    flexDirection: 'row',
     width: '100%',
+    minHeight: 84,
+    alignItems: 'center',
+  },
+  diceSide: {
+    flex: 1,
+  },
+  diceCenter: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    height: 56,
+  },
+  diceActionSide: {
+    alignItems: 'flex-end',
   },
   debugMoveButton: {
-    position: 'absolute',
-    right: 8,
-    top: 12,
     paddingHorizontal: 10,
     paddingVertical: 8,
     borderRadius: 8,
@@ -1684,7 +1693,6 @@ const styles = StyleSheet.create({
   quizSceneCard: {
     width: '100%',
     height: QUIZ_SCENE_HEIGHT,
-    position: 'relative',
     borderRadius: 16,
     borderWidth: 2,
     borderColor: '#475569',
@@ -1701,9 +1709,9 @@ const styles = StyleSheet.create({
   },
   quizCharacterImage: {
     position: 'absolute',
-    right: 30,
-    bottom: -140,
-    width: 112,
+    right: '8%',
+    bottom: '-115%',
+    width: '31%',
     aspectRatio: 1,
     transform: [{ scale: 2 }],
     zIndex: 1,
