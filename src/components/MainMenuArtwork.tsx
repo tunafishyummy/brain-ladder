@@ -7,6 +7,7 @@ const MENU_LAD = require('../../assets/images/mainmenulad.png');
 const MENU_ARM = require('../../assets/images/mainmenuladarm.png');
 const LEAVES = require('../../assets/images/leaves.png');
 const ART_SIZE = { width: 1350, height: 3000 };
+const MENU_ART_ASPECT = 2 / 3;
 const ARM_SIZE = { width: 2600, height: 1200 };
 const PAGE_ASPECT = 9 / 20;
 const VIGNETTE_STEPS = 20;
@@ -34,6 +35,8 @@ export default function MainMenuArtwork({
   const angle = useRef(new Animated.Value(0)).current;
   const pageWidth = Math.min(screenSize.width, screenSize.height * PAGE_ASPECT);
   const pageHeight = pageWidth / PAGE_ASPECT;
+  const menuArtWidth = pageHeight * MENU_ART_ASPECT;
+  const menuArtLeft = (pageWidth - menuArtWidth) / 2 - pageWidth * 0.07;
   const scale = pageWidth / ART_SIZE.width;
   const leafWidth = pageWidth * 0.56;
   const leafHeight = leafWidth * (1024 / 1536);
@@ -78,7 +81,19 @@ export default function MainMenuArtwork({
           transform: [{ scale: artScale }],
         }}
       >
-        <Image source={MENU_ART} resizeMode="stretch" style={styles.pageImage} />
+        <View style={[StyleSheet.absoluteFill, { overflow: 'hidden' }]}>
+          <Image
+            source={MENU_ART}
+            resizeMode="stretch"
+            style={{
+              position: 'absolute',
+              left: menuArtLeft,
+              top: 0,
+              width: menuArtWidth,
+              height: pageHeight,
+            }}
+          />
+        </View>
         <Animated.Image
           source={MENU_ARM}
           resizeMode="contain"
