@@ -23,7 +23,7 @@ export default function MainMenuScreen() {
   const router = useRouter();
   const { width, height } = useWindowDimensions();
   const artworkWidth = Math.min(width, height * (9 / 20));
-  const controlSize = Math.min(52, artworkWidth * 0.14);
+  const controlSize = Math.min(220, artworkWidth * 0.4);
   const playFontSize = Math.min(50, artworkWidth * 0.14);
   const { fadeThroughBlack } = useScreenTransition();
   const zoomProgress = useRef(new Animated.Value(0)).current;
@@ -117,9 +117,13 @@ export default function MainMenuScreen() {
           </TouchableOpacity>
         </View>
 
-        <View style={[styles.bottomRow, { right: '7%', bottom: '2%', gap: artworkWidth * 0.045 }]}>
+        <View style={[styles.bottomRow, { right: '-5%', bottom: '-3%', gap: 0.2 }]}>
           <TouchableOpacity
-            style={styles.iconButton}
+            style={[
+              styles.iconButton,
+              styles.settingsIconButton,
+              { transform: [{ translateX: artworkWidth * 0.15 }] },
+            ]}
             onPress={handleSettings}
             activeOpacity={0.6}
           >
@@ -128,8 +132,6 @@ export default function MainMenuScreen() {
               style={[styles.icon, { width: controlSize, height: controlSize }]}
             />
           </TouchableOpacity>
-
-          <View pointerEvents="none" style={[styles.iconDivider, { height: controlSize + 20 }]} />
 
           <TouchableOpacity
             style={styles.iconButton}
@@ -234,16 +236,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  iconDivider: {
-    width: 2,
-    height: 70,
-    alignSelf: 'center',
-    backgroundColor: 'rgba(255,255,255,0.75)',
-  },
   iconButton: {
     padding: 10,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  settingsIconButton: {
+    paddingRight: -50,
   },
   icon: {
     resizeMode: 'contain',
