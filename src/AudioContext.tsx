@@ -1,6 +1,6 @@
 import { useAudioPlayer } from 'expo-audio';
 import { usePathname } from 'expo-router';
-import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import placeholder2Volume from './audio/Placeholder2Volume';
 
 // Local asset path relative to src/AudioContext.tsx
@@ -67,7 +67,7 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
     }
   }, [activeTrack, gamePlayer, masterMute, masterVol, menuPlayer, musicMute, musicVol]);
 
-  const startAudio = () => {
+  const startAudio = useCallback(() => {
     try {
       audioStartedRef.current = true;
       const player = activeTrackRef.current === 'game' ? gamePlayer : menuPlayer;
@@ -75,7 +75,7 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       console.error('Error starting audio:', error);
     }
-  };
+  }, [gamePlayer, menuPlayer]);
 
   // Update volume  whenever any slider/mute state changes
   useEffect(() => {

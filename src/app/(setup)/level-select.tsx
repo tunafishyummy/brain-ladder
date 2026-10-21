@@ -1,5 +1,5 @@
-import { Stack, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useRouter } from 'expo-router';
+import { useEffect, useState } from 'react';
 import {
   ImageBackground,
   ScrollView,
@@ -9,7 +9,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import BookcaseBackground from '../components/BookcaseBackground';
+import { useScreenTransition } from '../../TransitionContext';
 
 // Constants
 const PADDING = 16;
@@ -21,21 +21,21 @@ const LEVELS = [
     title: 'The Reading Wing',
     subtitle: 'Language',
     color: '#a3e635',
-    image: require('../../assets/images/english.jpg'),
+    image: require('../../../assets/images/english.jpg'),
   },
   {
     id: 'research',
     title: 'The Research Corner',
     subtitle: 'Science & Technology',
     color: '#60a5fa',
-    image: require('../../assets/images/science.jpg'),
+    image: require('../../../assets/images/science.jpg'),
   },
   {
     id: 'collections',
     title: 'The Old Collections',
     subtitle: 'World History',
     color: '#f87171',
-    image: require('../../assets/images/history.jpg'),
+    image: require('../../../assets/images/history.jpg'),
   },
 ];
 
@@ -49,9 +49,14 @@ const TIMERS = [
 
 export default function LevelSelectScreen() {
   const router = useRouter();
+  const { setBookcaseDifficulty } = useScreenTransition();
   const [selectedLevel, setSelectedLevel] = useState('collections');
   const [difficultyIndex, setDifficultyIndex] = useState(1);
   const [questionTimer, setQuestionTimer] = useState(15);
+
+  useEffect(() => {
+    setBookcaseDifficulty(DIFFICULTIES[difficultyIndex]);
+  }, [difficultyIndex, setBookcaseDifficulty]);
 
   const handlePrevDifficulty = () => {
     setDifficultyIndex((prev) => (prev > 0 ? prev - 1 : DIFFICULTIES.length - 1));
@@ -77,8 +82,6 @@ export default function LevelSelectScreen() {
   };
 
   return (
-    <BookcaseBackground difficulty={DIFFICULTIES[difficultyIndex]}>
-      <Stack.Screen options={{ animation: 'none' }} />
       <SafeAreaView edges={['top', 'bottom']} style={styles.container}>
         <View style={styles.content}>
           <View style={styles.headerRow}>
@@ -173,7 +176,6 @@ export default function LevelSelectScreen() {
           </TouchableOpacity>
         </View>
       </SafeAreaView>
-    </BookcaseBackground>
   );
 }
 

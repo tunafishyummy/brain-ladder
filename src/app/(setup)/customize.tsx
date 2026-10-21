@@ -10,7 +10,6 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import BookcaseBackground from '../components/BookcaseBackground';
 
 const PADDING = 16;
 const CARD_RADIUS = 16;
@@ -22,12 +21,12 @@ const COLOR_OPTIONS = [
   { id: 'yellow', hex: '#fed330', label: 'Yellow' },
 ];
 
-const DEFAULT_PLAYER_PREVIEW = require('../../assets/images/Playergrey.png');
+const DEFAULT_PLAYER_PREVIEW = require('../../../assets/images/Playergrey.png');
 const PLAYER_PREVIEWS_BY_COLOR: Record<string, number> = {
-  '#4b7bec': require('../../assets/images/Playerblue.png'),
-  '#ff5252': require('../../assets/images/Playerred.png'),
-  '#26de81': require('../../assets/images/Playergreen.png'),
-  '#fed330': require('../../assets/images/Playeryellow.png'),
+  '#4b7bec': require('../../../assets/images/Playerblue.png'),
+  '#ff5252': require('../../../assets/images/Playerred.png'),
+  '#26de81': require('../../../assets/images/Playergreen.png'),
+  '#fed330': require('../../../assets/images/Playeryellow.png'),
 };
 
 const PLAYER_ACCENT_COLORS: { [key: number]: string } = {
@@ -119,7 +118,6 @@ export default function CustomizeCharacterScreen() {
   };
 
   return (
-    <BookcaseBackground difficulty={params.difficulty}>
       <SafeAreaView edges={['top', 'bottom']} style={styles.container}>
         <View style={styles.content}>
 
@@ -258,7 +256,6 @@ export default function CustomizeCharacterScreen() {
 
         </View>
       </SafeAreaView>
-    </BookcaseBackground>
   );
 }
 

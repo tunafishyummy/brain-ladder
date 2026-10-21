@@ -1,16 +1,22 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { usePathname } from 'expo-router';
 import { Animated, Easing, StyleSheet, View } from 'react-native';
+import BookcaseBackground from './components/BookcaseBackground';
 
-type TransitionContextValue = {
+type ScreenContextValue = {
   fadeThroughBlack: (navigate: () => void) => void;
+  setBookcaseDifficulty: (difficulty: string) => void;
 };
 
-const TransitionContext = createContext<TransitionContextValue | null>(null);
+const ScreenContext = createContext<ScreenContextValue | null>(null);
+const BOOKCASE_ROUTES = new Set(['/level-select', '/playerselection', '/customize']);
 
 export function TransitionProvider({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
   const opacity = useRef(new Animated.Value(0)).current;
-  const [active, setActive] = useState(false);
-  const running = useRef(false);
+  const [transitionActive, setTransitionActive] = useState(false);
+  const [bookcaseDifficulty, setBookcaseDifficulty] = useState('Normal');
+  const transitionRunning = useRef(false);
   const timeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => () => {
@@ -18,18 +24,18 @@ export function TransitionProvider({ children }: { children: React.ReactNode }) 
   }, []);
 
   const fadeThroughBlack = useCallback((navigate: () => void) => {
-    if (running.current) return;
-    running.current = true;
-    setActive(true);
+    if (transitionRunning.current) return;
+    transitionRunning.current = true;
+    setTransitionActive(true);
     Animated.timing(opacity, {
       toValue: 1,
-      duration: 450,
+      duration: 300,
       easing: Easing.in(Easing.ease),
       useNativeDriver: true,
     }).start(({ finished }) => {
       if (!finished) {
-        running.current = false;
-        setActive(false);
+        transitionRunning.current = false;
+        setTransitionActive(false);
         return;
       }
 
@@ -37,37 +43,42 @@ export function TransitionProvider({ children }: { children: React.ReactNode }) 
       timeout.current = setTimeout(() => {
         Animated.timing(opacity, {
           toValue: 0,
-          duration: 650,
+          duration: 350,
           easing: Easing.out(Easing.ease),
           useNativeDriver: true,
         }).start(() => {
-          running.current = false;
-          setActive(false);
+          transitionRunning.current = false;
+          setTransitionActive(false);
         });
-      }, 100);
+      }, 80);
     });
   }, [opacity]);
 
   return (
-    <TransitionContext.Provider value={{ fadeThroughBlack }}>
+    <ScreenContext.Provider value={{ fadeThroughBlack, setBookcaseDifficulty }}>
       <View style={styles.root}>
+        {BOOKCASE_ROUTES.has(pathname) && (
+          <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+            <BookcaseBackground difficulty={bookcaseDifficulty} />
+          </View>
+        )}
         {children}
         <Animated.View
-          pointerEvents={active ? 'auto' : 'none'}
+          pointerEvents={transitionActive ? 'auto' : 'none'}
           style={[styles.blackout, { opacity }]}
         />
       </View>
-    </TransitionContext.Provider>
+    </ScreenContext.Provider>
   );
 }
 
 export function useScreenTransition() {
-  const context = useContext(TransitionContext);
+  const context = useContext(ScreenContext);
   if (!context) throw new Error('useScreenTransition must be used inside TransitionProvider');
   return context;
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1 },
+  root: { flex: 1, backgroundColor: '#000' },
   blackout: { ...StyleSheet.absoluteFill, zIndex: 100, backgroundColor: '#000' },
 });

@@ -9,6 +9,14 @@ const HARD_BOOKCASE = require('../../assets/images/hardbookcase.png');
 const BOOKCASE_SIZE = { width: 1024, height: 1536 };
 const BACKGROUND_ZOOM = 2.5;
 
+export const getBookcaseTileSize = (width: number, height: number) => {
+  const imageScale = (Math.min(width, height) / Math.max(BOOKCASE_SIZE.width, BOOKCASE_SIZE.height)) * BACKGROUND_ZOOM;
+  return {
+    width: BOOKCASE_SIZE.width * imageScale,
+    height: BOOKCASE_SIZE.height * imageScale,
+  };
+};
+
 export const getBookcaseSource = (difficulty?: string | string[]) => {
   const selectedDifficulty = Array.isArray(difficulty) ? difficulty[0] : difficulty;
   if (selectedDifficulty === 'Easy') return EASY_BOOKCASE;
@@ -17,21 +25,19 @@ export const getBookcaseSource = (difficulty?: string | string[]) => {
   return BOOKCASE;
 };
 
-/** Shared, gently scrolling bookcase backdrop for every app route. */
+/** Shared, gently scrolling bookcase backdrop. */
 export default function BookcaseBackground({
   children,
   difficulty,
 }: {
-  children: React.ReactNode;
+  children?: React.ReactNode;
   difficulty?: string | string[];
 }) {
   const { width, height } = useWindowDimensions();
   const { backgroundSpeed } = useAudio();
   const bookcaseSource = getBookcaseSource(difficulty);
   const offset = useRef(new Animated.Value(0)).current;
-  const imageScale = (Math.min(width, height) / Math.max(BOOKCASE_SIZE.width, BOOKCASE_SIZE.height)) * BACKGROUND_ZOOM;
-  const tileWidth = BOOKCASE_SIZE.width * imageScale;
-  const tileHeight = BOOKCASE_SIZE.height * imageScale;
+  const { width: tileWidth, height: tileHeight } = getBookcaseTileSize(width, height);
   const columns = Math.max(1, Math.ceil(width / tileWidth) + 1);
   const rows = Math.max(1, Math.ceil(height / tileHeight) + 1);
 

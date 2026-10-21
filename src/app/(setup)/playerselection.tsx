@@ -7,7 +7,6 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import BookcaseBackground from '../components/BookcaseBackground';
 
 const PADDING = 16;
 const CARD_RADIUS = 16;
@@ -38,7 +37,6 @@ export default function PlayerSelectionScreen() {
   };
 
   return (
-    <BookcaseBackground difficulty={params.difficulty}>
       <SafeAreaView edges={['top', 'bottom']} style={styles.container}>
         <View style={styles.content}>
           {/* Header Banner */}
@@ -94,7 +92,6 @@ export default function PlayerSelectionScreen() {
           </TouchableOpacity>
         </View>
       </SafeAreaView>
-    </BookcaseBackground>
   );
 }
 

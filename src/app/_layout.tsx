@@ -15,8 +15,15 @@ export default function RootLayout() {
       <AudioProvider>
         <TransitionProvider>
           <StatusBar hidden />
-          <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#000' } }}>
-            <Stack.Screen name="mainmenu" options={{ animation: 'fade' }} />
+          <Stack
+            screenOptions={{
+              headerShown: false,
+              animation: 'fade',
+              animationDuration: 650,
+              contentStyle: { backgroundColor: '#000' },
+            }}
+          >
+            <Stack.Screen name="(setup)" options={{ contentStyle: { backgroundColor: 'transparent' } }} />
           </Stack>
         </TransitionProvider>
       </AudioProvider>

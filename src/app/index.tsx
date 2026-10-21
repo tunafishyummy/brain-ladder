@@ -24,7 +24,7 @@ export default function SplashScreen() {
 
     // Clean up timer if component unmounts
     return () => clearTimeout(timer);
-  }, []);
+  }, [router, startAudio]);
 
   return (
     <View style={styles.screenWrapper}>
