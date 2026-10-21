@@ -1734,10 +1734,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   timerDisplay: {
+    alignSelf: 'stretch',
+    paddingHorizontal: 20,
     fontSize: 18,
     fontWeight: '900',
     color: '#facc15',
-    textAlign: 'center',
+    textAlign: 'left',
     marginVertical: 4,
     textShadowColor: 'rgba(0,0,0,0.8)',
     textShadowOffset: { width: 1, height: 1 },
