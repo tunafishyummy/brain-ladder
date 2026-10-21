@@ -72,16 +72,29 @@ export default function LevelSelectScreen() {
     });
   };
 
+  const handleBack = () => {
+    router.back();
+  };
+
   return (
     <BookcaseBackground difficulty={DIFFICULTIES[difficultyIndex]}>
       <Stack.Screen options={{ animation: 'none' }} />
-      <View style={styles.centerWrapper}>
-        <SafeAreaView edges={['top', 'bottom']} style={styles.container}>
-          <ScrollView contentContainerStyle={styles.scrollContent}>
+      <SafeAreaView edges={['top', 'bottom']} style={styles.container}>
+        <View style={styles.content}>
+          <View style={styles.headerRow}>
+            <TouchableOpacity style={styles.backButton} onPress={handleBack} activeOpacity={0.7}>
+              <Text style={styles.backArrow}>‹</Text>
+            </TouchableOpacity>
             <View style={styles.headerBanner}>
               <Text style={styles.headerTitle}>SELECT LEVEL</Text>
             </View>
+          </View>
 
+          <ScrollView
+            style={styles.optionsScroll}
+            contentContainerStyle={styles.optionsContent}
+            showsVerticalScrollIndicator={false}
+          >
             {/* Level Cards */}
             <View style={styles.levelsContainer}>
               {LEVELS.map((level) => {
@@ -153,53 +166,80 @@ export default function LevelSelectScreen() {
               </View>
             </View>
 
-            {/* Continue Button */}
-            <TouchableOpacity style={styles.continueButton} onPress={handleContinue} activeOpacity={0.9}>
-              <Text style={styles.continueText}>NEXT</Text>
-            </TouchableOpacity>
           </ScrollView>
-        </SafeAreaView>
-      </View>
+
+          <TouchableOpacity style={styles.continueButton} onPress={handleContinue} activeOpacity={0.9}>
+            <Text style={styles.continueText}>NEXT</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
     </BookcaseBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  centerWrapper: {
-    flex: 1,
-    width: '100%',
-    height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 2,
-  },
   background: {
     flex: 1,
   },
   container: {
     flex: 1,
     width: '100%',
-    maxWidth: 420,
   },
-  scrollContent: {
+  content: {
+    flex: 1,
+    width: '100%',
+    maxWidth: 420,
+    alignSelf: 'center',
     padding: PADDING,
-    gap: PADDING,
+    justifyContent: 'space-between',
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  backButton: {
+    width: 48,
+    height: 48,
+    borderRadius: CARD_RADIUS,
+    backgroundColor: 'rgba(55, 58, 66, 0.92)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  backArrow: {
+    color: '#ffffff',
+    fontSize: 28,
+    fontWeight: '300',
+    marginTop: -2,
+  },
+  optionsScroll: {
+    flex: 1,
+    marginVertical: PADDING,
+  },
+  optionsContent: {
     flexGrow: 1,
     justifyContent: 'center',
+    gap: PADDING,
   },
   headerBanner: {
     backgroundColor: 'rgba(55, 58, 66, 0.92)',
-    paddingVertical: 14,
+    flex: 1,
+    minHeight: 48,
+    paddingVertical: 12,
     borderRadius: CARD_RADIUS,
     alignItems: 'center',
+    justifyContent: 'center',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.15)',
   },
   headerTitle: {
     color: '#ffffff',
-    fontSize: 20,
-    fontWeight: '700',
-    letterSpacing: 2,
+    fontSize: 18,
+    fontWeight: '800',
+    letterSpacing: 1.5,
+    textAlign: 'center',
   },
   levelsContainer: {
     gap: PADDING,

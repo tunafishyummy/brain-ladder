@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import {
   Animated,
   Image,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -140,102 +141,108 @@ export default function CustomizeCharacterScreen() {
             </View>
           </View>
 
-          {/* Smooth Character Preview & Instruction */}
-          <Animated.View
-            style={[
-              styles.previewCard,
-              { opacity: fadeAnim, transform: [{ scale: scaleAnim }] },
-            ]}
+          <ScrollView
+            style={styles.selectionScroll}
+            contentContainerStyle={styles.selectionContent}
+            showsVerticalScrollIndicator={false}
           >
-            {/* Instruction Banner with Dynamic Highlight */}
-            <View style={styles.instructionBox}>
-              <Text style={styles.instructionText}>
-                <Text
-                  style={{
-                    color:
-                      currentSelection ||
-                      PLAYER_ACCENT_COLORS[activePlayerIndex] ||
-                      'hsl(0, 0%, 37%)',
-                    fontWeight: '800',
-                  }}
-                >
-                  Player {currentPlayerNum}
+            {/* Smooth Character Preview & Instruction */}
+            <Animated.View
+              style={[
+                styles.previewCard,
+                { opacity: fadeAnim, transform: [{ scale: scaleAnim }] },
+              ]}
+            >
+              {/* Instruction Banner with Dynamic Highlight */}
+              <View style={styles.instructionBox}>
+                <Text style={styles.instructionText}>
+                  <Text
+                    style={{
+                      color:
+                        currentSelection ||
+                        PLAYER_ACCENT_COLORS[activePlayerIndex] ||
+                        'hsl(0, 0%, 37%)',
+                      fontWeight: '800',
+                    }}
+                  >
+                    Player {currentPlayerNum}
+                  </Text>
                 </Text>
-              </Text>
-            </View>
-
-            <View style={styles.avatarWrapper}>
-              <Image
-                source={previewImage}
-                style={styles.avatarImage}
-                resizeMode="contain"
-              />
-              <View
-                style={[
-                  styles.playerBadge,
-                  {
-                    backgroundColor:
-                      currentSelection ||
-                      PLAYER_ACCENT_COLORS[activePlayerIndex] ||
-                      'rgba(255,255,255,0.2)',
-                  },
-                ]}
-              >
-                <Text style={styles.badgeText}>P{currentPlayerNum}</Text>
               </View>
-            </View>
 
-            {/* Selection Summary Row */}
-            <View style={styles.summaryRow}>
-              {selectedColors.map((color, idx) => (
+              <View style={styles.avatarWrapper}>
+                <Image
+                  source={previewImage}
+                  style={styles.avatarImage}
+                  resizeMode="contain"
+                />
                 <View
-                  key={idx}
                   style={[
-                    styles.summaryDot,
+                    styles.playerBadge,
                     {
                       backgroundColor:
-                        color || PLAYER_ACCENT_COLORS[idx] || 'transparent',
+                        currentSelection ||
+                        PLAYER_ACCENT_COLORS[activePlayerIndex] ||
+                        'rgba(255,255,255,0.2)',
                     },
-                    idx === activePlayerIndex && styles.activeSummaryDot,
                   ]}
                 >
-                  <Text style={styles.summaryDotText}>P{idx + 1}</Text>
+                  <Text style={styles.badgeText}>P{currentPlayerNum}</Text>
                 </View>
-              ))}
+              </View>
+
+              {/* Selection Summary Row */}
+              <View style={styles.summaryRow}>
+                {selectedColors.map((color, idx) => (
+                  <View
+                    key={idx}
+                    style={[
+                      styles.summaryDot,
+                      {
+                        backgroundColor:
+                          color || PLAYER_ACCENT_COLORS[idx] || 'transparent',
+                      },
+                      idx === activePlayerIndex && styles.activeSummaryDot,
+                    ]}
+                  >
+                    <Text style={styles.summaryDotText}>P{idx + 1}</Text>
+                  </View>
+                ))}
+              </View>
+            </Animated.View>
+
+            {/* Color Selection Grid */}
+            <View style={styles.colorGrid}>
+              {COLOR_OPTIONS.map((item) => {
+                const isTakenByOther = selectedColors.some(
+                  (color, idx) => color === item.hex && idx !== activePlayerIndex
+                );
+                const isSelectedByCurrent = currentSelection === item.hex;
+
+                return (
+                  <TouchableOpacity
+                    key={item.id}
+                    activeOpacity={isTakenByOther ? 1 : 0.8}
+                    onPress={() => handleSelectColor(item.hex)}
+                    onMouseEnter={() => setHoveredColor(item.hex)}
+                    onMouseLeave={() => setHoveredColor(null)}
+                    style={[
+                      styles.colorBox,
+                      { backgroundColor: item.hex },
+                      isTakenByOther && styles.disabledBox,
+                      isSelectedByCurrent && styles.selectedBoxBorder,
+                    ]}
+                  >
+                    {isTakenByOther && (
+                      <View style={styles.takenOverlay}>
+                        <Text style={styles.takenText}>TAKEN</Text>
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
             </View>
-          </Animated.View>
-
-          {/* Color Selection Grid */}
-          <View style={styles.colorGrid}>
-            {COLOR_OPTIONS.map((item) => {
-              const isTakenByOther = selectedColors.some(
-                (color, idx) => color === item.hex && idx !== activePlayerIndex
-              );
-              const isSelectedByCurrent = currentSelection === item.hex;
-
-              return (
-                <TouchableOpacity
-                  key={item.id}
-                  activeOpacity={isTakenByOther ? 1 : 0.8}
-                  onPress={() => handleSelectColor(item.hex)}
-                  onMouseEnter={() => setHoveredColor(item.hex)}
-                  onMouseLeave={() => setHoveredColor(null)}
-                  style={[
-                    styles.colorBox,
-                    { backgroundColor: item.hex },
-                    isTakenByOther && styles.disabledBox,
-                    isSelectedByCurrent && styles.selectedBoxBorder,
-                  ]}
-                >
-                  {isTakenByOther && (
-                    <View style={styles.takenOverlay}>
-                      <Text style={styles.takenText}>TAKEN</Text>
-                    </View>
-                  )}
-                </TouchableOpacity>
-              );
-            })}
-          </View>
+          </ScrollView>
 
           {/* Continue / Next Player Button */}
           <TouchableOpacity
@@ -261,6 +268,9 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+    width: '100%',
+    maxWidth: 420,
+    alignSelf: 'center',
     padding: PADDING,
     justifyContent: 'space-between',
   },
@@ -269,11 +279,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
   },
+  selectionScroll: {
+    flex: 1,
+    marginVertical: PADDING,
+  },
+  selectionContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    gap: PADDING,
+  },
   backButton: {
     width: 48,
     height: 48,
     borderRadius: CARD_RADIUS,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: 'rgba(55, 58, 66, 0.92)',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.15)',
     justifyContent: 'center',
@@ -308,8 +327,6 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   previewCard: {
-    flex: 1,
-    marginVertical: PADDING,
     backgroundColor: 'rgba(15, 18, 28, 0.72)',
     borderRadius: CARD_RADIUS,
     borderWidth: 1,
@@ -379,7 +396,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 12,
-    marginBottom: PADDING,
     justifyContent: 'center',
   },
   colorBox: {

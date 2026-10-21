@@ -104,6 +104,9 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+    width: '100%',
+    maxWidth: 420,
+    alignSelf: 'center',
     padding: PADDING,
     justifyContent: 'space-between',
   },
