@@ -85,8 +85,10 @@ export default function CustomizeCharacterScreen() {
   const handleBack = () => {
     if (activePlayerIndex > 0) {
       setActivePlayerIndex((prev) => prev - 1);
-    } else {
+    } else if (router.canGoBack()) {
       router.back();
+    } else {
+      router.replace('/mainmenu');
     }
   };
 
