@@ -3,9 +3,9 @@ import { Animated, Easing, Image, StyleSheet, useWindowDimensions, View } from '
 import { useAudio } from '../AudioContext';
 
 const BOOKCASE = require('../../assets/images/bookcase.png');
-const EASY_BOOKCASE = require('../../assets/images/easybookcase.png');
+const EASY_BOOKCASE = require('../../assets/images/normalbookcase.png');
 const NORMAL_BOOKCASE = require('../../assets/images/normalbookcase.png');
-const HARD_BOOKCASE = require('../../assets/images/hardbookcase.png');
+const HARD_BOOKCASE = require('../../assets/images/normalbookcase.png');
 const BOOKCASE_SIZE = { width: 1024, height: 1536 };
 const BACKGROUND_ZOOM = 2.5;
 
