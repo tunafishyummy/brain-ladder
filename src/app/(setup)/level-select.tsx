@@ -1,12 +1,16 @@
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import type { ReactNode } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
+  Animated,
+  Easing,
   Image,
   ImageBackground,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
+  type ViewStyle,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -38,6 +42,105 @@ const TIMERS = [
   { label: '20s', value: 20 },
 ];
 
+function CrossfadeFrame({
+  source,
+  style,
+  children,
+}: {
+  source: number;
+  style: ViewStyle;
+  children: ReactNode;
+}) {
+  const [displayedSource, setDisplayedSource] = useState(source);
+  const [incomingSource, setIncomingSource] = useState<number | null>(null);
+  const displayedSourceRef = useRef(source);
+  const requestedSourceRef = useRef(source);
+  const opacity = useRef(new Animated.Value(0)).current;
+  const animation = useRef<Animated.CompositeAnimation | null>(null);
+  const [frameSize, setFrameSize] = useState({ width: 0, height: 0 });
+  const imageFrameStyle = {
+    position: 'absolute' as const,
+    left: 0,
+    top: 0,
+    width: frameSize.width,
+    height: frameSize.height,
+  };
+
+  useEffect(() => {
+    if (source === requestedSourceRef.current) return;
+    requestedSourceRef.current = source;
+    animation.current?.stop();
+    animation.current = null;
+    opacity.stopAnimation();
+    opacity.setValue(0);
+
+    if (source === displayedSourceRef.current) {
+      setIncomingSource(null);
+      return;
+    }
+
+    setIncomingSource(source);
+    return () => animation.current?.stop();
+  }, [opacity, source]);
+
+  const startCrossfade = (loadedSource: number) => {
+    if (
+      loadedSource !== requestedSourceRef.current
+      || loadedSource === displayedSourceRef.current
+      || animation.current
+    ) return;
+
+    const nextAnimation = Animated.timing(opacity, {
+      toValue: 1,
+      duration: 900,
+      easing: Easing.inOut(Easing.cubic),
+      useNativeDriver: true,
+    });
+    animation.current = nextAnimation;
+    nextAnimation.start(({ finished }) => {
+      animation.current = null;
+      if (!finished || requestedSourceRef.current !== loadedSource) return;
+      displayedSourceRef.current = loadedSource;
+      setDisplayedSource(loadedSource);
+      setIncomingSource(null);
+    });
+  };
+
+  return (
+    <View
+      style={[style, { overflow: 'hidden' }]}
+      onLayout={({ nativeEvent }) => {
+        const { width, height } = nativeEvent.layout;
+        setFrameSize((current) => current.width === width && current.height === height
+          ? current
+          : { width, height });
+      }}
+    >
+      {frameSize.width > 0 && frameSize.height > 0 && (
+        <>
+          <Image
+            source={displayedSource}
+            resizeMode="stretch"
+            fadeDuration={0}
+            style={imageFrameStyle}
+          />
+          {incomingSource !== null && (
+            <Animated.Image
+              source={incomingSource}
+              resizeMode="stretch"
+              fadeDuration={0}
+              onLoad={() => startCrossfade(incomingSource)}
+              pointerEvents="none"
+              style={[imageFrameStyle, { opacity }]}
+            />
+          )}
+        </>
+      )}
+      {children}
+    </View>
+  );
+}
+
 export default function LevelSelectScreen() {
   const router = useRouter();
   const tutorial = useTutorial();
@@ -45,8 +148,20 @@ export default function LevelSelectScreen() {
   const { setBookcaseLevel } = useScreenTransition();
   const playKnock = useWoodKnock();
   const [selectedLevel, setSelectedLevel] = useState<string | null>(null);
+  const cardOpacities = useRef(
+    Object.fromEntries(LEVELS.map(({ id }) => [id, new Animated.Value(0.55)])) as Record<string, Animated.Value>,
+  ).current;
   const [difficultyIndex, setDifficultyIndex] = useState(1);
   const [questionTimer, setQuestionTimer] = useState(15);
+
+  useEffect(() => {
+    Animated.parallel(LEVELS.map(({ id }) => Animated.timing(cardOpacities[id], {
+      toValue: selectedLevel === id ? 1 : 0.55,
+      duration: 900,
+      easing: Easing.inOut(Easing.cubic),
+      useNativeDriver: true,
+    }))).start();
+  }, [cardOpacities, selectedLevel]);
 
   const handlePrevDifficulty = () => {
     playKnock();
@@ -93,13 +208,12 @@ export default function LevelSelectScreen() {
               resizeMode="contain"
             />
           </TouchableOpacity>
-          <ImageBackground
+          <CrossfadeFrame
             source={getWoodframeSource(selectedLevel ?? undefined, '6to1')}
-            resizeMode="stretch"
             style={styles.headerBanner}
           >
             <Text style={styles.headerTitle}>SELECT LEVEL</Text>
-          </ImageBackground>
+          </CrossfadeFrame>
         </View>
 
         <ScrollView
@@ -110,30 +224,28 @@ export default function LevelSelectScreen() {
           {/* Level Cards */}
           <View style={styles.levelsContainer}>
             {LEVELS.map((level) => {
-              const isSelected = selectedLevel === level.id;
               const frameSource = SELECTED_LEVEL_FRAMES[level.id];
 
               return (
                 <TutorialTarget key={level.id} id="map-card">
-                  <TouchableOpacity
-                    activeOpacity={0.85}
-                    onPress={() => {
-                      playKnock();
-                      setSelectedLevel(level.id);
-                      setBookcaseLevel(level.id);
-                      tutorial.notify('map-selected');
-                    }}
-                    style={[
-                      styles.levelCardWrapper,
-                      !isSelected && styles.unselectedLevelCard,
-                    ]}
-                  >
+                  <Animated.View style={{ opacity: cardOpacities[level.id] }}>
+                    <TouchableOpacity
+                      activeOpacity={0.85}
+                      onPress={() => {
+                        playKnock();
+                        setSelectedLevel(level.id);
+                        setBookcaseLevel(level.id);
+                        tutorial.notify('map-selected');
+                      }}
+                      style={styles.levelCardWrapper}
+                    >
                     <ImageBackground
                       source={frameSource}
                       resizeMode="stretch"
                       style={styles.background}
                     />
-                  </TouchableOpacity>
+                    </TouchableOpacity>
+                  </Animated.View>
                 </TutorialTarget>
               );
             })}
@@ -141,9 +253,8 @@ export default function LevelSelectScreen() {
 
           {/* Difficulty Controls */}
           <TutorialTarget id="difficulty">
-            <ImageBackground
+            <CrossfadeFrame
               source={getWoodframeSource(selectedLevel ?? undefined, '4to1')}
-              resizeMode="stretch"
               style={styles.difficultyBanner}
             >
               <Text style={styles.difficultyLabel}>DIFFICULTY</Text>
@@ -156,14 +267,13 @@ export default function LevelSelectScreen() {
                   <Text style={styles.arrowText}>›</Text>
                 </TouchableOpacity>
               </View>
-            </ImageBackground>
+            </CrossfadeFrame>
           </TutorialTarget>
 
           {/* Question Timer Controls */}
           <TutorialTarget id="timer">
-            <ImageBackground
+            <CrossfadeFrame
               source={getWoodframeSource(selectedLevel ?? undefined, '4to1')}
-              resizeMode="stretch"
               style={styles.timerBanner}
             >
               <Text style={styles.timerLabel}>QUESTION TIMER</Text>
@@ -196,20 +306,19 @@ export default function LevelSelectScreen() {
                   );
                 })}
               </View>
-            </ImageBackground>
+            </CrossfadeFrame>
           </TutorialTarget>
 
         </ScrollView>
 
         <TutorialTarget id="screen-next">
           <TouchableOpacity onPress={handleContinue} activeOpacity={0.9} disabled={!selectedLevel}>
-            <ImageBackground
+            <CrossfadeFrame
               source={getWoodframeSource(selectedLevel ?? undefined, '6to1')}
-              resizeMode="stretch"
               style={styles.continueButton}
             >
               <Text style={styles.continueText}>NEXT</Text>
-            </ImageBackground>
+            </CrossfadeFrame>
           </TouchableOpacity>
         </TutorialTarget>
       </View>
@@ -278,9 +387,6 @@ const styles = StyleSheet.create({
   },
   levelCardWrapper: {
     height: 96,
-  },
-  unselectedLevelCard: {
-    opacity: 0.55,
   },
   difficultyBanner: {
     padding: PADDING,

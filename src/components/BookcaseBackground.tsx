@@ -35,50 +35,71 @@ export default function BookcaseBackground({
   const { width, height } = useWindowDimensions();
   const { backgroundSpeed } = useAudio();
   const bookcaseSource = getBookcaseSource(level);
-  const [activeSource, setActiveSource] = React.useState(bookcaseSource);
-  const [previousSource, setPreviousSource] = React.useState<number | null>(null);
-  const activeSourceRef = useRef(bookcaseSource);
-  const incomingOpacity = useRef(new Animated.Value(1)).current;
-  const outgoingOpacity = useRef(new Animated.Value(0)).current;
+  const [displayedSource, setDisplayedSource] = React.useState(bookcaseSource);
+  const [transitionSource, setTransitionSource] = React.useState<number | null>(null);
+  const displayedSourceRef = useRef(bookcaseSource);
+  const requestedSourceRef = useRef(bookcaseSource);
+  const transitionStarted = useRef(false);
+  const loadedTransitionTiles = useRef(new Set<number>());
+  const transitionAnimation = useRef<Animated.CompositeAnimation | null>(null);
+  const transitionOpacity = useRef(new Animated.Value(0)).current;
   const offset = useRef(new Animated.Value(0)).current;
   const { width: tileWidth, height: tileHeight } = getBookcaseTileSize(width, height);
   const columns = Math.max(1, Math.ceil(width / tileWidth) + 1);
   const rows = Math.max(1, Math.ceil(height / tileHeight) + 1);
 
   useEffect(() => {
-    if (bookcaseSource === activeSourceRef.current) return;
+    if (bookcaseSource === requestedSourceRef.current) return;
 
-    const outgoingSource = activeSourceRef.current;
-    activeSourceRef.current = bookcaseSource;
-    setPreviousSource(outgoingSource);
-    setActiveSource(bookcaseSource);
-    incomingOpacity.stopAnimation();
-    outgoingOpacity.stopAnimation();
-    incomingOpacity.setValue(0);
-    outgoingOpacity.setValue(1);
+    requestedSourceRef.current = bookcaseSource;
+    transitionStarted.current = false;
+    loadedTransitionTiles.current.clear();
+    transitionAnimation.current?.stop();
+    transitionAnimation.current = null;
+    transitionOpacity.stopAnimation();
 
-    const animation = Animated.parallel([
-      Animated.timing(incomingOpacity, {
-        toValue: 1,
-        duration: 450,
-        easing: Easing.inOut(Easing.ease),
-        useNativeDriver: true,
-      }),
-      Animated.timing(outgoingOpacity, {
-        toValue: 0,
-        duration: 450,
-        easing: Easing.inOut(Easing.ease),
-        useNativeDriver: true,
-      }),
-    ]);
-    animation.start(({ finished }) => {
-      if (finished && activeSourceRef.current === bookcaseSource) {
-        setPreviousSource(null);
-      }
+    if (bookcaseSource === displayedSourceRef.current) {
+      transitionOpacity.setValue(0);
+      setTransitionSource(null);
+      return;
+    }
+
+    transitionOpacity.setValue(0);
+    setTransitionSource(bookcaseSource);
+
+    return () => {
+      transitionAnimation.current?.stop();
+    };
+  }, [bookcaseSource, transitionOpacity]);
+
+  const startCrossfade = (source: number, tile: number) => {
+    if (
+      source !== requestedSourceRef.current
+      || source === displayedSourceRef.current
+      || transitionStarted.current
+    ) return;
+
+    loadedTransitionTiles.current.add(tile);
+    if (loadedTransitionTiles.current.size < rows * columns) return;
+
+    transitionStarted.current = true;
+    const animation = Animated.timing(transitionOpacity, {
+      toValue: 1,
+      duration: 900,
+      easing: Easing.inOut(Easing.cubic),
+      useNativeDriver: true,
     });
+    transitionAnimation.current = animation;
+    animation.start(({ finished }) => {
+      transitionAnimation.current = null;
+      if (!finished || requestedSourceRef.current !== source) return;
 
-    return () => animation.stop();
-  }, [bookcaseSource, incomingOpacity, outgoingOpacity]);
+      displayedSourceRef.current = source;
+      setDisplayedSource(source);
+      setTransitionSource(null);
+      transitionStarted.current = false;
+    });
+  };
 
   useEffect(() => {
     offset.stopAnimation();
@@ -98,7 +119,11 @@ export default function BookcaseBackground({
   const translateX = offset.interpolate({ inputRange: [0, 1], outputRange: [0, -tileWidth] });
   const translateY = offset.interpolate({ inputRange: [0, 1], outputRange: [0, -tileHeight] });
 
-  const renderTileLayer = (source: number, opacity: Animated.Value) => (
+  const renderTileLayer = (
+    source: number,
+    opacity: number | Animated.Value,
+    onTileLoad?: (tile: number) => void,
+  ) => (
     <Animated.View
       key={source}
       pointerEvents="none"
@@ -120,6 +145,7 @@ export default function BookcaseBackground({
             source={source}
             resizeMode="cover"
             fadeDuration={0}
+            onLoad={onTileLoad ? () => onTileLoad(tile) : undefined}
             style={{ width: tileWidth, height: tileHeight, flexShrink: 0 }}
           />
         ))}
@@ -130,8 +156,12 @@ export default function BookcaseBackground({
   return (
     <View style={styles.root}>
       <View pointerEvents="none" style={StyleSheet.absoluteFill}>
-        {previousSource !== null && renderTileLayer(previousSource, outgoingOpacity)}
-        {renderTileLayer(activeSource, incomingOpacity)}
+        {renderTileLayer(displayedSource, 1)}
+        {transitionSource !== null && renderTileLayer(
+          transitionSource,
+          transitionOpacity,
+          (tile) => startCrossfade(transitionSource, tile),
+        )}
       </View>
       {children}
     </View>
