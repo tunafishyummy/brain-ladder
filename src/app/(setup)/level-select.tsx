@@ -115,7 +115,6 @@ export default function LevelSelectScreen() {
                     style={[
                       styles.levelCardWrapper,
                       !isSelected && styles.unselectedLevelCard,
-                      isSelected && styles.selectedCardBorder,
                     ]}
                   >
                     <ImageBackground
@@ -263,10 +262,6 @@ const styles = StyleSheet.create({
   },
   unselectedLevelCard: {
     opacity: 0.55,
-  },
-  selectedCardBorder: {
-    borderColor: '#ffffff',
-    borderWidth: 2,
   },
   cardOverlay: {
     flex: 1,
