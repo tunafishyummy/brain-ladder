@@ -898,6 +898,11 @@ export default function GameScreen() {
     outputRange: [1, 1 / BOARD_CAMERA_ZOOM],
     extrapolate: 'clamp',
   });
+  const tileNumberOpacity = cameraScale.interpolate({
+    inputRange: [1, BOARD_CAMERA_ZOOM],
+    outputRange: [1, 0],
+    extrapolate: 'clamp',
+  });
   const diceSize = Math.min(84, boardSize * 0.37);
 
   return (
@@ -1051,6 +1056,7 @@ export default function GameScreen() {
                         height: TILE_NUMBER_HEIGHT,
                         alignItems: 'flex-end',
                         zIndex: 5,
+                        opacity: tileNumberOpacity,
                         transformOrigin: [TILE_NUMBER_WIDTH, 0, 0],
                         transform: [{ scale: tileNumberScale }],
                       }}
@@ -1486,7 +1492,7 @@ const styles = StyleSheet.create({
   quizSceneCard: { width: '100%', height: QUIZ_SCENE_HEIGHT, borderRadius: 16, borderWidth: 2, borderColor: '#475569', overflow: 'hidden', zIndex: 0 },
   quizSceneBackgroundImage: { borderRadius: 16 },
   quizSceneForeground: { ...StyleSheet.absoluteFill, justifyContent: 'center', padding: 16, overflow: 'visible' },
-  quizCharacterWrapper: { position: 'absolute', right: '4%', top: '-330%', width: '46%', aspectRatio: 1, zIndex: 3, elevation: 3 },
+  quizCharacterWrapper: { position: 'absolute', right: '4%', top: '-40%', width: '46%', aspectRatio: 1, zIndex: 3, elevation: 3 },
   quizCharacterImage: { width: '100%', height: '100%', transform: [{ scale: 1.5 }] },
   quizDialogueBox: { width: '45%', height: QUIZ_DIALOGUE_BOX_HEIGHT, justifyContent: 'center', padding: 12, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(255,255,255,0.24)', backgroundColor: 'rgba(15,23,42,0.86)', zIndex: 2 },
   quizDialogueText: { color: '#fff', fontSize: 14, lineHeight: DIALOGUE_LINE_HEIGHT, fontWeight: '600' },
