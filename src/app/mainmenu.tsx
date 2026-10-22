@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAudioPlayer } from 'expo-audio';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -12,11 +13,12 @@ import {
   Text,
   TouchableOpacity,
   useWindowDimensions,
-  View
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAudio } from '../AudioContext';
 import MainMenuArtwork from '../components/MainMenuArtwork';
+import { useTutorial } from '../components/TutorialOverlay';
 import { useScreenTransition } from '../TransitionContext';
 // @ts-ignore SettingsScreen is maintained as JSX.
 import SettingsScreen from '../components/SettingsScreen';
@@ -27,8 +29,9 @@ const PLAY_GLOW_IMG = require('../../assets/images/play-glow.png');
 
 export default function MainMenuScreen() {
   const router = useRouter();
-  const { masterVol, masterMute, sfxVol, sfxMute } = useAudio();
+  const tutorial = useTutorial();
   const crumblyPlayer = useAudioPlayer(CRUMBLY_WOOD_SOUND);
+  const { masterVol, masterMute, sfxVol, sfxMute } = useAudio();
   const { width, height } = useWindowDimensions();
   const artworkWidth = Math.min(width, height * (9 / 20));
   const controlSize = Math.min(220, artworkWidth * 0.4);
@@ -44,26 +47,28 @@ export default function MainMenuScreen() {
   const [zoomAnchor, setZoomAnchor] = useState<{ x: number; y: number }>();
 
   useEffect(() => {
-    const rocking = Animated.loop(Animated.sequence([
-      Animated.timing(playRock, {
-        toValue: 1,
-        duration: 900,
-        easing: Easing.inOut(Easing.ease),
-        useNativeDriver: true,
-      }),
-      Animated.timing(playRock, {
-        toValue: -1,
-        duration: 1800,
-        easing: Easing.inOut(Easing.ease),
-        useNativeDriver: true,
-      }),
-      Animated.timing(playRock, {
-        toValue: 0,
-        duration: 900,
-        easing: Easing.inOut(Easing.ease),
-        useNativeDriver: true,
-      }),
-    ]));
+    const rocking = Animated.loop(
+      Animated.sequence([
+        Animated.timing(playRock, {
+          toValue: 1,
+          duration: 900,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(playRock, {
+          toValue: -1,
+          duration: 1800,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(playRock, {
+          toValue: 0,
+          duration: 900,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ]),
+    );
     rocking.start();
     return () => rocking.stop();
   }, [playRock]);
@@ -83,12 +88,17 @@ export default function MainMenuScreen() {
     }, [zoomProgress]),
   );
 
-  const handlePlay = () => {
+  const handlePlay = async () => {
     if (transitionStarted.current) return;
 
     setBookcaseLevel(null);
     transitionStarted.current = true;
     setIsTransitioning(true);
+
+    const hasSeenTutorial = await AsyncStorage.getItem('@has_seen_game_tutorial');
+    if (hasSeenTutorial !== 'true') {
+      tutorial.start();
+    }
 
     Animated.timing(zoomProgress, {
       toValue: 1,
@@ -162,15 +172,16 @@ export default function MainMenuScreen() {
             disabled={isTransitioning}
             activeOpacity={0.8}
           >
-            <Image
-              source={PLAY_GLOW_IMG}
-              resizeMode="contain"
-              pointerEvents="none"
-              style={[
-                styles.playGlowImage,
-                { width: playImageWidth, height: playImageHeight },
-              ]}
-            />
+            <View pointerEvents="none" style={{ position: 'absolute', left: 0, top: 0 }}>
+              <Image
+                source={PLAY_GLOW_IMG}
+                resizeMode="contain"
+                style={[
+                  styles.playGlowImage,
+                  { width: playImageWidth, height: playImageHeight },
+                ]}
+              />
+            </View>
             <Animated.Image
               source={PLAY_IMG}
               resizeMode="contain"
@@ -259,112 +270,22 @@ export default function MainMenuScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    zIndex: 2,
-    justifyContent: 'flex-start',
-    alignItems: 'center',
-  },
-  debugButton: {
-    alignSelf: 'flex-start',
-    marginTop: 12,
-    marginLeft: 12,
-    zIndex: 3,
-    opacity: 0,
-    backgroundColor: '#fff',
-    borderWidth: 2,
-    borderColor: '#facc15',
-    borderRadius: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 9,
-    elevation: 8,
-  },
-  debugButtonText: {
-    color: '#111827',
-    fontWeight: '900',
-    fontSize: 11,
-  },
-  playContainer: {
-    position: 'absolute',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  playButton: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  playImage: {
-    alignSelf: 'center',
-  },
-  playGlowImage: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-  },
-  bottomRow: {
-    position: 'absolute',
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  iconButton: {
-    padding: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  settingsIconButton: {
-    paddingRight: -50,
-  },
-  icon: {
-    resizeMode: 'contain',
-  },
-  modalBackdrop: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-    backgroundColor: 'rgba(0,0,0,0.72)',
-  },
-  settingsModal: {
-    width: '100%',
-    maxWidth: 400,
-    maxHeight: '90%',
-    overflow: 'hidden',
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#3b4b73',
-    backgroundColor: 'rgba(17,22,37,0.98)',
-  },
-  exitModal: {
-    width: '100%',
-    maxWidth: 360,
-    padding: 16,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#252f47',
-    backgroundColor: 'rgba(24,31,48,0.98)',
-    gap: 16,
-  },
-  exitTitle: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
-  exitActions: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 12,
-  },
-  exitButton: {
-    minWidth: 90,
-    alignItems: 'center',
-    paddingHorizontal: 18,
-    paddingVertical: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#3b4b73',
-    backgroundColor: '#252d42',
-  },
+  container: { flex: 1, zIndex: 2, justifyContent: 'flex-start', alignItems: 'center' },
+  debugButton: { alignSelf: 'flex-start', marginTop: 12, marginLeft: 12, zIndex: 3, opacity: 0, backgroundColor: '#fff', borderWidth: 2, borderColor: '#facc15', borderRadius: 6, paddingHorizontal: 12, paddingVertical: 9, elevation: 8 },
+  debugButtonText: { color: '#111827', fontWeight: '900', fontSize: 11 },
+  playContainer: { position: 'absolute', alignItems: 'center', justifyContent: 'center' },
+  playButton: { alignItems: 'center', justifyContent: 'center' },
+  playImage: { alignSelf: 'center' },
+  playGlowImage: { position: 'absolute', left: 0, top: 0 },
+  bottomRow: { position: 'absolute', flexDirection: 'row', justifyContent: 'center', alignItems: 'center' },
+  iconButton: { padding: 10, justifyContent: 'center', alignItems: 'center' },
+  settingsIconButton: { paddingRight: -50 },
+  icon: { resizeMode: 'contain' },
+  modalBackdrop: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20, backgroundColor: 'rgba(0,0,0,0.72)' },
+  settingsModal: { width: '100%', maxWidth: 400, maxHeight: '90%', overflow: 'hidden', borderRadius: 10, borderWidth: 1, borderColor: '#3b4b73', backgroundColor: 'rgba(17,22,37,0.98)' },
+  exitModal: { width: '100%', maxWidth: 360, padding: 16, borderRadius: 8, borderWidth: 1, borderColor: '#252f47', backgroundColor: 'rgba(24,31,48,0.98)', gap: 16 },
+  exitTitle: { color: '#fff', fontSize: 18, fontWeight: 'bold', textAlign: 'center' },
+  exitActions: { flexDirection: 'row', justifyContent: 'center', gap: 12 },
+  exitButton: { minWidth: 90, alignItems: 'center', paddingHorizontal: 18, paddingVertical: 12, borderRadius: 8, borderWidth: 1, borderColor: '#3b4b73', backgroundColor: '#252d42' },
   exitButtonText: { color: '#fff', fontWeight: 'bold' },
 });

@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useScreenTransition } from '../../TransitionContext';
+import { TutorialTarget, useTutorial, useTutorialScene } from '../../components/TutorialOverlay';
 import { getWoodframeSource } from '../../components/woodframes';
 
 // Constants
@@ -18,25 +19,16 @@ const PADDING = 16;
 const CARD_RADIUS = 16;
 
 const LEVELS = [
-  {
-    id: 'reading',
-    title: 'The Reading Wing',
-    subtitle: 'Language',
-    color: '#a3e635',
-  },
-  {
-    id: 'research',
-    title: 'The Research Corner',
-    subtitle: 'Science & Technology',
-    color: '#60a5fa',
-  },
-  {
-    id: 'collections',
-    title: 'The Old Collections',
-    subtitle: 'World History',
-    color: '#f87171',
-  },
+  { id: 'reading' },
+  { id: 'research' },
+  { id: 'collections' },
 ];
+
+const SELECTED_LEVEL_FRAMES: Record<string, number> = {
+  reading: require('../../../assets/images/Languagewoodframe4to1selected.png'),
+  research: require('../../../assets/images/Sciencewoodframe4to1selected.png'),
+  collections: require('../../../assets/images/Historywoodframe4to1selected.png'),
+};
 
 const DIFFICULTIES = ['Easy', 'Normal', 'Hard'];
 const TIMERS = [
@@ -48,21 +40,29 @@ const TIMERS = [
 
 export default function LevelSelectScreen() {
   const router = useRouter();
+  const tutorial = useTutorial();
+  useTutorialScene('level-select');
   const { setBookcaseLevel } = useScreenTransition();
   const [selectedLevel, setSelectedLevel] = useState<string | null>(null);
   const [difficultyIndex, setDifficultyIndex] = useState(1);
   const [questionTimer, setQuestionTimer] = useState(15);
 
   const handlePrevDifficulty = () => {
-    setDifficultyIndex((prev) => (prev > 0 ? prev - 1 : DIFFICULTIES.length - 1));
+    const next = difficultyIndex > 0 ? difficultyIndex - 1 : DIFFICULTIES.length - 1;
+    setDifficultyIndex(next);
+    tutorial.notify('difficulty-changed', DIFFICULTIES[next]);
   };
 
   const handleNextDifficulty = () => {
-    setDifficultyIndex((prev) => (prev < DIFFICULTIES.length - 1 ? prev + 1 : 0));
+    const next = difficultyIndex < DIFFICULTIES.length - 1 ? difficultyIndex + 1 : 0;
+    setDifficultyIndex(next);
+    tutorial.notify('difficulty-changed', DIFFICULTIES[next]);
   };
 
   const handleContinue = () => {
     if (!selectedLevel) return;
+
+    tutorial.notify('screen-next');
 
     router.push({
       pathname: '/playerselection',
@@ -79,69 +79,65 @@ export default function LevelSelectScreen() {
   };
 
   return (
-      <SafeAreaView edges={['top', 'bottom']} style={styles.container}>
-        <View style={styles.content}>
-          <View style={styles.headerRow}>
-            <TouchableOpacity style={styles.backButton} onPress={handleBack} activeOpacity={0.7}>
-              <Image
-                source={require('../../../assets/images/Backbutton.png')}
-                style={styles.backArrowImage}
-                resizeMode="contain"
-              />
-            </TouchableOpacity>
-            <ImageBackground
-              source={getWoodframeSource(selectedLevel ?? undefined, '6to1')}
-              resizeMode="stretch"
-              style={styles.headerBanner}
-            >
-              <Text style={styles.headerTitle}>SELECT LEVEL</Text>
-            </ImageBackground>
-          </View>
-
-          <ScrollView
-            style={styles.optionsScroll}
-            contentContainerStyle={styles.optionsContent}
-            showsVerticalScrollIndicator={false}
+    <SafeAreaView edges={['top', 'bottom']} style={styles.container}>
+      <View style={styles.content}>
+        <View style={styles.headerRow}>
+          <TouchableOpacity style={styles.backButton} onPress={handleBack} activeOpacity={0.7}>
+            <Image
+              source={require('../../../assets/images/Backbutton.png')}
+              style={styles.backArrowImage}
+              resizeMode="contain"
+            />
+          </TouchableOpacity>
+          <ImageBackground
+            source={getWoodframeSource(selectedLevel ?? undefined, '6to1')}
+            resizeMode="stretch"
+            style={styles.headerBanner}
           >
-            {/* Level Cards */}
-            <View style={styles.levelsContainer}>
-              {LEVELS.map((level) => {
-                const isSelected = selectedLevel === level.id;
-                return (
+            <Text style={styles.headerTitle}>SELECT LEVEL</Text>
+          </ImageBackground>
+        </View>
+
+        <ScrollView
+          style={styles.optionsScroll}
+          contentContainerStyle={styles.optionsContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Level Cards */}
+          <View style={styles.levelsContainer}>
+            {LEVELS.map((level) => {
+              const isSelected = selectedLevel === level.id;
+              const frameSource = isSelected && SELECTED_LEVEL_FRAMES[level.id]
+                ? SELECTED_LEVEL_FRAMES[level.id]
+                : getWoodframeSource(level.id, '4to1');
+
+              return (
+                <TutorialTarget key={level.id} id="map-card">
                   <TouchableOpacity
-                    key={level.id}
                     activeOpacity={0.85}
                     onPress={() => {
                       setSelectedLevel(level.id);
                       setBookcaseLevel(level.id);
+                      tutorial.notify('map-selected');
                     }}
                     style={[
                       styles.levelCardWrapper,
                       !isSelected && styles.unselectedLevelCard,
-                      isSelected && styles.selectedCardBorder,
                     ]}
                   >
                     <ImageBackground
-                      source={getWoodframeSource(selectedLevel ?? undefined, '4to1')}
+                      source={frameSource}
                       resizeMode="stretch"
                       style={styles.background}
-                    >
-                      <View style={styles.cardOverlay}>
-                        <View>
-                          <Text style={[styles.levelTitle, { color: level.color }]}>
-                            {level.title}
-                          </Text>
-                          <Text style={styles.levelSubtitle}>{level.subtitle}</Text>
-                        </View>
-                        {isSelected && <View style={styles.selectDot} />}
-                      </View>
-                    </ImageBackground>
+                    />
                   </TouchableOpacity>
-                );
-              })}
-            </View>
+                </TutorialTarget>
+              );
+            })}
+          </View>
 
-            {/* Difficulty Controls */}
+          {/* Difficulty Controls */}
+          <TutorialTarget id="difficulty">
             <ImageBackground
               source={getWoodframeSource(selectedLevel ?? undefined, '4to1')}
               resizeMode="stretch"
@@ -158,8 +154,10 @@ export default function LevelSelectScreen() {
                 </TouchableOpacity>
               </View>
             </ImageBackground>
+          </TutorialTarget>
 
-            {/* Question Timer Controls */}
+          {/* Question Timer Controls */}
+          <TutorialTarget id="timer">
             <ImageBackground
               source={getWoodframeSource(selectedLevel ?? undefined, '4to1')}
               resizeMode="stretch"
@@ -173,7 +171,10 @@ export default function LevelSelectScreen() {
                     <TouchableOpacity
                       key={timer.value}
                       activeOpacity={0.8}
-                      onPress={() => setQuestionTimer(timer.value)}
+                      onPress={() => {
+                        setQuestionTimer(timer.value);
+                        tutorial.notify('timer-selected');
+                      }}
                       style={[
                         styles.timerChip,
                         isSelected && styles.selectedTimerChip,
@@ -192,9 +193,11 @@ export default function LevelSelectScreen() {
                 })}
               </View>
             </ImageBackground>
+          </TutorialTarget>
 
-          </ScrollView>
+        </ScrollView>
 
+        <TutorialTarget id="screen-next">
           <TouchableOpacity onPress={handleContinue} activeOpacity={0.9} disabled={!selectedLevel}>
             <ImageBackground
               source={getWoodframeSource(selectedLevel ?? undefined, '6to1')}
@@ -204,8 +207,9 @@ export default function LevelSelectScreen() {
               <Text style={styles.continueText}>NEXT</Text>
             </ImageBackground>
           </TouchableOpacity>
-        </View>
-      </SafeAreaView>
+        </TutorialTarget>
+      </View>
+    </SafeAreaView>
   );
 }
 
@@ -273,32 +277,6 @@ const styles = StyleSheet.create({
   },
   unselectedLevelCard: {
     opacity: 0.55,
-  },
-  selectedCardBorder: {
-    borderColor: '#ffffff',
-    borderWidth: 2,
-  },
-  cardOverlay: {
-    flex: 1,
-    paddingHorizontal: PADDING,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  levelTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-    marginBottom: 2,
-  },
-  levelSubtitle: {
-    color: '#FBF7F5',
-    fontSize: 13,
-  },
-  selectDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#ffffff',
   },
   difficultyBanner: {
     padding: PADDING,

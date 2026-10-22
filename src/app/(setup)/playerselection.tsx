@@ -9,6 +9,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { TutorialTarget, useTutorial, useTutorialScene } from '../../components/TutorialOverlay';
 import { getWoodframeSource } from '../../components/woodframes';
 
 const PADDING = 16;
@@ -24,12 +25,15 @@ export default function PlayerSelectionScreen() {
   const router = useRouter();
   const params = useLocalSearchParams(); // Captures level, difficulty, and timer from level-select
   const [selectedCount, setSelectedCount] = useState<number>(2);
+  const tutorial = useTutorial();
+  useTutorialScene('playerselection');
 
   const handleBack = () => {
     router.back();
   };
 
   const handleContinue = () => {
+    tutorial.notify('screen-next');
     router.push({
       pathname: '/customize',
       params: {
@@ -70,10 +74,13 @@ export default function PlayerSelectionScreen() {
             {PLAYER_OPTIONS.map((opt) => {
               const isSelected = selectedCount === opt.count;
               return (
+                <TutorialTarget key={opt.count} id="player-option">
                 <TouchableOpacity
-                  key={opt.count}
                   activeOpacity={0.85}
-                  onPress={() => setSelectedCount(opt.count)}
+                  onPress={() => {
+                    setSelectedCount(opt.count);
+                    tutorial.notify('players-selected');
+                  }}
                   style={[
                     styles.optionCardTouch,
                     !isSelected && styles.unselectedOptionCard,
@@ -95,20 +102,23 @@ export default function PlayerSelectionScreen() {
                     <Text style={styles.optionSubtitle}>{opt.subtitle}</Text>
                   </ImageBackground>
                 </TouchableOpacity>
+                </TutorialTarget>
               );
             })}
           </View>
 
           {/* Continue Button */}
-          <TouchableOpacity onPress={handleContinue} activeOpacity={0.9}>
-            <ImageBackground
-              source={getWoodframeSource(params.level, '6to1')}
-              resizeMode="stretch"
-              style={styles.continueButton}
-            >
-              <Text style={styles.continueText}>NEXT</Text>
-            </ImageBackground>
-          </TouchableOpacity>
+          <TutorialTarget id="screen-next">
+            <TouchableOpacity onPress={handleContinue} activeOpacity={0.9}>
+              <ImageBackground
+                source={getWoodframeSource(params.level, '6to1')}
+                resizeMode="stretch"
+                style={styles.continueButton}
+              >
+                <Text style={styles.continueText}>NEXT</Text>
+              </ImageBackground>
+            </TouchableOpacity>
+          </TutorialTarget>
         </View>
       </SafeAreaView>
   );

@@ -11,6 +11,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { TutorialTarget, useTutorial, useTutorialScene } from '../../components/TutorialOverlay';
 import { getWoodframeSource } from '../../components/woodframes';
 
 const PADDING = 16;
@@ -40,6 +41,8 @@ const PLAYER_ACCENT_COLORS: { [key: number]: string } = {
 export default function CustomizeCharacterScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
+  const tutorial = useTutorial();
+  useTutorialScene('customize');
 
   const totalPlayers = Number(params.players || 1);
   const [activePlayerIndex, setActivePlayerIndex] = useState(0);
@@ -97,6 +100,7 @@ export default function CustomizeCharacterScreen() {
     const updated = [...selectedColors];
     updated[activePlayerIndex] = hex;
     setSelectedColors(updated);
+    tutorial.notify('colors-selected');
   };
 
   const handleNextOrStart = () => {
@@ -105,6 +109,7 @@ export default function CustomizeCharacterScreen() {
     if (activePlayerIndex < totalPlayers - 1) {
       setActivePlayerIndex((prev) => prev + 1);
     } else {
+      tutorial.notify('start-game');
       router.push({
         pathname: '/game',
         params: {
@@ -223,6 +228,7 @@ export default function CustomizeCharacterScreen() {
             </Animated.View>
 
             {/* Color Selection Grid */}
+            <TutorialTarget id="color-option">
             <View style={styles.colorGrid}>
               {COLOR_OPTIONS.map((item) => {
                 const isTakenByOther = selectedColors.some(
@@ -253,25 +259,28 @@ export default function CustomizeCharacterScreen() {
                 );
               })}
             </View>
+            </TutorialTarget>
           </ScrollView>
 
           {/* Continue / Next Player Button */}
-          <TouchableOpacity
-            style={!currentSelection && styles.disabledButton}
-            onPress={handleNextOrStart}
-            disabled={!currentSelection}
-            activeOpacity={0.9}
-          >
-            <ImageBackground
-              source={getWoodframeSource(params.level, '6to1')}
-              resizeMode="stretch"
-              style={styles.actionButton}
+          <TutorialTarget id="start-button">
+            <TouchableOpacity
+              style={!currentSelection && styles.disabledButton}
+              onPress={handleNextOrStart}
+              disabled={!currentSelection}
+              activeOpacity={0.9}
             >
-              <Text style={styles.actionText}>
-                {activePlayerIndex < totalPlayers - 1 ? 'NEXT PLAYER' : 'START GAME'}
-              </Text>
-            </ImageBackground>
-          </TouchableOpacity>
+              <ImageBackground
+                source={getWoodframeSource(params.level, '6to1')}
+                resizeMode="stretch"
+                style={styles.actionButton}
+              >
+                <Text style={styles.actionText}>
+                  {activePlayerIndex < totalPlayers - 1 ? 'NEXT PLAYER' : 'START GAME'}
+                </Text>
+              </ImageBackground>
+            </TouchableOpacity>
+          </TutorialTarget>
 
         </View>
       </SafeAreaView>
@@ -427,7 +436,7 @@ const styles = StyleSheet.create({
     opacity: 0.25,
   },
   takenOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(0, 0, 0, 0.6)',
     justifyContent: 'center',
     alignItems: 'center',

@@ -21,6 +21,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAudio } from '../AudioContext';
 import BookcaseBackground, { getBookcaseSource } from '../components/BookcaseBackground';
 import Dice3D, { type Dice3DHandle } from '../components/Dice3D';
+import {
+  TUTORIAL_POWER_TILE,
+  TUTORIAL_QUESTION,
+  TUTORIAL_ROLLS,
+  TutorialOverlay,
+  TutorialTarget,
+  useTutorial,
+} from '../components/TutorialOverlay';
 import { getWoodframeSource } from '../components/woodframes';
 
 const DICE_ROLL_SOUND = require('../../assets/audio/dice-roll.mp3');
@@ -96,7 +104,6 @@ const DIALOGUE_FILES = {
   },
 } as const;
 
-// Ladders (Going Up): landing tile -> top tile
 const LADDERS: { [key: number]: number } = {
   2: 23,
   8: 34,
@@ -108,7 +115,6 @@ const LADDERS: { [key: number]: number } = {
   85: 95,
 };
 
-// Snakes (Going Down): landing tile (head) -> tail tile
 const SNAKES: { [key: number]: number } = {
   29: 9,
   38: 15,
@@ -240,6 +246,11 @@ const getPlaceholderQuestion = (type: EventType): Question => {
 
 export default function GameScreen() {
   const router = useRouter();
+  const tutorial = useTutorial();
+  const tutorialRollIndex = useRef(0);
+  const tutorialQuizRef = useRef<PendingEvent | null>(null);
+  const tutorialPowerRef = useRef<{ mover: Player; newPos: number; moverIndex: number } | null>(null);
+
   const { masterVol, masterMute, sfxVol, sfxMute } = useAudio();
   const params = useLocalSearchParams<{
     players?: string;
@@ -302,7 +313,6 @@ export default function GameScreen() {
   const [debugPlayerId, setDebugPlayerId] = useState('1');
   const [debugTile, setDebugTile] = useState('1');
 
-  // --- 10 RANDOM POWER-UP BOXES ON BOARD (Excluding all ladder and snake endpoints) ---
   const [powerUpTiles, setPowerUpTiles] = useState<number[]>(() => {
     const tiles: number[] = [];
     const restrictedTiles = new Set([
@@ -320,10 +330,10 @@ export default function GameScreen() {
         tiles.push(rand);
       }
     }
+    if (tutorial.isActive() && !tiles.includes(TUTORIAL_POWER_TILE)) tiles[0] = TUTORIAL_POWER_TILE;
     return tiles;
   });
 
-  // --- ROULETTE & TIMER STATE ---
   const [rouletteModalVisible, setRouletteModalVisible] = useState(false);
   const [rouletteDisplayItem, setRouletteDisplayItem] = useState<'hint' | 'skip' | 'add-time' | 'refresh'>('hint');
   const [challengeSeconds, setChallengeSeconds] = useState(challengeTimeLimit);
@@ -336,7 +346,6 @@ export default function GameScreen() {
   const diceRef = useRef<Dice3DHandle>(null);
   const [winner, setWinner] = useState<Player | null>(null);
 
-  // --- STAT TRACKING REFS ---
   const startTimeRef = useRef(Date.now());
   const totalRollsRef = useRef(0);
   const questionsAnsweredRef = useRef(0);
@@ -358,7 +367,6 @@ export default function GameScreen() {
   const cameraScale = useRef(new Animated.Value(1)).current;
   const cameraFollow = useRef(new Animated.Value(0)).current;
 
-  // Available power-ups filtered safely outside JSX
   const availablePowerUps = POWER_UP_TYPES.filter(
     (pType) => !(pType === 'add-time' && isInfiniteTimer)
   );
@@ -368,7 +376,6 @@ export default function GameScreen() {
       ? 'Science'
       : 'History';
 
-  // Challenge timer countdown effect
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout>;
     if (isChallengeActive && !isInfiniteTimer) {
@@ -414,6 +421,7 @@ export default function GameScreen() {
     : ADDER_DIALOGUE_IMG;
 
   const getNextQuestion = (eventType: EventType): Question => {
+    if (tutorial.isActive()) return { ...TUTORIAL_QUESTION };
     const rawQuestions = QUESTION_BANKS[dialogueSubject];
     if (!rawQuestions?.length) return getPlaceholderQuestion(eventType);
     if (questionDeck.current.length === 0) {
@@ -531,13 +539,15 @@ export default function GameScreen() {
 
   const rollDice = () => {
     if (!isDiceReady || isRolling || movementLocked.current || winner || isModalVisible || showExitModal || rouletteModalVisible) return;
+    tutorial.notify('dice-rolled');
     setIsRolling(true);
     totalRollsRef.current += 1;
     void rollSoundPlayer.seekTo(0).then(() => rollSoundPlayer.play()).catch((error: unknown) => {
       console.error('Failed to play the dice rolling sound.', error);
     });
 
-    const finalRoll = Math.floor(Math.random() * 6) + 1;
+    const scriptedRoll = tutorial.isActive() ? TUTORIAL_ROLLS[tutorialRollIndex.current++] : undefined;
+    const finalRoll = scriptedRoll ?? Math.floor(Math.random() * 6) + 1;
     if (!diceRef.current?.roll(finalRoll)) {
       setIsRolling(false);
       return;
@@ -545,6 +555,7 @@ export default function GameScreen() {
   };
 
   const passTurn = (fromIndex = turnIndex) => {
+    if (tutorial.isActive()) return;
     setTurnIndex((fromIndex + 1) % players.length);
   };
 
@@ -569,6 +580,7 @@ export default function GameScreen() {
           );
           if (newPos === 100) setWinner(mover);
           else passTurn(moverIndex);
+          tutorial.notify('roulette-done');
         }, 800);
       }
     }, 100);
@@ -644,7 +656,7 @@ export default function GameScreen() {
     setIsAnswerCorrect(null);
     setHintMessage(null);
     setChallengeSeconds(challengeTimeLimit);
-    setIsChallengeActive(true);
+    setIsChallengeActive(!tutorial.isActive());
   };
 
   const resolvePlayerLanding = (mover: Player, moverIndex: number, newPos: number) => {
@@ -652,6 +664,24 @@ export default function GameScreen() {
     setPlayers((currentPlayers) => currentPlayers.map((player) =>
       player.id === mover.id ? updatedPlayer : player,
     ));
+
+    if (tutorial.isActive() && newPos !== 100) {
+      if (powerUpTiles.includes(newPos)) {
+        tutorialPowerRef.current = { mover: updatedPlayer, newPos, moverIndex };
+        tutorial.notify('landed-power');
+        return;
+      }
+      if (LADDERS[newPos]) {
+        tutorialQuizRef.current = { type: 'ladder', landedPos: newPos, target: LADDERS[newPos] };
+        tutorial.notify('landed-ladder');
+        return;
+      }
+      if (SNAKES[newPos]) {
+        tutorialQuizRef.current = { type: 'snake', landedPos: newPos, target: SNAKES[newPos] };
+        tutorial.notify('landed-snake');
+        return;
+      }
+    }
 
     if (newPos === 100) {
       setWinner(updatedPlayer);
@@ -717,6 +747,7 @@ export default function GameScreen() {
 
   const resolveQuiz = () => {
     if (!pendingEvent || isAnswerCorrect === null) return;
+    tutorial.notify('quiz-resolved');
     const mover = players[turnIndex];
     const startPosition = pendingEvent.landedPos;
     const target = pendingEvent.type === 'ladder'
@@ -743,10 +774,57 @@ export default function GameScreen() {
       ));
       if (pendingEvent.type === 'ladder' && isAnswerCorrect) {ladderClimbsRef.current += 1;}
       else if (pendingEvent.type === 'snake' && !isAnswerCorrect) {snakeBitesRef.current += 1;}
+      tutorial.notify('quiz-moved');
       if (target === 100) setWinner(updatedPlayer);
       else passTurn();
     });
   };
+
+  useEffect(() => {
+    tutorial.setScene('game');
+    return () => tutorial.setScene('setup');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    tutorial.setInModal(isModalVisible);
+    return () => tutorial.setInModal(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isModalVisible]);
+
+  const tutorialActionRef = useRef<() => void>(() => {});
+  tutorialActionRef.current = () => {
+    const id = tutorial.stepId;
+    if ((id === 'ladder-q1' || id === 'snake-q') && tutorialQuizRef.current) {
+      const event = tutorialQuizRef.current;
+      tutorialQuizRef.current = null;
+      openQuiz(event);
+    } else if (id === 'wait-roulette' && tutorialPowerRef.current) {
+      const power = tutorialPowerRef.current;
+      tutorialPowerRef.current = null;
+      triggerPowerUpRoulette(power.mover, power.newPos, power.moverIndex);
+    }
+  };
+  useEffect(() => {
+    tutorialActionRef.current();
+  }, [tutorial.stepId]);
+
+  const resolveQuizRef = useRef<() => void>(() => {});
+  resolveQuizRef.current = resolveQuiz;
+  useEffect(() => {
+    if (tutorial.stepId !== 'ladder-help' || !currentQuestion) return undefined;
+    const timers = [
+      setTimeout(() => setSelectedIndex(currentQuestion.correctIndex), 1600),
+      setTimeout(() => {
+        questionsAnsweredRef.current += 1;
+        setIsAnswerCorrect(true);
+        setDialogueText(getRandomDialogueLine('ladder', dialogueSubject, 'CorrectAnswer'));
+      }, 2600),
+      setTimeout(() => resolveQuizRef.current(), 4200),
+    ];
+    return () => timers.forEach(clearTimeout);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tutorial.stepId, currentQuestion]);
 
   const handleVictoryTap = () => {
     const elapsedMs = Date.now() - startTimeRef.current;
@@ -825,7 +903,6 @@ export default function GameScreen() {
     <BookcaseBackground level={params.level}>
       <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1 }}>
         <View style={styles.mainContainer}>
-          {/* TOP BANNER & EXIT BUTTON */}
           <View style={[styles.headerRow, { width: frameWidth }]}>
             <TouchableOpacity
               style={styles.exitButton}
@@ -849,7 +926,6 @@ export default function GameScreen() {
             </ImageBackground>
           </View>
 
-          {/* BOARD FRAME */}
           <View style={[styles.boardFrame, { width: frameWidth, height: frameHeight }]}>
             <Animated.View
               style={{
@@ -886,7 +962,6 @@ export default function GameScreen() {
                   resizeMode="cover"
                 />
                 
-                {/* POWER-UP BOXES ON BOARD */}
                 {powerUpTiles.map((tileNum) => {
                   const { x, y } = getCoordinatesForPosition(tileNum);
                   const pSize = cellSize * 0.65;
@@ -987,36 +1062,37 @@ export default function GameScreen() {
             </Animated.View>
           </View>
 
-          {/* 3D DICE SECTION */}
           <View style={styles.diceSection}>
             <View style={styles.diceSide} />
             <View style={styles.diceCenter}>
-              <TouchableOpacity
-                style={styles.diceButton}
-                onPress={rollDice}
-                disabled={!isDiceReady || isRolling || !!winner || isModalVisible || showExitModal || rouletteModalVisible}
-                activeOpacity={0.7}
-              >
-                <Dice3D
-                  ref={diceRef}
-                  size={diceSize}
-                  onReady={() => setIsDiceReady(true)}
-                  onRollComplete={(value) => {
-                    setIsRolling(false);
-                    void resultSoundPlayer.seekTo(0).then(() => resultSoundPlayer.play()).catch((error: unknown) => {
-                      console.error('Failed to play the dice result sound.', error);
-                    });
-                    movePlayer(value);
-                  }}
-                  onError={() => {
-                    setIsDiceReady(false);
-                    Alert.alert(
-                      '3D die unavailable',
-                      'The die renderer could not start. Please restart the game and try again.',
-                    );
-                  }}
-                />
-              </TouchableOpacity>
+              <TutorialTarget id="dice">
+                <TouchableOpacity
+                  style={styles.diceButton}
+                  onPress={rollDice}
+                  disabled={!isDiceReady || isRolling || !!winner || isModalVisible || showExitModal || rouletteModalVisible}
+                  activeOpacity={0.7}
+                >
+                  <Dice3D
+                    ref={diceRef}
+                    size={diceSize}
+                    onReady={() => setIsDiceReady(true)}
+                    onRollComplete={(value) => {
+                      setIsRolling(false);
+                      void resultSoundPlayer.seekTo(0).then(() => resultSoundPlayer.play()).catch((error: unknown) => {
+                        console.error('Failed to play the dice result sound.', error);
+                      });
+                      movePlayer(value);
+                    }}
+                    onError={() => {
+                      setIsDiceReady(false);
+                      Alert.alert(
+                        '3D die unavailable',
+                        'The die renderer could not start. Please restart the game and try again.',
+                      );
+                    }}
+                  />
+                </TouchableOpacity>
+              </TutorialTarget>
             </View>
             <View style={[styles.diceSide, styles.diceActionSide]}>
               <TouchableOpacity
@@ -1028,8 +1104,6 @@ export default function GameScreen() {
                 onPress={openDebugMoveModal}
                 disabled={isDebugMoveBlocked}
                 activeOpacity={0.75}
-                accessibilityRole="button"
-                accessibilityLabel="Open debug movement controls"
               >
                 <Text style={styles.debugMoveButtonText}>DEBUG</Text>
               </TouchableOpacity>
@@ -1037,7 +1111,6 @@ export default function GameScreen() {
           </View>
         </View>
 
-        {/* BOTTOM INDICATORS */}
         <View style={styles.bottomBarContainer}>
           {players.map((player, index) => {
             const isActive = index === turnIndex;
@@ -1056,7 +1129,6 @@ export default function GameScreen() {
           })}
         </View>
 
-        {/* POWER-UP ROULETTE MODAL */}
         <Modal
           visible={rouletteModalVisible}
           transparent
@@ -1074,7 +1146,6 @@ export default function GameScreen() {
           </View>
         </Modal>
 
-        {/* DEBUG MOVEMENT */}
         <Modal
           visible={debugMoveModalVisible}
           transparent
@@ -1136,7 +1207,6 @@ export default function GameScreen() {
                 keyboardType="number-pad"
                 maxLength={3}
                 selectTextOnFocus
-                accessibilityLabel="Destination tile"
               />
               <View style={styles.exitActions}>
                 <TouchableOpacity
@@ -1159,7 +1229,6 @@ export default function GameScreen() {
           </View>
         </Modal>
 
-        {/* EXIT DIALOG */}
         <Modal
           visible={showExitModal}
           transparent
@@ -1184,7 +1253,6 @@ export default function GameScreen() {
           </View>
         </Modal>
 
-        {/* QUIZ MODAL */}
         <Modal
           visible={isModalVisible}
           transparent
@@ -1216,15 +1284,15 @@ export default function GameScreen() {
                       </View>
                     </View>
                   </ImageBackground>
-                  <Image
-                    source={dialogueImage}
-                    style={styles.quizCharacterImage}
-                    resizeMode="contain"
-                    pointerEvents="none"
-                  />
+                  <View pointerEvents="none" style={styles.quizCharacterWrapper}>
+                    <Image
+                      source={dialogueImage}
+                      style={styles.quizCharacterImage}
+                      resizeMode="contain"
+                    />
+                  </View>
                 </View>
 
-                {/* TIMER DISPLAY */}
                 {!isInfiniteTimer && (
                   <Text style={styles.timerDisplay}>
                     Timer: {String(Math.floor(challengeSeconds / 60)).padStart(2, '0')}:
@@ -1244,7 +1312,6 @@ export default function GameScreen() {
 
                   <Text style={styles.quizPrompt}>{currentQuestion?.prompt}</Text>
 
-                  {/* HINT BANNER */}
                   {hintMessage && (
                     <View style={styles.hintBanner}>
                       <Text style={styles.hintBannerText}>💡 {hintMessage}</Text>
@@ -1307,7 +1374,6 @@ export default function GameScreen() {
                   </View>
                 </View>
 
-                {/* POWER-UP INVENTORY BUTTONS */}
                 <View style={styles.powerUpsBar}>
                   {availablePowerUps.map((pType) => {
                     const count = activePlayer.powerUps.filter((item) => item === pType).length;
@@ -1330,12 +1396,12 @@ export default function GameScreen() {
 
               </View>
             </ScrollView>
+            <TutorialOverlay embedded />
           </View>
         </Modal>
 
       </SafeAreaView>
 
-      {/* VICTORY POPUP */}
       {winner && (
         <TouchableOpacity
           style={[StyleSheet.absoluteFill, styles.modalOverlayContainer]}
@@ -1359,576 +1425,93 @@ export default function GameScreen() {
 }
 
 const styles = StyleSheet.create({
-  mainContainer: {
-    flex: 1,
-    width: '100%',
-    alignItems: 'center',
-    justifyContent: 'space-evenly',
-    paddingVertical: 10,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    zIndex: 20,
-  },
-  exitButton: {
-    width: 48,
-    height: 48,
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 30,
-  },
-  exitButtonImage: {
-    width: 44,
-    height: 30,
-    transform: [{ scale: 1.2 }],
-  },
-  turnBanner: {
-    flex: 1,
-    aspectRatio: 6,
-    paddingVertical: 10,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 6,
-  },
+  mainContainer: { flex: 1, width: '100%', alignItems: 'center', justifyContent: 'space-evenly', paddingVertical: 10 },
+  headerRow: { flexDirection: 'row', alignItems: 'center', gap: 10, zIndex: 20 },
+  exitButton: { width: 48, height: 48, justifyContent: 'center', alignItems: 'center', zIndex: 30 },
+  exitButtonImage: { width: 44, height: 30, transform: [{ scale: 1.2 }] },
+  turnBanner: { flex: 1, aspectRatio: 6, paddingVertical: 10, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 4, elevation: 6 },
   turnText: { color: '#fff', fontSize: 18, fontWeight: 'bold', letterSpacing: 1 },
-  boardFrame: {
-    ...BOARD_FRAME,
-    overflow: 'hidden',
-    alignSelf: 'center',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  boardFrame: { ...BOARD_FRAME, overflow: 'hidden', alignSelf: 'center', alignItems: 'center', justifyContent: 'center' },
   boardFrameBackground: { position: 'absolute' },
   boardImage: { position: 'absolute', width: '100%', height: '100%' },
-  tileNumber: {
-    color: '#fff',
-    fontSize: TILE_NUMBER_FONT_SIZE,
-    fontWeight: TILE_NUMBER_FONT_WEIGHT,
-    textAlign: 'right',
-    includeFontPadding: false,
-    textShadowColor: 'rgba(0,0,0,0.9)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
-  },
-  playerTokenWrapper: {
-    position: 'absolute',
-    borderWidth: 2,
-    borderColor: '#0f172a',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.5,
-    shadowRadius: 3,
-    elevation: 5,
-  },
-  playerToken: {
-    width: '82%',
-    height: '82%',
-    resizeMode: 'contain',
-  },
-  diceSection: {
-    flexDirection: 'row',
-    width: '100%',
-    minHeight: 84,
-    alignItems: 'center',
-  },
-  diceSide: {
-    flex: 1,
-  },
-  diceCenter: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  diceActionSide: {
-    alignItems: 'flex-end',
-  },
-  debugMoveButton: {
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    borderRadius: 8,
-    backgroundColor: '#facc15',
-    borderWidth: 1,
-    borderColor: '#fff7b2',
-    elevation: 5,
-  },
-  debugMoveButtonDisabled: {
-    opacity: 0.45,
-  },
-  debugMoveButtonHidden: {
-    opacity: 0,
-  },
-  debugMoveButtonText: {
-    color: '#1b2338',
-    fontSize: 11,
-    fontWeight: '900',
-    letterSpacing: 0.5,
-  },
-  diceButton: {
-    minWidth: 72,
-    minHeight: 72,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  bottomBarContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'flex-end',
-    width: '100%',
-    paddingHorizontal: 12,
-  },
-  bottomIndicator: {
-    flex: 1,
-    marginHorizontal: 6,
-    borderTopLeftRadius: 14,
-    borderTopRightRadius: 14,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.4,
-    shadowRadius: 4,
-    elevation: 6,
-  },
-  indicatorActive: {
-    height: 95,
-    borderTopWidth: 4,
-    borderTopColor: '#fff',
-  },
-  indicatorInactive: {
-    height: 25,
-    opacity: 0.7,
-  },
-  modalOverlayContainer: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.75)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  rouletteCard: {
-    width: 260,
-    backgroundColor: '#1e293b',
-    borderRadius: 20,
-    padding: 20,
-    alignItems: 'center',
-    borderWidth: 3,
-    borderColor: '#facc15',
-  },
-  rouletteTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 12,
-  },
-  rouletteImage: {
-    width: 80,
-    height: 80,
-    marginBottom: 12,
-  },
-  rouletteSubtitle: {
-    fontSize: 14,
-    color: '#facc15',
-    fontWeight: '700',
-  },
-  debugMoveCard: {
-    width: '88%',
-    maxWidth: 380,
-    backgroundColor: '#1b2338',
-    borderRadius: 16,
-    padding: 22,
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#facc15',
-    elevation: 12,
-  },
-  debugMoveTitle: {
-    color: '#ffffff',
-    fontSize: 22,
-    fontWeight: '900',
-    marginBottom: 6,
-  },
-  debugPlayerChoices: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    gap: 8,
-    width: '100%',
-    marginBottom: 18,
-  },
-  debugPlayerChoice: {
-    minWidth: 84,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 8,
-    borderWidth: 2,
-    alignItems: 'center',
-    backgroundColor: '#27334d',
-  },
-  debugPlayerChoiceText: {
-    color: '#ffffff',
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  debugPlayerChoiceTextSelected: {
-    color: '#111827',
-  },
-  debugPowerUpChoices: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    gap: 8,
-    width: '100%',
-    marginTop: -10,
-    marginBottom: 14,
-  },
-  debugPowerUpChoice: {
-    width: '48%',
-    minHeight: 54,
-    paddingHorizontal: 8,
-    paddingVertical: 6,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#64748b',
-    backgroundColor: '#27334d',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-  },
-  debugPowerUpIcon: {
-    width: 26,
-    height: 26,
-    flexShrink: 0,
-  },
-  debugPowerUpChoiceText: {
-    flexShrink: 1,
-    color: '#ffffff',
-    fontSize: 12,
-    fontWeight: '700',
-    textAlign: 'center',
-  },
-  debugMoveLabel: {
-    width: '100%',
-    color: '#ffffff',
-    fontSize: 14,
-    fontWeight: '700',
-    marginBottom: 20,
-  },
-  debugMoveInput: {
-    width: '100%',
-    height: 48,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#64748b',
-    backgroundColor: '#ffffff',
-    color: '#111827',
-    fontSize: 20,
-    fontWeight: '700',
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  debugMoveConfirm: {
-    backgroundColor: '#facc15',
-    borderColor: '#facc15',
-  },
-  debugMoveConfirmDisabled: {
-    opacity: 0.45,
-  },
-  exitCard: {
-    width: '88%',
-    maxWidth: 380,
-    backgroundColor: '#1b2338',
-    borderRadius: 8,
-    paddingVertical: 24,
-    paddingHorizontal: 20,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.5,
-    shadowRadius: 10,
-    elevation: 12,
-  },
-  exitTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#ffffff',
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  exitActions: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 16,
-    width: '100%',
-  },
-  exitBtn: {
-    flex: 1,
-    maxWidth: 130,
-    backgroundColor: '#27334d',
-    paddingVertical: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#3b4b6c',
-    alignItems: 'center',
-  },
-  exitBtnText: {
-    color: '#ffffff',
-    fontWeight: 'bold',
-    fontSize: 16,
-    letterSpacing: 0.5,
-  },
-  popupImageContainer: {
-    width: '88%',
-    maxWidth: 340,
-    aspectRatio: 340 / 260,
-    justifyContent: 'flex-end',
-    alignItems: 'center',
-    paddingBottom: 28,
-  },
-  popupTextWrapper: {
-    alignItems: 'center',
-    gap: 8,
-  },
-  victorySubtitle: {
-    fontSize: 18,
-    color: '#fff',
-    fontWeight: 'bold',
-    textShadowColor: 'rgba(0,0,0,0.75)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 3,
-  },
-  tapToContinueText: {
-    color: '#facc15',
-    fontWeight: 'bold',
-    fontSize: 14,
-    textShadowColor: 'rgba(0,0,0,0.75)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 3,
-  },
-  quizPopupScrollView: {
-    flex: 1,
-    width: '100%',
-  },
-  quizPopupScrollContent: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 20,
-  },
-  quizPopupGroup: {
-    width: '88%',
-    maxWidth: 420,
-    alignItems: 'center',
-    gap: 10,
-  },
-  quizSceneStage: {
-    position: 'relative',
-    width: '100%',
-    height: QUIZ_SCENE_HEIGHT,
-    zIndex: 2,
-    elevation: 2,
-  },
-  quizSceneCard: {
-    width: '100%',
-    height: QUIZ_SCENE_HEIGHT,
-    borderRadius: 16,
-    borderWidth: 2,
-    borderColor: '#475569',
-    overflow: 'hidden',
-    zIndex: 0,
-  },
-  quizSceneBackgroundImage: {
-    borderRadius: 16,
-  },
-  quizSceneForeground: {
-    ...StyleSheet.absoluteFill,
-    justifyContent: 'center',
-    padding: 16,
-    overflow: 'visible',
-  },
-  quizCharacterImage: {
-    position: 'absolute',
-    right: '4%',
-    top: '-330%',
-    width: '46%',
-    aspectRatio: 1,
-    zIndex: 3,
-    elevation: 3,
-    transform: [{ scale: 1.5 }],
-  },
-  quizDialogueBox: {
-    width: '45%',
-    height: QUIZ_DIALOGUE_BOX_HEIGHT,
-    justifyContent: 'center',
-    padding: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.24)',
-    backgroundColor: 'rgba(15,23,42,0.86)',
-    zIndex: 2,
-  },
-  quizDialogueText: {
-    color: '#fff',
-    fontSize: 14,
-    lineHeight: DIALOGUE_LINE_HEIGHT,
-    fontWeight: '600',
-  },
-  timerDisplay: {
-    alignSelf: 'stretch',
-    paddingHorizontal: 20,
-    fontSize: 18,
-    fontWeight: '900',
-    color: '#facc15',
-    textAlign: 'left',
-    marginVertical: 4,
-    textShadowColor: 'rgba(0,0,0,0.8)',
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 2,
-  },
-  quizCard: {
-    width: '100%',
-    backgroundColor: '#1e293b',
-    borderRadius: 16,
-    padding: 20,
-    borderWidth: 2,
-    borderColor: '#475569',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.4,
-    shadowRadius: 10,
-    elevation: 10,
-    zIndex: 5,
-    position: 'relative',
-  },
-  quizHeader: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#fff',
-    textAlign: 'center',
-    marginBottom: 4,
-  },
-  quizSubheader: {
-    fontSize: 13,
-    color: '#cbd5e1',
-    textAlign: 'center',
-    marginBottom: 14,
-  },
-  quizPrompt: {
-    fontSize: 15,
-    color: '#f8fafc',
-    textAlign: 'center',
-    marginBottom: 16,
-    fontWeight: '600',
-  },
-  hintBanner: {
-    backgroundColor: '#334155',
-    borderWidth: 1.5,
-    borderColor: '#facc15',
-    borderRadius: 10,
-    padding: 10,
-    marginBottom: 14,
-  },
-  hintBannerText: {
-    color: '#fef08a',
-    fontSize: 13,
-    fontWeight: '700',
-    textAlign: 'center',
-  },
-  optionsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    rowGap: 10,
-  },
-  optionButton: {
-    width: '48%',
-    backgroundColor: '#334155',
-    paddingVertical: 14,
-    paddingHorizontal: 8,
-    borderRadius: 10,
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: 'transparent',
-  },
-  optionCorrect: {
-    backgroundColor: '#166534',
-    borderColor: '#22c55e',
-  },
-  optionSelected: {
-    backgroundColor: '#475569',
-    borderColor: '#facc15',
-  },
-  optionWrong: {
-    backgroundColor: '#7f1d1d',
-    borderColor: '#ef4444',
-  },
-  optionText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-  resultBlock: {
-    marginTop: 16,
-    alignItems: 'center',
-  },
-  continueButton: {
-    minHeight: 44,
-    backgroundColor: '#facc15',
-    paddingVertical: 10,
-    paddingHorizontal: 28,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  continueButtonDisabled: {
-    opacity: 0.45,
-  },
-  answerCorrectButton: {
-    backgroundColor: '#16a34a',
-  },
-  answerIncorrectButton: {
-    backgroundColor: '#dc2626',
-  },
-  continueButtonText: {
-    color: '#1e293b',
-    fontWeight: 'bold',
-    fontSize: 14,
-  },
-  answerResultButtonText: {
-    color: '#fff',
-  },
-  powerUpsBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '100%',
-    marginTop: 10,
-    gap: 8,
-  },
-  powerUpButton: {
-    flex: 1,
-    backgroundColor: '#c2410c',
-    borderRadius: 12,
-    paddingVertical: 10,
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#ea580c',
-  },
-  powerUpDisabled: {
-    opacity: 0.4,
-  },
-  powerUpIcon: {
-    width: 28,
-    height: 28,
-    marginBottom: 4,
-  },
-  powerUpCountText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: '900',
-  },
+  tileNumber: { color: '#fff', fontSize: TILE_NUMBER_FONT_SIZE, fontWeight: TILE_NUMBER_FONT_WEIGHT, textAlign: 'right', includeFontPadding: false, textShadowColor: 'rgba(0,0,0,0.9)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 },
+  playerTokenWrapper: { position: 'absolute', borderWidth: 2, borderColor: '#0f172a', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.5, shadowRadius: 3, elevation: 5 },
+  playerToken: { width: '82%', height: '82%', resizeMode: 'contain' },
+  diceSection: { flexDirection: 'row', width: '100%', minHeight: 84, alignItems: 'center' },
+  diceSide: { flex: 1 },
+  diceCenter: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  diceActionSide: { alignItems: 'flex-end' },
+  debugMoveButton: { paddingHorizontal: 10, paddingVertical: 8, borderRadius: 8, backgroundColor: '#facc15', borderWidth: 1, borderColor: '#fff7b2', elevation: 5 },
+  debugMoveButtonDisabled: { opacity: 0.45 },
+  debugMoveButtonHidden: { opacity: 0 },
+  debugMoveButtonText: { color: '#1b2338', fontSize: 11, fontWeight: '900', letterSpacing: 0.5 },
+  diceButton: { minWidth: 72, minHeight: 72, alignItems: 'center', justifyContent: 'center' },
+  bottomBarContainer: { flexDirection: 'row', justifyContent: 'space-around', alignItems: 'flex-end', width: '100%', paddingHorizontal: 12 },
+  bottomIndicator: { flex: 1, marginHorizontal: 6, borderTopLeftRadius: 14, borderTopRightRadius: 14, shadowColor: '#000', shadowOffset: { width: 0, height: -2 }, shadowOpacity: 0.4, shadowRadius: 4, elevation: 6 },
+  indicatorActive: { height: 95, borderTopWidth: 4, borderTopColor: '#fff' },
+  indicatorInactive: { height: 25, opacity: 0.7 },
+  modalOverlayContainer: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.75)', justifyContent: 'center', alignItems: 'center' },
+  rouletteCard: { width: 260, backgroundColor: '#1e293b', borderRadius: 20, padding: 20, alignItems: 'center', borderWidth: 3, borderColor: '#facc15' },
+  rouletteTitle: { fontSize: 16, fontWeight: 'bold', color: '#fff', marginBottom: 12 },
+  rouletteImage: { width: 80, height: 80, marginBottom: 12 },
+  rouletteSubtitle: { fontSize: 14, color: '#facc15', fontWeight: '700' },
+  debugMoveCard: { width: '88%', maxWidth: 380, backgroundColor: '#1b2338', borderRadius: 16, padding: 22, alignItems: 'center', borderWidth: 2, borderColor: '#facc15', elevation: 12 },
+  debugMoveTitle: { color: '#ffffff', fontSize: 22, fontWeight: '900', marginBottom: 6 },
+  debugPlayerChoices: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8, width: '100%', marginBottom: 18 },
+  debugPlayerChoice: { minWidth: 84, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 8, borderWidth: 2, alignItems: 'center', backgroundColor: '#27334d' },
+  debugPlayerChoiceText: { color: '#ffffff', fontSize: 13, fontWeight: '700' },
+  debugPlayerChoiceTextSelected: { color: '#111827' },
+  debugPowerUpChoices: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: 8, width: '100%', marginTop: -10, marginBottom: 14 },
+  debugPowerUpChoice: { width: '48%', minHeight: 54, paddingHorizontal: 8, paddingVertical: 6, borderRadius: 8, borderWidth: 1, borderColor: '#64748b', backgroundColor: '#27334d', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
+  debugPowerUpIcon: { width: 26, height: 26, flexShrink: 0 },
+  debugPowerUpChoiceText: { flexShrink: 1, color: '#ffffff', fontSize: 12, fontWeight: '700', textAlign: 'center' },
+  debugMoveLabel: { width: '100%', color: '#ffffff', fontSize: 14, fontWeight: '700', marginBottom: 20 },
+  debugMoveInput: { width: '100%', height: 48, borderRadius: 8, borderWidth: 1, borderColor: '#64748b', backgroundColor: '#ffffff', color: '#111827', fontSize: 20, fontWeight: '700', textAlign: 'center', marginBottom: 8 },
+  debugMoveConfirm: { backgroundColor: '#facc15', borderColor: '#facc15' },
+  debugMoveConfirmDisabled: { opacity: 0.45 },
+  exitCard: { width: '88%', maxWidth: 380, backgroundColor: '#1b2338', borderRadius: 8, paddingVertical: 24, paddingHorizontal: 20, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.5, shadowRadius: 10, elevation: 12 },
+  exitTitle: { fontSize: 22, fontWeight: 'bold', color: '#ffffff', marginBottom: 20, textAlign: 'center' },
+  exitActions: { flexDirection: 'row', justifyContent: 'center', gap: 16, width: '100%' },
+  exitBtn: { flex: 1, maxWidth: 130, backgroundColor: '#27334d', paddingVertical: 12, borderRadius: 8, borderWidth: 1, borderColor: '#3b4b6c', alignItems: 'center' },
+  exitBtnText: { color: '#ffffff', fontWeight: 'bold', fontSize: 16, letterSpacing: 0.5 },
+  popupImageContainer: { width: '88%', maxWidth: 340, aspectRatio: 340 / 260, justifyContent: 'flex-end', alignItems: 'center', paddingBottom: 28 },
+  popupTextWrapper: { alignItems: 'center', gap: 8 },
+  victorySubtitle: { fontSize: 18, color: '#fff', fontWeight: 'bold', textShadowColor: 'rgba(0,0,0,0.75)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 },
+  tapToContinueText: { color: '#facc15', fontWeight: 'bold', fontSize: 14, textShadowColor: 'rgba(0,0,0,0.75)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 },
+  quizPopupScrollView: { flex: 1, width: '100%' },
+  quizPopupScrollContent: { flexGrow: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 20 },
+  quizPopupGroup: { width: '88%', maxWidth: 420, alignItems: 'center', gap: 10 },
+  quizSceneStage: { position: 'relative', width: '100%', height: QUIZ_SCENE_HEIGHT, zIndex: 2, elevation: 2 },
+  quizSceneCard: { width: '100%', height: QUIZ_SCENE_HEIGHT, borderRadius: 16, borderWidth: 2, borderColor: '#475569', overflow: 'hidden', zIndex: 0 },
+  quizSceneBackgroundImage: { borderRadius: 16 },
+  quizSceneForeground: { ...StyleSheet.absoluteFill, justifyContent: 'center', padding: 16, overflow: 'visible' },
+  quizCharacterWrapper: { position: 'absolute', right: '4%', top: '-330%', width: '46%', aspectRatio: 1, zIndex: 3, elevation: 3 },
+  quizCharacterImage: { width: '100%', height: '100%', transform: [{ scale: 1.5 }] },
+  quizDialogueBox: { width: '45%', height: QUIZ_DIALOGUE_BOX_HEIGHT, justifyContent: 'center', padding: 12, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(255,255,255,0.24)', backgroundColor: 'rgba(15,23,42,0.86)', zIndex: 2 },
+  quizDialogueText: { color: '#fff', fontSize: 14, lineHeight: DIALOGUE_LINE_HEIGHT, fontWeight: '600' },
+  timerDisplay: { alignSelf: 'stretch', paddingHorizontal: 20, fontSize: 18, fontWeight: '900', color: '#facc15', textAlign: 'left', marginVertical: 4, textShadowColor: 'rgba(0,0,0,0.8)', textShadowOffset: { width: 1, height: 1 }, textShadowRadius: 2 },
+  quizCard: { width: '100%', backgroundColor: '#1e293b', borderRadius: 16, padding: 20, borderWidth: 2, borderColor: '#475569', shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.4, shadowRadius: 10, elevation: 10, zIndex: 5, position: 'relative' },
+  quizHeader: { fontSize: 20, fontWeight: 'bold', color: '#fff', textAlign: 'center', marginBottom: 4 },
+  quizSubheader: { fontSize: 13, color: '#cbd5e1', textAlign: 'center', marginBottom: 14 },
+  quizPrompt: { fontSize: 15, color: '#f8fafc', textAlign: 'center', marginBottom: 16, fontWeight: '600' },
+  hintBanner: { backgroundColor: '#334155', borderWidth: 1.5, borderColor: '#facc15', borderRadius: 10, padding: 10, marginBottom: 14 },
+  hintBannerText: { color: '#fef08a', fontSize: 13, fontWeight: '700', textAlign: 'center' },
+  optionsGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 10 },
+  optionButton: { width: '48%', backgroundColor: '#334155', paddingVertical: 14, paddingHorizontal: 8, borderRadius: 10, alignItems: 'center', borderWidth: 2, borderColor: 'transparent' },
+  optionCorrect: { backgroundColor: '#166534', borderColor: '#22c55e' },
+  optionSelected: { backgroundColor: '#475569', borderColor: '#facc15' },
+  optionWrong: { backgroundColor: '#7f1d1d', borderColor: '#ef4444' },
+  optionText: { color: '#fff', fontSize: 14, fontWeight: '600', textAlign: 'center' },
+  resultBlock: { marginTop: 16, alignItems: 'center' },
+  continueButton: { minHeight: 44, backgroundColor: '#facc15', paddingVertical: 10, paddingHorizontal: 28, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  continueButtonDisabled: { opacity: 0.45 },
+  answerCorrectButton: { backgroundColor: '#16a34a' },
+  answerIncorrectButton: { backgroundColor: '#dc2626' },
+  continueButtonText: { color: '#1e293b', fontWeight: 'bold', fontSize: 14 },
+  answerResultButtonText: { color: '#fff' },
+  powerUpsBar: { flexDirection: 'row', justifyContent: 'space-between', width: '100%', marginTop: 10, gap: 8 },
+  powerUpButton: { flex: 1, backgroundColor: '#c2410c', borderRadius: 12, paddingVertical: 10, alignItems: 'center', borderWidth: 2, borderColor: '#ea580c' },
+  powerUpDisabled: { opacity: 0.4 },
+  powerUpIcon: { width: 28, height: 28, marginBottom: 4 },
+  powerUpCountText: { color: '#fff', fontSize: 12, fontWeight: '900' },
 });
