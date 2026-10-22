@@ -11,6 +11,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useWoodKnock } from '../../audio/useWoodKnock';
 import { getWoodframeSource } from '../../components/woodframes';
 
 const PADDING = 16;
@@ -40,6 +41,7 @@ const PLAYER_ACCENT_COLORS: { [key: number]: string } = {
 export default function CustomizeCharacterScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
+  const playKnock = useWoodKnock();
 
   const totalPlayers = Number(params.players || 1);
   const [activePlayerIndex, setActivePlayerIndex] = useState(0);
@@ -93,6 +95,7 @@ export default function CustomizeCharacterScreen() {
       (color, idx) => color === hex && idx !== activePlayerIndex
     );
     if (isTakenByOther) return;
+    playKnock();
 
     const updated = [...selectedColors];
     updated[activePlayerIndex] = hex;
@@ -101,6 +104,7 @@ export default function CustomizeCharacterScreen() {
 
   const handleNextOrStart = () => {
     if (!currentSelection) return;
+    playKnock();
 
     if (activePlayerIndex < totalPlayers - 1) {
       setActivePlayerIndex((prev) => prev + 1);

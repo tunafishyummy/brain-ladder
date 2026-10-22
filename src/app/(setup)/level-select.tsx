@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useScreenTransition } from '../../TransitionContext';
+import { useWoodKnock } from '../../audio/useWoodKnock';
 import { getWoodframeSource } from '../../components/woodframes';
 
 // Constants
@@ -52,17 +53,21 @@ export default function LevelSelectScreen() {
   const [selectedLevel, setSelectedLevel] = useState<string | null>(null);
   const [difficultyIndex, setDifficultyIndex] = useState(1);
   const [questionTimer, setQuestionTimer] = useState(15);
+  const playKnock = useWoodKnock();
 
   const handlePrevDifficulty = () => {
+    playKnock();
     setDifficultyIndex((prev) => (prev > 0 ? prev - 1 : DIFFICULTIES.length - 1));
   };
 
   const handleNextDifficulty = () => {
+    playKnock();
     setDifficultyIndex((prev) => (prev < DIFFICULTIES.length - 1 ? prev + 1 : 0));
   };
 
   const handleContinue = () => {
     if (!selectedLevel) return;
+    playKnock();
 
     router.push({
       pathname: '/playerselection',
@@ -112,6 +117,7 @@ export default function LevelSelectScreen() {
                     key={level.id}
                     activeOpacity={0.85}
                     onPress={() => {
+                      playKnock();
                       setSelectedLevel(level.id);
                       setBookcaseLevel(level.id);
                     }}
@@ -173,7 +179,10 @@ export default function LevelSelectScreen() {
                     <TouchableOpacity
                       key={timer.value}
                       activeOpacity={0.8}
-                      onPress={() => setQuestionTimer(timer.value)}
+                      onPress={() => {
+                        playKnock();
+                        setQuestionTimer(timer.value);
+                      }}
                       style={[
                         styles.timerChip,
                         isSelected && styles.selectedTimerChip,

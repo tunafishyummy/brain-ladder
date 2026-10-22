@@ -9,6 +9,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useWoodKnock } from '../../audio/useWoodKnock';
 import { getWoodframeSource } from '../../components/woodframes';
 
 const PADDING = 16;
@@ -24,12 +25,14 @@ export default function PlayerSelectionScreen() {
   const router = useRouter();
   const params = useLocalSearchParams(); // Captures level, difficulty, and timer from level-select
   const [selectedCount, setSelectedCount] = useState<number>(2);
+  const playKnock = useWoodKnock();
 
   const handleBack = () => {
     router.back();
   };
 
   const handleContinue = () => {
+    playKnock();
     router.push({
       pathname: '/customize',
       params: {
@@ -73,7 +76,10 @@ export default function PlayerSelectionScreen() {
                 <TouchableOpacity
                   key={opt.count}
                   activeOpacity={0.85}
-                  onPress={() => setSelectedCount(opt.count)}
+                  onPress={() => {
+                    playKnock();
+                    setSelectedCount(opt.count);
+                  }}
                   style={[
                     styles.optionCardTouch,
                     !isSelected && styles.unselectedOptionCard,
