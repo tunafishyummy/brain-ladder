@@ -107,7 +107,7 @@ const styles = StyleSheet.create({
   },
   placeholderLabel: {
     marginTop: 0,
-    color: '#a0a5b5',
+    color: '#FBF7F5',
     fontSize: 9,
     fontWeight: '700',
     letterSpacing: 1,

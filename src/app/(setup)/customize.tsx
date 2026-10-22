@@ -171,8 +171,7 @@ export default function CustomizeCharacterScreen() {
                     style={{
                       color:
                         currentSelection ||
-                        PLAYER_ACCENT_COLORS[activePlayerIndex] ||
-                        'hsl(0, 0%, 37%)',
+                        'hsl(20, 43%, 97%)',
                       fontWeight: '800',
                     }}
                   >

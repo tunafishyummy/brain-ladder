@@ -291,7 +291,7 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   levelSubtitle: {
-    color: '#a0a5b5',
+    color: '#FBF7F5',
     fontSize: 13,
   },
   selectDot: {
@@ -305,7 +305,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   difficultyLabel: {
-    color: '#8e94a5',
+    color: '#FBF7F5',
     fontSize: 12,
     fontWeight: '600',
     letterSpacing: 1.5,
@@ -337,7 +337,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   timerLabel: {
-    color: '#8e94a5',
+    color: '#FBF7F5',
     fontSize: 12,
     fontWeight: '600',
     letterSpacing: 1.5,
@@ -362,7 +362,7 @@ const styles = StyleSheet.create({
     borderColor: '#ffffff',
   },
   timerChipText: {
-    color: '#a0a5b5',
+    color: '#FBF7F5',
     fontSize: 14,
     fontWeight: '700',
   },
