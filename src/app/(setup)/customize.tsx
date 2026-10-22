@@ -102,6 +102,7 @@ export default function CustomizeScreen() {
   const handleStartGame = () => {
     if (!allPlayersHaveColors) return;
 
+    playKnock();
     tutorial.notify('screen-next');
     router.push({
       pathname: '/game',

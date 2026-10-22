@@ -33,6 +33,10 @@ import { getWoodframeSource } from '../components/woodframes';
 
 const DICE_ROLL_SOUND = require('../../assets/audio/dice-roll.mp3');
 const DICE_RESULT_SOUND = require('../../assets/audio/dice-result.mp3');
+const VICTORY_SOUND = require('../../assets/audio/victory-trumpet.mp3');
+const CORRECT_SOUND = require('../../assets/audio/xylophone-correct.mp3');
+const WRONG_SOUND = require('../../assets/audio/book-drop-wrong.mp3');
+const TICKING_SOUND = require('../../assets/audio/clock-ticking.mp3');
 const POWER_UP_IMG = require('../../assets/images/power-up.png');
 const HINT_IMG = require('../../assets/images/hint.png');
 const SKIP_IMG = require('../../assets/images/skip.png');
@@ -258,6 +262,10 @@ export default function GameScreen() {
   const insets = useSafeAreaInsets();
   const rollSoundPlayer = useAudioPlayer(DICE_ROLL_SOUND);
   const resultSoundPlayer = useAudioPlayer(DICE_RESULT_SOUND);
+  const victorySoundPlayer = useAudioPlayer(VICTORY_SOUND);
+  const correctSoundPlayer = useAudioPlayer(CORRECT_SOUND);
+  const wrongSoundPlayer = useAudioPlayer(WRONG_SOUND);
+  const tickingSoundPlayer = useAudioPlayer(TICKING_SOUND);
 
   const frameWidth = screenWidth - BOARD_FRAME_SIDE_INSET * 2;
   const frameHeight = Math.min(frameWidth * BOARD_FRAME_HEIGHT_RATIO, screenHeight * 0.52);
@@ -397,9 +405,45 @@ export default function GameScreen() {
     const sfxVolume = masterMute || sfxMute ? 0 : (masterVol / 100) * (sfxVol / 100);
     rollSoundPlayer.volume = sfxVolume;
     resultSoundPlayer.volume = sfxVolume;
+    victorySoundPlayer.volume = sfxVolume;
+    correctSoundPlayer.volume = sfxVolume;
+    wrongSoundPlayer.volume = sfxVolume;
+    tickingSoundPlayer.volume = sfxVolume;
+    tickingSoundPlayer.loop = false;
+    correctSoundPlayer.loop = false;
+    wrongSoundPlayer.loop = false;
     rollSoundPlayer.loop = false;
     resultSoundPlayer.loop = false;
-  }, [masterVol, masterMute, sfxVol, sfxMute, rollSoundPlayer, resultSoundPlayer]);
+    victorySoundPlayer.loop = false;
+  }, [masterVol, masterMute, sfxVol, sfxMute, rollSoundPlayer, resultSoundPlayer, victorySoundPlayer, correctSoundPlayer, wrongSoundPlayer, tickingSoundPlayer]);
+
+  const isTimerLow = !isInfiniteTimer && challengeSeconds <= 5 && isAnswerCorrect !== true;
+  const shouldTick = isTimerLow && isChallengeActive && challengeSeconds > 0;
+  useEffect(() => {
+    if (shouldTick) {
+      void tickingSoundPlayer.seekTo(0).then(() => tickingSoundPlayer.play()).catch((error: unknown) => {
+        console.warn('Unable to play ticking sound', error);
+      });
+    } else {
+      tickingSoundPlayer.pause();
+    }
+    return () => tickingSoundPlayer.pause();
+  }, [shouldTick, tickingSoundPlayer]);
+
+  useEffect(() => {
+    if (isAnswerCorrect === null) return;
+    const player = isAnswerCorrect ? correctSoundPlayer : wrongSoundPlayer;
+    void player.seekTo(0).then(() => player.play()).catch((error: unknown) => {
+      console.warn('Unable to play answer sound', error);
+    });
+  }, [isAnswerCorrect, correctSoundPlayer, wrongSoundPlayer]);
+
+  useEffect(() => {
+    if (!winner) return;
+    void victorySoundPlayer.seekTo(0).then(() => victorySoundPlayer.play()).catch((error: unknown) => {
+      console.warn('Unable to play victory sound', error);
+    });
+  }, [winner, victorySoundPlayer]);
 
   const activePlayer = players[turnIndex] || players[0];
   const isModalVisible = pendingEvent !== null;
@@ -570,6 +614,9 @@ export default function GameScreen() {
         clearInterval(interval);
         const finalAward = availablePowerUps[Math.floor(Math.random() * availablePowerUps.length)];
         setRouletteDisplayItem(finalAward);
+        void resultSoundPlayer.seekTo(0).then(() => resultSoundPlayer.play()).catch((error: unknown) => {
+          console.warn('Unable to play power-up sound', error);
+        });
         setTimeout(() => {
           setRouletteModalVisible(false);
           setPlayers((curr) =>
@@ -1288,7 +1335,7 @@ export default function GameScreen() {
                 </View>
 
                 {!isInfiniteTimer && (
-                  <Text style={styles.timerDisplay}>
+                  <Text style={[styles.timerDisplay, isTimerLow && styles.timerDisplayLow]}>
                     Timer: {String(Math.floor(challengeSeconds / 60)).padStart(2, '0')}:
                     {String(challengeSeconds % 60).padStart(2, '0')}
                   </Text>
@@ -1483,6 +1530,7 @@ const styles = StyleSheet.create({
   quizCharacterImage: { width: '100%', height: '100%', transform: [{ scale: 1.5 }] },
   quizDialogueBox: { width: '45%', height: QUIZ_DIALOGUE_BOX_HEIGHT, justifyContent: 'center', padding: 12, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(255,255,255,0.24)', backgroundColor: 'rgba(15,23,42,0.86)', zIndex: 2 },
   quizDialogueText: { color: '#fff', fontSize: 14, lineHeight: DIALOGUE_LINE_HEIGHT, fontWeight: '600' },
+  timerDisplayLow: { color: '#ef4444' },
   timerDisplay: { alignSelf: 'stretch', paddingHorizontal: 20, fontSize: 18, fontWeight: '900', color: '#facc15', textAlign: 'left', marginVertical: 4, textShadowColor: 'rgba(0,0,0,0.8)', textShadowOffset: { width: 1, height: 1 }, textShadowRadius: 2 },
   quizCard: { width: '100%', backgroundColor: '#1e293b', borderRadius: 16, padding: 20, borderWidth: 2, borderColor: '#475569', shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.4, shadowRadius: 10, elevation: 10, zIndex: 5, position: 'relative' },
   quizHeader: { fontSize: 20, fontWeight: 'bold', color: '#fff', textAlign: 'center', marginBottom: 4 },
