@@ -18,25 +18,15 @@ const PADDING = 16;
 const CARD_RADIUS = 16;
 
 const LEVELS = [
-  {
-    id: 'reading',
-    title: 'The Reading Wing',
-    subtitle: 'Language',
-    color: '#a3e635',
-  },
-  {
-    id: 'research',
-    title: 'The Research Corner',
-    subtitle: 'Science & Technology',
-    color: '#60a5fa',
-  },
-  {
-    id: 'collections',
-    title: 'The Old Collections',
-    subtitle: 'World History',
-    color: '#f87171',
-  },
+  { id: 'reading' },
+  { id: 'research' },
+  { id: 'collections' },
 ];
+const SELECTED_LEVEL_FRAMES: Record<string, number> = {
+  reading: require('../../../assets/images/Languagewoodframe4to1selected.png'),
+  research: require('../../../assets/images/Sciencewoodframe4to1selected.png'),
+  collections: require('../../../assets/images/Historywoodframe4to1selected.png'),
+};
 
 const DIFFICULTIES = ['Easy', 'Normal', 'Hard'];
 const TIMERS = [
@@ -107,6 +97,7 @@ export default function LevelSelectScreen() {
             <View style={styles.levelsContainer}>
               {LEVELS.map((level) => {
                 const isSelected = selectedLevel === level.id;
+                const levelFrame = SELECTED_LEVEL_FRAMES[level.id];
                 return (
                   <TouchableOpacity
                     key={level.id}
@@ -122,20 +113,10 @@ export default function LevelSelectScreen() {
                     ]}
                   >
                     <ImageBackground
-                      source={getWoodframeSource(selectedLevel ?? undefined, '4to1')}
+                      source={levelFrame}
                       resizeMode="stretch"
                       style={styles.background}
-                    >
-                      <View style={styles.cardOverlay}>
-                        <View>
-                          <Text style={[styles.levelTitle, { color: level.color }]}>
-                            {level.title}
-                          </Text>
-                          <Text style={styles.levelSubtitle}>{level.subtitle}</Text>
-                        </View>
-                        {isSelected && <View style={styles.selectDot} />}
-                      </View>
-                    </ImageBackground>
+                    />
                   </TouchableOpacity>
                 );
               })}
@@ -277,28 +258,6 @@ const styles = StyleSheet.create({
   selectedCardBorder: {
     borderColor: '#ffffff',
     borderWidth: 2,
-  },
-  cardOverlay: {
-    flex: 1,
-    paddingHorizontal: PADDING,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  levelTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-    marginBottom: 2,
-  },
-  levelSubtitle: {
-    color: '#a0a5b5',
-    fontSize: 13,
-  },
-  selectDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#ffffff',
   },
   difficultyBanner: {
     padding: PADDING,
