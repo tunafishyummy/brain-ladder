@@ -17,7 +17,7 @@ import {
   useWindowDimensions,
   type ViewStyle,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAudio } from '../AudioContext';
 import BookcaseBackground, { getBookcaseSource } from '../components/BookcaseBackground';
 import Dice3D, { type Dice3DHandle } from '../components/Dice3D';
@@ -255,6 +255,7 @@ export default function GameScreen() {
     difficulty?: Difficulty;
   }>();
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const rollSoundPlayer = useAudioPlayer(DICE_ROLL_SOUND);
   const resultSoundPlayer = useAudioPlayer(DICE_RESULT_SOUND);
 
@@ -1051,6 +1052,12 @@ export default function GameScreen() {
           <View style={styles.diceSection}>
             <View style={styles.diceSide} />
             <View style={styles.diceCenter}>
+              <ImageBackground
+                source={getWoodframeSource(params.level, '4to1')}
+                resizeMode="stretch"
+                pointerEvents="none"
+                style={[styles.diceWoodframe, { width: diceSize * 5.6, height: diceSize * 1.4 }]}
+              />
               <TutorialTarget id="dice">
                 <TouchableOpacity
                   style={styles.diceButton}
@@ -1097,7 +1104,7 @@ export default function GameScreen() {
           </View>
         </View>
 
-        <View style={styles.bottomBarContainer}>
+        <View style={[styles.bottomBarContainer, { height: Math.min(95, screenHeight * 0.13) }]}>
           {players.map((player, index) => {
             const isActive = index === turnIndex;
             return (
@@ -1107,8 +1114,9 @@ export default function GameScreen() {
                   styles.bottomIndicator,
                   { backgroundColor: player.color },
                   isActive
-                    ? [styles.indicatorActive, { height: Math.min(95, screenHeight * 0.13) }]
-                    : [styles.indicatorInactive, { height: Math.min(25, screenHeight * 0.04) }],
+                    ? [styles.indicatorActive, { height: Math.min(95, screenHeight * 0.13) + insets.bottom }]
+                    : [styles.indicatorInactive, { height: Math.min(25, screenHeight * 0.04) + insets.bottom }],
+                  { transform: [{ translateY: insets.bottom }] },
                 ]}
               />
             );
@@ -1424,13 +1432,14 @@ const styles = StyleSheet.create({
   playerToken: { width: '82%', height: '82%', resizeMode: 'contain' },
   diceSection: { flexDirection: 'row', width: '100%', minHeight: 84, alignItems: 'center' },
   diceSide: { flex: 1 },
-  diceCenter: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  diceCenter: { flex: 1, alignItems: 'center', justifyContent: 'center', position: 'relative' },
+  diceWoodframe: { position: 'absolute', aspectRatio: 4, alignSelf: 'center', zIndex: 0 },
   diceActionSide: { alignItems: 'flex-end' },
   debugMoveButton: { paddingHorizontal: 10, paddingVertical: 8, borderRadius: 8, backgroundColor: '#facc15', borderWidth: 1, borderColor: '#fff7b2', elevation: 5 },
   debugMoveButtonDisabled: { opacity: 0.45 },
   debugMoveButtonHidden: { opacity: 0 },
   debugMoveButtonText: { color: '#1b2338', fontSize: 11, fontWeight: '900', letterSpacing: 0.5 },
-  diceButton: { minWidth: 72, minHeight: 72, alignItems: 'center', justifyContent: 'center' },
+  diceButton: { minWidth: 72, minHeight: 72, alignItems: 'center', justifyContent: 'center', zIndex: 1 },
   bottomBarContainer: { flexDirection: 'row', justifyContent: 'space-around', alignItems: 'flex-end', width: '100%', paddingHorizontal: 12 },
   bottomIndicator: { flex: 1, marginHorizontal: 6, borderTopLeftRadius: 14, borderTopRightRadius: 14, shadowColor: '#000', shadowOffset: { width: 0, height: -2 }, shadowOpacity: 0.4, shadowRadius: 4, elevation: 6 },
   indicatorActive: { height: 95, borderTopWidth: 4, borderTopColor: '#fff' },
