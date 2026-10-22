@@ -32,6 +32,12 @@ const PLAYER_PREVIEWS_BY_COLOR: Record<string, number> = {
   '#fed330': require('../../../assets/images/Playeryellow.png'),
 };
 
+type CustomizablePlayer = {
+  id: number;
+  name: string;
+  color: string | null;
+};
+
 export default function CustomizeScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{
@@ -46,23 +52,56 @@ export default function CustomizeScreen() {
 
   const totalPlayers = Math.min(3, Math.max(1, Number(params.players || 3)));
 
-  const [players, setPlayers] = useState(
-    [
-      { id: 1, name: 'Player 1', color: '#16a34a' },
-      { id: 2, name: 'Player 2', color: '#dc2626' },
-      { id: 3, name: 'Player 3', color: '#2563eb' },
-    ].slice(0, totalPlayers),
+  const [players, setPlayers] = useState<CustomizablePlayer[]>(
+    Array.from({ length: totalPlayers }, (_, index) => ({
+      id: index + 1,
+      name: `Player ${index + 1}`,
+      color: null,
+    })),
   );
+  const allPlayersHaveColors = players.every((player) => player.color !== null);
 
   const handleSelectColor = (playerId: number, colorHex: string) => {
     playKnock();
-    setPlayers((prev) =>
-      prev.map((p) => (p.id === playerId ? { ...p, color: colorHex } : p))
-    );
+    setPlayers((prev) => {
+      const selectedPlayer = prev.find((player) => player.id === playerId);
+      if (!selectedPlayer || selectedPlayer.color === colorHex) return prev;
+
+      const currentOwner = prev.find(
+        (player) => player.id !== playerId && player.color === colorHex,
+      );
+
+      if (!currentOwner) {
+        return prev.map((player) =>
+          player.id === playerId ? { ...player, color: colorHex } : player,
+        );
+      }
+
+      const colorsInUse = new Set(
+        prev
+          .filter((player) => player.id !== playerId && player.id !== currentOwner.id)
+          .flatMap((player) => (player.color ? [player.color] : [])),
+      );
+      const selectedColorIndex = COLOR_OPTIONS.findIndex((color) => color.hex === colorHex);
+      const nextAvailableColor = [
+        ...COLOR_OPTIONS.slice(selectedColorIndex + 1),
+        ...COLOR_OPTIONS.slice(0, selectedColorIndex),
+      ].find((color) => !colorsInUse.has(color.hex));
+
+      if (!nextAvailableColor) return prev;
+
+      return prev.map((player) => {
+        if (player.id === playerId) return { ...player, color: colorHex };
+        if (player.id === currentOwner.id) return { ...player, color: nextAvailableColor.hex };
+        return player;
+      });
+    });
     tutorial.notify('color-changed', colorHex);
   };
 
   const handleStartGame = () => {
+    if (!allPlayersHaveColors) return;
+
     tutorial.notify('screen-next');
     router.push({
       pathname: '/game',
@@ -96,7 +135,9 @@ export default function CustomizeScreen() {
 
         <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           {players.map((player) => {
-            const previewSource = PLAYER_PREVIEWS_BY_COLOR[player.color] ?? DEFAULT_PLAYER_PREVIEW;
+            const previewSource = player.color
+              ? PLAYER_PREVIEWS_BY_COLOR[player.color] ?? DEFAULT_PLAYER_PREVIEW
+              : DEFAULT_PLAYER_PREVIEW;
 
             return (
               <ImageBackground
@@ -116,6 +157,9 @@ export default function CustomizeScreen() {
                       <View style={styles.colorPalette}>
                         {COLOR_OPTIONS.map((c) => {
                           const isSelected = player.color === c.hex;
+                          const isSelectedByAnotherPlayer = players.some(
+                            (otherPlayer) => otherPlayer.id !== player.id && otherPlayer.color === c.hex,
+                          );
                           return (
                             <TouchableOpacity
                               key={c.id}
@@ -123,9 +167,15 @@ export default function CustomizeScreen() {
                                 styles.colorSwatch,
                                 { backgroundColor: c.hex },
                                 isSelected && styles.colorSwatchSelected,
+                                isSelectedByAnotherPlayer && styles.colorSwatchUnavailable,
                               ]}
                               onPress={() => handleSelectColor(player.id, c.hex)}
                               activeOpacity={0.8}
+                              accessibilityRole="button"
+                              accessibilityLabel={`${c.label}${isSelectedByAnotherPlayer ? ', selected by another player' : ''}`}
+                              accessibilityHint={isSelectedByAnotherPlayer
+                                ? 'Selecting this color moves its current player to the next available color.'
+                                : undefined}
                             />
                           );
                         })}
@@ -139,11 +189,16 @@ export default function CustomizeScreen() {
         </ScrollView>
 
         <TutorialTarget id="screen-next">
-          <TouchableOpacity onPress={handleStartGame} activeOpacity={0.9}>
+          <TouchableOpacity
+            onPress={handleStartGame}
+            activeOpacity={0.9}
+            disabled={!allPlayersHaveColors}
+            accessibilityState={{ disabled: !allPlayersHaveColors }}
+          >
             <ImageBackground
               source={getWoodframeSource(params.level, '6to1')}
               resizeMode="stretch"
-              style={styles.startButton}
+              style={[styles.startButton, !allPlayersHaveColors && styles.startButtonDisabled]}
             >
               <Text style={styles.startText}>START GAME</Text>
             </ImageBackground>
@@ -173,6 +228,8 @@ const styles = StyleSheet.create({
   colorPalette: { flexDirection: 'row', gap: 10 },
   colorSwatch: { width: 32, height: 32, borderRadius: 16, borderWidth: 2, borderColor: 'transparent' },
   colorSwatchSelected: { borderColor: '#ffffff', transform: [{ scale: 1.15 }] },
+  colorSwatchUnavailable: { opacity: 0.35 },
   startButton: { paddingVertical: 16, alignItems: 'center' },
+  startButtonDisabled: { opacity: 0.4 },
   startText: { color: '#ffffff', fontSize: 18, fontWeight: '800', letterSpacing: 1 },
 });
