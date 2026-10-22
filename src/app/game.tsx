@@ -57,7 +57,13 @@ const BOARD_FRAME_SIDE_INSET = 8;
 const BOARD_FRAME_HEIGHT_RATIO = 1.2;
 const BOARD_RESTING_WIDTH_RATIO = 0.82;
 const BOARD_IMAGE_SCALE = 1.06;
+const BOARD_BACKGROUND_SCALE = 1.5;
 const BOARD_CAMERA_ZOOM = 1.45;
+const BOARD_BACKGROUNDS: Record<string, number> = {
+  reading: require('../../assets/images/LanguageBoardBG.png'),
+  research: require('../../assets/images/ScienceBoardBG.png'),
+  collections: require('../../assets/images/HistoryBoardBG.png'),
+};
 const PLAYER_MOVEMENT_WARMUP_MS = 650;
 const PLAYER_MOVEMENT_COOLDOWN_MS = 500;
 const PLAYER_TILE_MOVE_MS = 150;
@@ -248,12 +254,15 @@ export default function GameScreen() {
 
   const frameWidth = screenWidth - BOARD_FRAME_SIDE_INSET * 2;
   const frameHeight = Math.min(frameWidth * BOARD_FRAME_HEIGHT_RATIO, screenHeight * 0.52);
+  const boardAreaWidth = frameWidth - BOARD_FRAME_BORDER_WIDTH * 2;
+  const boardAreaHeight = frameHeight - BOARD_FRAME_BORDER_WIDTH * 2;
   const boardSize = Math.min(
     frameWidth * BOARD_RESTING_WIDTH_RATIO,
     frameHeight * BOARD_RESTING_WIDTH_RATIO,
     MAX_BOARD_SIZE,
   );
   const gridSize = boardSize - BOARD_FRAME_BORDER_WIDTH * 2;
+  const boardBackground = BOARD_BACKGROUNDS[params.level ?? 'collections'] ?? BOARD_BACKGROUNDS.collections;
   const cellSize = gridSize / 10;
   const playerCount = Math.min(3, Math.max(1, Number(params.players) || 3));
   const configuredTimer = Number(params.timer);
@@ -864,6 +873,20 @@ export default function GameScreen() {
                 }}
               >
                 <Image
+                  source={boardBackground}
+                  style={[
+                    styles.boardFrameBackground,
+                    {
+                      left: (gridSize - boardAreaWidth) / 2,
+                      top: (gridSize - boardAreaHeight) / 2,
+                      width: boardAreaWidth,
+                      height: boardAreaHeight,
+                      transform: [{ scale: BOARD_BACKGROUND_SCALE }],
+                    },
+                  ]}
+                  resizeMode="cover"
+                />
+                <Image
                   source={require('../../assets/images/board.png')}
                   style={[styles.boardImage, { transform: [{ scale: BOARD_IMAGE_SCALE }] }]}
                   resizeMode="cover"
@@ -1401,6 +1424,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  boardFrameBackground: { position: 'absolute' },
   boardImage: { position: 'absolute', width: '100%', height: '100%' },
   tileNumber: {
     color: '#fff',
