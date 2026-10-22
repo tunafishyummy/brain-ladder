@@ -10,7 +10,6 @@ import {
   Modal,
   ScrollView,
   StyleSheet,
-  Switch,
   Text,
   TextInput,
   TouchableOpacity,
@@ -22,6 +21,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAudio } from '../AudioContext';
 import BookcaseBackground, { getBookcaseSource } from '../components/BookcaseBackground';
 import Dice3D, { type Dice3DHandle } from '../components/Dice3D';
+import { getWoodframeSource } from '../components/woodframes';
 
 const DICE_ROLL_SOUND = require('../../assets/audio/dice-roll.mp3');
 const DICE_RESULT_SOUND = require('../../assets/audio/dice-result.mp3');
@@ -348,7 +348,6 @@ export default function GameScreen() {
   const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [isAnswerCorrect, setIsAnswerCorrect] = useState<boolean | null>(null);
-  const [useQuestionBank, setUseQuestionBank] = useState(true);
   const questionDeck = useRef<Question[]>([]);
 
   const [showExitModal, setShowExitModal] = useState(false);
@@ -406,7 +405,6 @@ export default function GameScreen() {
   const isDebugMoveBlocked = isRolling || movement !== null || Boolean(
     winner || isModalVisible || showExitModal || rouletteModalVisible,
   );
-  const hasQuestionBank = Boolean(QUESTION_BANKS[dialogueSubject]?.length);
   const dialogueImage = pendingEvent?.type === 'ladder'
     ? isAnswerCorrect === true
       ? LAD_DIALOGUE_CHEER_IMG
@@ -417,7 +415,7 @@ export default function GameScreen() {
 
   const getNextQuestion = (eventType: EventType): Question => {
     const rawQuestions = QUESTION_BANKS[dialogueSubject];
-    if (!useQuestionBank || !rawQuestions?.length) return getPlaceholderQuestion(eventType);
+    if (!rawQuestions?.length) return getPlaceholderQuestion(eventType);
     if (questionDeck.current.length === 0) {
       const filtered = rawQuestions.filter((q) => !q.difficulty || q.difficulty === selectedDifficulty);
       const pool = filtered.length > 0 ? filtered : rawQuestions;
@@ -835,24 +833,20 @@ export default function GameScreen() {
               activeOpacity={0.7}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
-              <Text style={styles.exitIcon}>✕</Text>
+              <Image
+                source={require('../../assets/images/Backbutton.png')}
+                style={styles.exitButtonImage}
+                resizeMode="contain"
+              />
             </TouchableOpacity>
 
-            <View style={[styles.turnBanner, { backgroundColor: activePlayer.color }]}>
+            <ImageBackground
+              source={getWoodframeSource(params.level, '6to1')}
+              resizeMode="stretch"
+              style={styles.turnBanner}
+            >
               <Text style={styles.turnText}>{activePlayer.name}'s Turn</Text>
-            </View>
-            <View style={styles.questionModeControl}>
-              <Text style={styles.questionModeText}>
-                {!hasQuestionBank ? 'NO BANK' : useQuestionBank ? 'QUESTIONS' : 'DEMO'}
-              </Text>
-              <Switch
-                value={hasQuestionBank && useQuestionBank}
-                onValueChange={setUseQuestionBank}
-                disabled={!hasQuestionBank}
-                trackColor={{ false: '#64748b', true: '#15803d' }}
-                thumbColor="#ffffff"
-              />
-            </View>
+            </ImageBackground>
           </View>
 
           {/* BOARD FRAME */}
@@ -1026,7 +1020,11 @@ export default function GameScreen() {
             </View>
             <View style={[styles.diceSide, styles.diceActionSide]}>
               <TouchableOpacity
-                style={[styles.debugMoveButton, isDebugMoveBlocked && styles.debugMoveButtonDisabled]}
+                style={[
+                  styles.debugMoveButton,
+                  isDebugMoveBlocked && styles.debugMoveButtonDisabled,
+                  styles.debugMoveButtonHidden,
+                ]}
                 onPress={openDebugMoveModal}
                 disabled={isDebugMoveBlocked}
                 activeOpacity={0.75}
@@ -1377,23 +1375,19 @@ const styles = StyleSheet.create({
   exitButton: {
     width: 48,
     height: 48,
-    borderRadius: 12,
-    backgroundColor: 'rgba(239, 68, 68, 0.3)',
-    borderWidth: 1.5,
-    borderColor: '#ef4444',
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 30,
   },
-  exitIcon: {
-    color: '#ffffff',
-    fontSize: 18,
-    fontWeight: '800',
+  exitButtonImage: {
+    width: 44,
+    height: 30,
+    transform: [{ scale: 1.2 }],
   },
   turnBanner: {
     flex: 1,
+    aspectRatio: 6,
     paddingVertical: 10,
-    borderRadius: 12,
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
@@ -1402,21 +1396,6 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   turnText: { color: '#fff', fontSize: 18, fontWeight: 'bold', letterSpacing: 1 },
-  questionModeControl: {
-    minWidth: 108,
-    minHeight: 48,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 2,
-  },
-  questionModeText: {
-    width: 64,
-    color: '#fff',
-    fontSize: 9,
-    fontWeight: '800',
-    textAlign: 'center',
-  },
   boardFrame: {
     ...BOARD_FRAME,
     overflow: 'hidden',
@@ -1481,6 +1460,9 @@ const styles = StyleSheet.create({
   },
   debugMoveButtonDisabled: {
     opacity: 0.45,
+  },
+  debugMoveButtonHidden: {
+    opacity: 0,
   },
   debugMoveButtonText: {
     color: '#1b2338',
