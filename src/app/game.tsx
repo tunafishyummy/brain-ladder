@@ -448,7 +448,8 @@ export default function GameScreen() {
 
   const handleConfirmExit = () => {
     setShowExitModal(false);
-    router.replace('/level-select');
+    router.dismissAll();
+    router.replace('/');
   };
 
   const getCoordinatesForPosition = (pos: number) => {
