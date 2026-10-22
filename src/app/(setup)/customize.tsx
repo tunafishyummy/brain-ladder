@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
   Image,
@@ -34,15 +34,25 @@ const PLAYER_PREVIEWS_BY_COLOR: Record<string, number> = {
 
 export default function CustomizeScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{
+    level?: string;
+    difficulty?: string;
+    timer?: string;
+    players?: string;
+  }>();
   const tutorial = useTutorial();
   useTutorialScene('customize');
   const playKnock = useWoodKnock();
 
-  const [players, setPlayers] = useState([
-    { id: 1, name: 'Player 1', color: '#16a34a' },
-    { id: 2, name: 'Player 2', color: '#dc2626' },
-    { id: 3, name: 'Player 3', color: '#2563eb' },
-  ]);
+  const totalPlayers = Math.min(3, Math.max(1, Number(params.players || 3)));
+
+  const [players, setPlayers] = useState(
+    [
+      { id: 1, name: 'Player 1', color: '#16a34a' },
+      { id: 2, name: 'Player 2', color: '#dc2626' },
+      { id: 3, name: 'Player 3', color: '#2563eb' },
+    ].slice(0, totalPlayers),
+  );
 
   const handleSelectColor = (playerId: number, colorHex: string) => {
     playKnock();
@@ -57,6 +67,7 @@ export default function CustomizeScreen() {
     router.push({
       pathname: '/game',
       params: {
+        ...params,
         players: String(players.length),
         playerColors: JSON.stringify(players.map((p) => p.color)),
       },
@@ -75,7 +86,7 @@ export default function CustomizeScreen() {
             />
           </TouchableOpacity>
           <ImageBackground
-            source={getWoodframeSource(undefined, '6to1')}
+            source={getWoodframeSource(params.level, '6to1')}
             resizeMode="stretch"
             style={styles.headerBanner}
           >
@@ -90,7 +101,7 @@ export default function CustomizeScreen() {
             return (
               <ImageBackground
                 key={player.id}
-                source={getWoodframeSource(undefined, '4to1')}
+                source={getWoodframeSource(params.level, '4to1')}
                 resizeMode="stretch"
                 style={styles.playerCard}
               >
@@ -130,7 +141,7 @@ export default function CustomizeScreen() {
         <TutorialTarget id="screen-next">
           <TouchableOpacity onPress={handleStartGame} activeOpacity={0.9}>
             <ImageBackground
-              source={getWoodframeSource(undefined, '6to1')}
+              source={getWoodframeSource(params.level, '6to1')}
               resizeMode="stretch"
               style={styles.startButton}
             >

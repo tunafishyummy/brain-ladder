@@ -38,7 +38,7 @@ export const TUTORIAL_QUESTION = {
 
 export interface TutorialStep {
   id: string;
-  /** Which screen this step is shown on: 'level-select' | 'playerselection' | 'customize' | 'game' */
+  /** Which screen this step is shown on: 'level-select' | 'player-select' | 'customize' | 'game' */
   scene: string;
   speaker?: 'LAD' | 'SNAKE';
   text?: string;
@@ -109,27 +109,27 @@ const STEPS: TutorialStep[] = [
   },
 
   /* ----------------------------- PLAYER SELECTION ---------------------------- */
-  { id: 'players-intro', scene: 'playerselection', speaker: 'SNAKE', advance: 'tap', focus: ['player-option'], text: 'Choose how many players are going to play.' },
+  { id: 'players-intro', scene: 'player-select', speaker: 'SNAKE', advance: 'tap', focus: ['player-card'], text: 'Choose how many players are going to play.' },
   {
-    id: 'players-howmany', scene: 'playerselection', speaker: 'SNAKE', isMini: true, place: 'top', advance: 'next',
-    focus: ['player-option'], interactive: true, requires: { event: 'players-selected' },
+    id: 'players-howmany', scene: 'player-select', speaker: 'SNAKE', isMini: true, place: 'top', advance: 'next',
+    focus: ['player-card'], interactive: true, requires: { event: 'player-count-selected' },
     text: 'How many of you are there?',
   },
   {
-    id: 'dress-up', scene: 'playerselection', speaker: 'SNAKE', isMini: true, place: 'above', advance: 'event', event: 'screen-next',
+    id: 'dress-up', scene: 'player-select', speaker: 'SNAKE', isMini: true, place: 'above', advance: 'event', event: 'screen-next',
     focus: ['screen-next'], interactive: true, text: "Great! Now let's dress you up!",
   },
 
   /* --------------------------- CUSTOMIZE CHARACTER --------------------------- */
-  { id: 'colors-choose', scene: 'customize', speaker: 'SNAKE', advance: 'tap', focus: ['color-option'], text: 'Choose a color for each player.' },
+  { id: 'colors-choose', scene: 'customize', speaker: 'SNAKE', advance: 'tap', focus: ['color-picker'], text: 'Choose a color for each player.' },
   {
     id: 'colors-want', scene: 'customize', speaker: 'SNAKE', isMini: true, place: 'top', advance: 'next',
-    focus: ['color-option'], interactive: true, requires: { event: 'colors-selected' },
+    focus: ['color-picker'], interactive: true, requires: { event: 'color-changed' },
     text: "Choose the colors ya'll want",
   },
   {
-    id: 'start-game', scene: 'customize', speaker: 'SNAKE', isMini: true, place: 'above', anchor: 'start-button', advance: 'event', event: 'start-game',
-    focus: ['color-option', 'start-button'], interactive: true, text: "Let's get started!",
+    id: 'start-game', scene: 'customize', speaker: 'SNAKE', isMini: true, place: 'above', anchor: 'screen-next', advance: 'event', event: 'screen-next',
+    focus: ['color-picker', 'screen-next'], interactive: true, text: "Let's get started!",
   },
 
   /* ---------------------------------- GAME ---------------------------------- */
@@ -160,7 +160,6 @@ const STEPS: TutorialStep[] = [
   { id: 'wait-3', scene: 'game', hidden: true, advance: 'event', event: 'landed-snake' },
   { id: 'land-snake', scene: 'game', speaker: 'SNAKE', advance: 'tap', text: 'Unlucky. You landed on a snake tile. Prepare to answer another question.' },
   {
-    // last step: the player answers by themselves, the tutorial ends when they press the result button
     id: 'snake-q', scene: 'game', speaker: 'SNAKE', y: 0.2, dim: 0, passive: true, advance: 'event', event: 'quiz-resolved',
     text: "On snake tiles, if you answer correctly you'll move forward 1 tile. However, answering wrong leads you to the tail of the snake.",
   },
@@ -281,9 +280,7 @@ export const TutorialProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     if (!activeRef.current) return;
     const step = STEPS[indexRef.current];
     if (!step) return;
-    // remember what the player did during this step (this is what unlocks the NEXT button)
     setSeen((prev) => ({ ...prev, [event]: payload ?? true }));
-    // only "press the real button" steps move on by themselves
     if (
       step.advance === 'event' &&
       step.event === event &&
@@ -370,7 +367,7 @@ export const TutorialProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 };
 
 /* -------------------------------------------------------------------------- */
-/*  TARGET (wrap anything the tutorial should highlight / allow pressing)     */
+/*  TARGET                                                                    */
 /* -------------------------------------------------------------------------- */
 
 export const TutorialTarget: React.FC<{ id: string; children: React.ReactNode; style?: any }> = ({
@@ -415,7 +412,6 @@ const sameHoles = (a: Hole[], b: Hole[]) =>
       Math.abs(h.h - b[i].h) < 1,
   );
 
-/** Splits the screen into cells along every hole edge so the holes stay free of any blocking view. */
 const buildCells = (holes: Rect[], width: number, height: number) => {
   const cl = (n: number, max: number) => Math.min(Math.max(n, 0), max);
   const xs = Array.from(new Set([0, width, ...holes.flatMap((h) => [cl(h.x, width), cl(h.x + h.w, width)])])).sort((a, b) => a - b);
@@ -499,7 +495,6 @@ const DialogueBox: React.FC<{
   const isLad = step.speaker === 'LAD';
   const isMini = step.isMini ?? false;
 
-  // pop animation on the character png whenever the speaker switches
   useEffect(() => {
     pop.setValue(0.4);
     Animated.spring(pop, { toValue: 1, friction: 4, tension: 150, useNativeDriver: true }).start();
@@ -517,7 +512,6 @@ const DialogueBox: React.FC<{
       position = { top: insets.top + 44 };
     }
   } else {
-    // big box: bottom of the screen, unless the highlighted thing lives down there
     const lower = anchorRect ? anchorRect.y + anchorRect.h / 2 > H * 0.55 : false;
     position = lower ? { top: insets.top + 64 } : { bottom: insets.bottom + 28 };
   }
@@ -545,12 +539,13 @@ const DialogueBox: React.FC<{
         {step.advance === 'tap' && done ? <Text style={styles.tapArrow}>▼</Text> : null}
       </Pressable>
 
-      <Animated.Image
-        source={isLad ? LAD_IMG : SNAKE_IMG}
-        resizeMode="contain"
-        pointerEvents="none"
-        style={[styles.avatar, isMini ? styles.avatarMini : null, { transform: [{ scale: pop }] }]}
-      />
+      <View pointerEvents="none" style={[styles.avatar, isMini ? styles.avatarMini : null]}>
+        <Animated.Image
+          source={isLad ? LAD_IMG : SNAKE_IMG}
+          resizeMode="contain"
+          style={{ width: '100%', height: '100%', transform: [{ scale: pop }] }}
+        />
+      </View>
 
       {showNext && (
         <Pressable style={styles.nextBtn} onPress={onNext}>
@@ -569,7 +564,6 @@ export const TutorialOverlay: React.FC<{ embedded?: boolean }> = ({ embedded = f
   const [emptyRuns, setEmptyRuns] = useState(0);
 
   const step = t.active ? STEPS.find((s) => s.id === t.stepId) : undefined;
-  // The root copy shows while no Modal is open, the copy placed inside the quiz Modal shows while it is open.
   const visible = !!step && step.scene === t.scene && embedded === t.inModal;
   const stepId = step?.id;
 
@@ -585,7 +579,6 @@ export const TutorialOverlay: React.FC<{ embedded?: boolean }> = ({ embedded = f
     const run = async () => {
       const found: Hole[] = [];
       for (const id of focus) {
-        // eslint-disable-next-line no-await-in-loop
         const rects = await t.measureTarget(id);
         rects.forEach((r) => found.push({ ...r, id }));
       }
@@ -610,20 +603,17 @@ export const TutorialOverlay: React.FC<{ embedded?: boolean }> = ({ embedded = f
       setEmptyRuns((n) => (next.length ? 0 : n + 1));
     };
     run();
-    // keeps the highlight glued to the target even when a ScrollView moves or something animates
     const timer = setInterval(run, 350);
     return () => {
       cancelled = true;
       clearInterval(timer);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible, stepId, t.layoutVersion, W, H]);
 
   const cells = useMemo(() => buildCells(holes, W, H), [holes, W, H]);
 
   if (!visible || !step) return null;
 
-  // Safety net: if an interactive target can never be found, never trap the player behind the dim.
   const targetMissing = Boolean(step.interactive && step.focus?.length && emptyRuns >= 4);
   const passive = Boolean(step.passive) || targetMissing;
   const dim = step.dim ?? 0.55;
@@ -643,7 +633,6 @@ export const TutorialOverlay: React.FC<{ embedded?: boolean }> = ({ embedded = f
           return (
             <View
               key={`${stepId}-cell-${i}`}
-              // the dim blocks touches; a hole only lets touches through on steps where the target is selectable
               pointerEvents={open ? 'none' : 'auto'}
               onStartShouldSetResponder={() => !open}
               style={{
@@ -672,10 +661,6 @@ export const TutorialOverlay: React.FC<{ embedded?: boolean }> = ({ embedded = f
     </View>
   );
 };
-
-/* -------------------------------------------------------------------------- */
-/*  STYLES                                                                    */
-/* -------------------------------------------------------------------------- */
 
 const styles = StyleSheet.create({
   overlayContainer: {
