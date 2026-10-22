@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useScreenTransition } from '../../TransitionContext';
+import { getWoodframeSource } from '../../components/woodframes';
 
 // Constants
 const PADDING = 16;
@@ -89,7 +90,7 @@ export default function LevelSelectScreen() {
               />
             </TouchableOpacity>
             <ImageBackground
-              source={require('../../../assets/images/woodframe6to1.png')}
+              source={getWoodframeSource(selectedLevel ?? undefined, '6to1')}
               resizeMode="stretch"
               style={styles.headerBanner}
             >
@@ -121,7 +122,7 @@ export default function LevelSelectScreen() {
                     ]}
                   >
                     <ImageBackground
-                      source={require('../../../assets/images/woodframe4to1.png')}
+                      source={getWoodframeSource(selectedLevel ?? undefined, '4to1')}
                       resizeMode="stretch"
                       style={styles.background}
                     >
@@ -142,7 +143,7 @@ export default function LevelSelectScreen() {
 
             {/* Difficulty Controls */}
             <ImageBackground
-              source={require('../../../assets/images/woodframe4to1.png')}
+              source={getWoodframeSource(selectedLevel ?? undefined, '4to1')}
               resizeMode="stretch"
               style={styles.difficultyBanner}
             >
@@ -160,7 +161,7 @@ export default function LevelSelectScreen() {
 
             {/* Question Timer Controls */}
             <ImageBackground
-              source={require('../../../assets/images/woodframe4to1.png')}
+              source={getWoodframeSource(selectedLevel ?? undefined, '4to1')}
               resizeMode="stretch"
               style={styles.timerBanner}
             >
@@ -196,7 +197,7 @@ export default function LevelSelectScreen() {
 
           <TouchableOpacity onPress={handleContinue} activeOpacity={0.9} disabled={!selectedLevel}>
             <ImageBackground
-              source={require('../../../assets/images/woodframe6to1.png')}
+              source={getWoodframeSource(selectedLevel ?? undefined, '6to1')}
               resizeMode="stretch"
               style={styles.continueButton}
             >
@@ -239,6 +240,7 @@ const styles = StyleSheet.create({
   backArrowImage: {
     width: 44,
     height: 30,
+    transform: [{ scale: 1.2 }],
   },
   optionsScroll: {
     flex: 1,

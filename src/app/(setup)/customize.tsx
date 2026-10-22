@@ -11,6 +11,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { getWoodframeSource } from '../../components/woodframes';
 
 const PADDING = 16;
 const CARD_RADIUS = 16;
@@ -133,7 +134,7 @@ export default function CustomizeCharacterScreen() {
             </TouchableOpacity>
 
             <ImageBackground
-              source={require('../../../assets/images/woodframe6to1.png')}
+              source={getWoodframeSource(params.level, '6to1')}
               resizeMode="stretch"
               style={styles.bannerContainer}
             >
@@ -255,7 +256,7 @@ export default function CustomizeCharacterScreen() {
             activeOpacity={0.9}
           >
             <ImageBackground
-              source={require('../../../assets/images/woodframe6to1.png')}
+              source={getWoodframeSource(params.level, '6to1')}
               resizeMode="stretch"
               style={styles.actionButton}
             >
@@ -306,6 +307,7 @@ const styles = StyleSheet.create({
   backArrowImage: {
     width: 44,
     height: 30,
+    transform: [{ scale: 1.2 }],
   },
   bannerContainer: {
     flex: 1,
