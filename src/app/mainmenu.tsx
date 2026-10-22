@@ -1,3 +1,4 @@
+import { useAudioPlayer } from 'expo-audio';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -14,16 +15,20 @@ import {
   View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useAudio } from '../AudioContext';
 import MainMenuArtwork from '../components/MainMenuArtwork';
 import { useScreenTransition } from '../TransitionContext';
 // @ts-ignore SettingsScreen is maintained as JSX.
 import SettingsScreen from '../components/SettingsScreen';
 
+const CRUMBLY_WOOD_SOUND = require('../../assets/audio/crumbly-wood.mp3');
 const PLAY_IMG = require('../../assets/images/Play.png');
 const PLAY_GLOW_IMG = require('../../assets/images/play-glow.png');
 
 export default function MainMenuScreen() {
   const router = useRouter();
+  const { masterVol, masterMute, sfxVol, sfxMute } = useAudio();
+  const crumblyPlayer = useAudioPlayer(CRUMBLY_WOOD_SOUND);
   const { width, height } = useWindowDimensions();
   const artworkWidth = Math.min(width, height * (9 / 20));
   const controlSize = Math.min(220, artworkWidth * 0.4);
@@ -101,7 +106,14 @@ export default function MainMenuScreen() {
     });
   };
 
+  const playCrumblySound = () => {
+    crumblyPlayer.volume = masterMute || sfxMute ? 0 : (masterVol / 100) * (sfxVol / 100);
+    crumblyPlayer.seekTo(0);
+    crumblyPlayer.play();
+  };
+
   const handleSettings = () => {
+    playCrumblySound();
     setSettingsVisible(true);
   };
 
@@ -110,6 +122,7 @@ export default function MainMenuScreen() {
   };
 
   const handleExit = () => {
+    playCrumblySound();
     setExitPromptVisible(true);
   };
 
