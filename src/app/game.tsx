@@ -420,14 +420,21 @@ export default function GameScreen() {
   const isTimerLow = !isInfiniteTimer && challengeSeconds <= 5 && isAnswerCorrect !== true;
   const shouldTick = isTimerLow && isChallengeActive && challengeSeconds > 0;
   useEffect(() => {
+    let isMounted = true;
+
     if (shouldTick) {
-      void tickingSoundPlayer.seekTo(0).then(() => tickingSoundPlayer.play()).catch((error: unknown) => {
+      void tickingSoundPlayer.seekTo(0).then(() => {
+        if (isMounted) tickingSoundPlayer.play();
+      }).catch((error: unknown) => {
         console.warn('Unable to play ticking sound', error);
       });
     } else {
       tickingSoundPlayer.pause();
     }
-    return () => tickingSoundPlayer.pause();
+
+    return () => {
+      isMounted = false;
+    };
   }, [shouldTick, tickingSoundPlayer]);
 
   useEffect(() => {

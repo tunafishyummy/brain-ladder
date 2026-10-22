@@ -143,7 +143,7 @@ export default function CustomizeScreen() {
             return (
               <ImageBackground
                 key={player.id}
-                source={getWoodframeSource(params.level, '4to1')}
+                source={getWoodframeSource(params.level, '4to3')}
                 resizeMode="stretch"
                 style={styles.playerCard}
               >
@@ -220,13 +220,13 @@ const styles = StyleSheet.create({
   headerTitle: { color: '#ffffff', fontSize: 18, fontWeight: '800', letterSpacing: 1.5, textAlign: 'center' },
   scroll: { flex: 1, marginVertical: PADDING },
   scrollContent: { flexGrow: 1, justifyContent: 'center', gap: PADDING },
-  playerCard: { padding: PADDING, minHeight: 110 },
-  playerCardContent: { flexDirection: 'row', alignItems: 'center', gap: 16 },
-  previewContainer: { width: 64, height: 64, alignItems: 'center', justifyContent: 'center' },
+  playerCard: { padding: PADDING, minHeight: 192 },
+  playerCardContent: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  previewContainer: { width: 140, height: 160, alignItems: 'center', justifyContent: 'center' },
   playerPreviewImage: { width: '100%', height: '100%' },
-  controlsSection: { flex: 1, gap: 8 },
-  playerName: { color: '#ffffff', fontSize: 16, fontWeight: '700' },
-  colorPalette: { flexDirection: 'row', gap: 10 },
+  controlsSection: { flex: 1, minWidth: 0, paddingRight: 40, alignItems: 'flex-end', gap: 8 },
+  playerName: { width: '100%', color: '#ffffff', fontSize: 16, fontWeight: '700', textAlign: 'right' },
+  colorPalette: { width: '100%', flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-end', gap: 8 },
   colorSwatch: { width: 32, height: 32, borderRadius: 16, borderWidth: 2, borderColor: 'transparent' },
   colorSwatchSelected: { borderColor: '#ffffff', transform: [{ scale: 1.15 }] },
   colorSwatchUnavailable: { opacity: 0.35 },
