@@ -1048,7 +1048,7 @@ export default function GameScreen() {
                 })}
 
                 {players.map((player) => {
-                  const markerSize = cellSize * 0.9;
+                  const markerSize = cellSize * 1.15;
                   if (movement?.playerId === player.id && movementX !== null && movementY !== null) {
                     return (
                       <Animated.View
@@ -1060,8 +1060,6 @@ export default function GameScreen() {
                             top: 0,
                             width: markerSize,
                             height: markerSize,
-                            borderRadius: markerSize / 2,
-                            backgroundColor: player.color,
                             transform: [
                               { translateX: Animated.subtract(movementX, markerSize / 2) },
                               { translateY: Animated.subtract(movementY, markerSize / 2) },
@@ -1084,12 +1082,10 @@ export default function GameScreen() {
                       style={[
                         styles.playerTokenWrapper,
                         {
-                          left: x + cellSize * 0.05 + stackOffset * markerSize * 0.5,
-                          top: y + cellSize * 0.05,
+                          left: x + (cellSize - markerSize) / 2 + stackOffset * markerSize * 0.5,
+                          top: y + (cellSize - markerSize) / 2,
                           width: markerSize,
                           height: markerSize,
-                          borderRadius: markerSize / 2,
-                          backgroundColor: player.color,
                           zIndex: stackIndex + 1,
                           elevation: 5 + stackIndex,
                         },
@@ -1482,8 +1478,8 @@ const styles = StyleSheet.create({
   boardFrame: { ...BOARD_FRAME, overflow: 'hidden', alignSelf: 'center', alignItems: 'center', justifyContent: 'center' },
   boardFrameBackground: { position: 'absolute' },
   boardImage: { position: 'absolute', width: '100%', height: '100%' },
-  playerTokenWrapper: { position: 'absolute', borderWidth: 2, borderColor: '#0f172a', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.5, shadowRadius: 3, elevation: 5 },
-  playerToken: { width: '82%', height: '82%', resizeMode: 'contain' },
+  playerTokenWrapper: { position: 'absolute', alignItems: 'center', justifyContent: 'center' },
+  playerToken: { width: '100%', height: '100%', resizeMode: 'contain' },
   diceSection: { flexDirection: 'row', width: '100%', minHeight: 84, alignItems: 'center' },
   diceSide: { flex: 1 },
   diceCenter: { flex: 1, alignItems: 'center', justifyContent: 'center', position: 'relative' },
