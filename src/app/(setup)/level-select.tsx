@@ -49,12 +49,14 @@ export default function LevelSelectScreen() {
   const [questionTimer, setQuestionTimer] = useState(15);
 
   const handlePrevDifficulty = () => {
+    playKnock();
     const next = difficultyIndex > 0 ? difficultyIndex - 1 : DIFFICULTIES.length - 1;
     setDifficultyIndex(next);
     tutorial.notify('difficulty-changed', DIFFICULTIES[next]);
   };
 
   const handleNextDifficulty = () => {
+    playKnock();
     const next = difficultyIndex < DIFFICULTIES.length - 1 ? difficultyIndex + 1 : 0;
     setDifficultyIndex(next);
     tutorial.notify('difficulty-changed', DIFFICULTIES[next]);
@@ -62,6 +64,7 @@ export default function LevelSelectScreen() {
 
   const handleContinue = () => {
     if (!selectedLevel) return;
+    playKnock();
 
     tutorial.notify('screen-next');
 
@@ -172,6 +175,7 @@ export default function LevelSelectScreen() {
                       key={timer.value}
                       activeOpacity={0.8}
                       onPress={() => {
+                        playKnock();
                         setQuestionTimer(timer.value);
                         tutorial.notify('timer-selected');
                       }}

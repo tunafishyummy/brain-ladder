@@ -63,6 +63,7 @@ export default function CustomizeScreen() {
   };
 
   const handleStartGame = () => {
+    playKnock();
     tutorial.notify('screen-next');
     router.push({
       pathname: '/game',

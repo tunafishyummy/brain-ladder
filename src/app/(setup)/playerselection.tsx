@@ -44,6 +44,7 @@ export default function PlayerSelectionScreen() {
   };
 
   const handleNext = () => {
+    playKnock();
     tutorial.notify('screen-next');
     router.push({
       pathname: '/customize',
