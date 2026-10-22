@@ -152,11 +152,18 @@ export default function CustomizeCharacterScreen() {
           >
             {/* Smooth Character Preview & Instruction */}
             <Animated.View
-              style={[
-                styles.previewCard,
-                { opacity: fadeAnim, transform: [{ scale: scaleAnim }] },
-              ]}
+              style={{
+                width: '100%',
+                alignItems: 'center',
+                opacity: fadeAnim,
+                transform: [{ scale: scaleAnim }],
+              }}
             >
+              <ImageBackground
+                source={getWoodframeSource(params.level, '4to3')}
+                resizeMode="stretch"
+                style={styles.previewCard}
+              >
               {/* Instruction Banner with Dynamic Highlight */}
               <View style={styles.instructionBox}>
                 <Text style={styles.instructionText}>
@@ -213,6 +220,7 @@ export default function CustomizeCharacterScreen() {
                   </View>
                 ))}
               </View>
+              </ImageBackground>
             </Animated.View>
 
             {/* Color Selection Grid */}
@@ -294,6 +302,8 @@ const styles = StyleSheet.create({
   },
   selectionContent: {
     flexGrow: 1,
+    width: '100%',
+    alignItems: 'center',
     justifyContent: 'center',
     gap: PADDING,
   },
@@ -330,10 +340,10 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   previewCard: {
-    backgroundColor: 'rgba(15, 18, 28, 0.72)',
-    borderRadius: CARD_RADIUS,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    width: '100%',
+    maxWidth: 440,
+    alignSelf: 'center',
+    aspectRatio: 1.2,
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: PADDING,
@@ -396,6 +406,7 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   colorGrid: {
+    width: '100%',
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 12,
