@@ -20,8 +20,8 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-const LAD_IMG = require('../../assets/images/LogoLad.png');
-const SNAKE_IMG = require('../../assets/images/LogoKnowItAdder.png');
+const LAD_IMG = require('../../assets/images/LadDialogue.png');
+const SNAKE_IMG = require('../../assets/images/AdderDialogue.png');
 
 export const TUTORIAL_ROLLS = [1, 3, 3];
 export const TUTORIAL_POWER_TILE = 26;
