@@ -1,7 +1,6 @@
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'expo-router';
+import { useState } from 'react';
 import {
-  Animated,
   Image,
   ImageBackground,
   ScrollView,
@@ -11,6 +10,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useWoodKnock } from '../../audio/useWoodKnock';
 import { TutorialTarget, useTutorial, useTutorialScene } from '../../components/TutorialOverlay';
 import { getWoodframeSource } from '../../components/woodframes';
 
@@ -32,432 +32,136 @@ const PLAYER_PREVIEWS_BY_COLOR: Record<string, number> = {
   '#fed330': require('../../../assets/images/Playeryellow.png'),
 };
 
-const PLAYER_ACCENT_COLORS: { [key: number]: string } = {
-  0: 'hsl(0, 0%, 37%)', // Player 1 - Default Blue Accent
-  1: 'hsl(0, 0%, 37%)', // Player 2 - Default Red Accent
-  2: 'hsl(0, 0%, 37%)', // Player 3 - Default Green Accent
-};
-
-export default function CustomizeCharacterScreen() {
+export default function CustomizeScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams();
   const tutorial = useTutorial();
   useTutorialScene('customize');
+  const playKnock = useWoodKnock();
 
-  const totalPlayers = Number(params.players || 1);
-  const [activePlayerIndex, setActivePlayerIndex] = useState(0);
-  const [hoveredColor, setHoveredColor] = useState<string | null>(null);
+  const [players, setPlayers] = useState([
+    { id: 1, name: 'Player 1', color: '#16a34a' },
+    { id: 2, name: 'Player 2', color: '#dc2626' },
+    { id: 3, name: 'Player 3', color: '#2563eb' },
+  ]);
 
-  const [selectedColors, setSelectedColors] = useState<(string | null)[]>(
-    Array(totalPlayers).fill(null)
-  );
-
-  const fadeAnim = useRef(new Animated.Value(1)).current;
-  const scaleAnim = useRef(new Animated.Value(1)).current;
-
-  const currentPlayerNum = activePlayerIndex + 1;
-  const currentSelection = selectedColors[activePlayerIndex];
-  const previewColor = hoveredColor ?? currentSelection;
-  const previewImage = previewColor
-    ? PLAYER_PREVIEWS_BY_COLOR[previewColor]
-    : DEFAULT_PLAYER_PREVIEW;
-
-  useEffect(() => {
-    setHoveredColor(null);
-    fadeAnim.setValue(0.3);
-    scaleAnim.setValue(0.95);
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-      Animated.spring(scaleAnim, {
-        toValue: 1,
-        friction: 6,
-        tension: 80,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  }, [activePlayerIndex]);
-
-  const handleBack = () => {
-    if (activePlayerIndex > 0) {
-      setActivePlayerIndex((prev) => prev - 1);
-    } else if (router.canGoBack()) {
-      router.back();
-    } else {
-      router.replace('/mainmenu');
-    }
-  };
-
-  const handleSelectColor = (hex: string) => {
-    const isTakenByOther = selectedColors.some(
-      (color, idx) => color === hex && idx !== activePlayerIndex
+  const handleSelectColor = (playerId: number, colorHex: string) => {
+    playKnock();
+    setPlayers((prev) =>
+      prev.map((p) => (p.id === playerId ? { ...p, color: colorHex } : p))
     );
-    if (isTakenByOther) return;
-
-    const updated = [...selectedColors];
-    updated[activePlayerIndex] = hex;
-    setSelectedColors(updated);
-    tutorial.notify('colors-selected');
+    tutorial.notify('color-changed', colorHex);
   };
 
-  const handleNextOrStart = () => {
-    if (!currentSelection) return;
-
-    if (activePlayerIndex < totalPlayers - 1) {
-      setActivePlayerIndex((prev) => prev + 1);
-    } else {
-      tutorial.notify('start-game');
-      router.push({
-        pathname: '/game',
-        params: {
-          ...params,
-          playerColors: JSON.stringify(selectedColors),
-        },
-      });
-    }
+  const handleStartGame = () => {
+    tutorial.notify('screen-next');
+    router.push({
+      pathname: '/game',
+      params: {
+        players: String(players.length),
+        playerColors: JSON.stringify(players.map((p) => p.color)),
+      },
+    });
   };
 
   return (
-      <SafeAreaView edges={['top', 'bottom']} style={styles.container}>
-        <View style={styles.content}>
-
-          {/* Header Banner with Dynamic Color Background */}
-          <View style={styles.headerRow}>
-            <TouchableOpacity
-              style={styles.backButton}
-              onPress={handleBack}
-              activeOpacity={0.7}
-            >
-              <Image
-                source={require('../../../assets/images/Backbutton.png')}
-                style={styles.backArrowImage}
-                resizeMode="contain"
-              />
-            </TouchableOpacity>
-
-            <ImageBackground
-              source={getWoodframeSource(params.level, '6to1')}
-              resizeMode="stretch"
-              style={styles.bannerContainer}
-            >
-              <Text style={styles.bannerTitle}>CUSTOMIZE CHARACTER</Text>
-              <Text style={styles.bannerSubtitle}>
-                PLAYER {currentPlayerNum} OF {totalPlayers} TURN
-              </Text>
-            </ImageBackground>
-          </View>
-
-          <ScrollView
-            style={styles.selectionScroll}
-            contentContainerStyle={styles.selectionContent}
-            showsVerticalScrollIndicator={false}
+    <SafeAreaView edges={['top', 'bottom']} style={styles.container}>
+      <View style={styles.content}>
+        <View style={styles.headerRow}>
+          <TouchableOpacity style={styles.backButton} onPress={() => router.back()} activeOpacity={0.7}>
+            <Image
+              source={require('../../../assets/images/Backbutton.png')}
+              style={styles.backArrowImage}
+              resizeMode="contain"
+            />
+          </TouchableOpacity>
+          <ImageBackground
+            source={getWoodframeSource(undefined, '6to1')}
+            resizeMode="stretch"
+            style={styles.headerBanner}
           >
-            {/* Smooth Character Preview & Instruction */}
-            <Animated.View
-              style={{
-                width: '100%',
-                alignItems: 'center',
-                opacity: fadeAnim,
-                transform: [{ scale: scaleAnim }],
-              }}
-            >
-              <ImageBackground
-                source={getWoodframeSource(params.level, '4to3')}
-                resizeMode="stretch"
-                style={styles.previewCard}
-              >
-              {/* Instruction Banner with Dynamic Highlight */}
-              <View style={styles.instructionBox}>
-                <Text style={styles.instructionText}>
-                  <Text
-                    style={{
-                      color:
-                        currentSelection ||
-                        'hsl(20, 43%, 97%)',
-                      fontWeight: '800',
-                    }}
-                  >
-                    Player {currentPlayerNum}
-                  </Text>
-                </Text>
-              </View>
-
-              <View style={styles.avatarWrapper}>
-                <Image
-                  source={previewImage}
-                  style={styles.avatarImage}
-                  resizeMode="contain"
-                />
-                <View
-                  style={[
-                    styles.playerBadge,
-                    {
-                      backgroundColor:
-                        currentSelection ||
-                        PLAYER_ACCENT_COLORS[activePlayerIndex] ||
-                        'rgba(255,255,255,0.2)',
-                    },
-                  ]}
-                >
-                  <Text style={styles.badgeText}>P{currentPlayerNum}</Text>
-                </View>
-              </View>
-
-              {/* Selection Summary Row */}
-              <View style={styles.summaryRow}>
-                {selectedColors.map((color, idx) => (
-                  <View
-                    key={idx}
-                    style={[
-                      styles.summaryDot,
-                      {
-                        backgroundColor:
-                          color || PLAYER_ACCENT_COLORS[idx] || 'transparent',
-                      },
-                      idx === activePlayerIndex && styles.activeSummaryDot,
-                    ]}
-                  >
-                    <Text style={styles.summaryDotText}>P{idx + 1}</Text>
-                  </View>
-                ))}
-              </View>
-              </ImageBackground>
-            </Animated.View>
-
-            {/* Color Selection Grid */}
-            <TutorialTarget id="color-option">
-            <View style={styles.colorGrid}>
-              {COLOR_OPTIONS.map((item) => {
-                const isTakenByOther = selectedColors.some(
-                  (color, idx) => color === item.hex && idx !== activePlayerIndex
-                );
-                const isSelectedByCurrent = currentSelection === item.hex;
-
-                return (
-                  <TouchableOpacity
-                    key={item.id}
-                    activeOpacity={isTakenByOther ? 1 : 0.8}
-                    onPress={() => handleSelectColor(item.hex)}
-                    onMouseEnter={() => setHoveredColor(item.hex)}
-                    onMouseLeave={() => setHoveredColor(null)}
-                    style={[
-                      styles.colorBox,
-                      { backgroundColor: item.hex },
-                      isTakenByOther && styles.disabledBox,
-                      isSelectedByCurrent && styles.selectedBoxBorder,
-                    ]}
-                  >
-                    {isTakenByOther && (
-                      <View style={styles.takenOverlay}>
-                        <Text style={styles.takenText}>TAKEN</Text>
-                      </View>
-                    )}
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-            </TutorialTarget>
-          </ScrollView>
-
-          {/* Continue / Next Player Button */}
-          <TutorialTarget id="start-button">
-            <TouchableOpacity
-              style={!currentSelection && styles.disabledButton}
-              onPress={handleNextOrStart}
-              disabled={!currentSelection}
-              activeOpacity={0.9}
-            >
-              <ImageBackground
-                source={getWoodframeSource(params.level, '6to1')}
-                resizeMode="stretch"
-                style={styles.actionButton}
-              >
-                <Text style={styles.actionText}>
-                  {activePlayerIndex < totalPlayers - 1 ? 'NEXT PLAYER' : 'START GAME'}
-                </Text>
-              </ImageBackground>
-            </TouchableOpacity>
-          </TutorialTarget>
-
+            <Text style={styles.headerTitle}>CUSTOMIZE PLAYERS</Text>
+          </ImageBackground>
         </View>
-      </SafeAreaView>
+
+        <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          {players.map((player) => {
+            const previewSource = PLAYER_PREVIEWS_BY_COLOR[player.color] ?? DEFAULT_PLAYER_PREVIEW;
+
+            return (
+              <ImageBackground
+                key={player.id}
+                source={getWoodframeSource(undefined, '4to1')}
+                resizeMode="stretch"
+                style={styles.playerCard}
+              >
+                <View style={styles.playerCardContent}>
+                  <View style={styles.previewContainer}>
+                    <Image source={previewSource} style={styles.playerPreviewImage} resizeMode="contain" />
+                  </View>
+
+                  <View style={styles.controlsSection}>
+                    <Text style={styles.playerName}>{player.name}</Text>
+                    <TutorialTarget id="color-picker">
+                      <View style={styles.colorPalette}>
+                        {COLOR_OPTIONS.map((c) => {
+                          const isSelected = player.color === c.hex;
+                          return (
+                            <TouchableOpacity
+                              key={c.id}
+                              style={[
+                                styles.colorSwatch,
+                                { backgroundColor: c.hex },
+                                isSelected && styles.colorSwatchSelected,
+                              ]}
+                              onPress={() => handleSelectColor(player.id, c.hex)}
+                              activeOpacity={0.8}
+                            />
+                          );
+                        })}
+                      </View>
+                    </TutorialTarget>
+                  </View>
+                </View>
+              </ImageBackground>
+            );
+          })}
+        </ScrollView>
+
+        <TutorialTarget id="screen-next">
+          <TouchableOpacity onPress={handleStartGame} activeOpacity={0.9}>
+            <ImageBackground
+              source={getWoodframeSource(undefined, '6to1')}
+              resizeMode="stretch"
+              style={styles.startButton}
+            >
+              <Text style={styles.startText}>START GAME</Text>
+            </ImageBackground>
+          </TouchableOpacity>
+        </TutorialTarget>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  content: {
-    flex: 1,
-    width: '100%',
-    maxWidth: 420,
-    alignSelf: 'center',
-    padding: PADDING,
-    justifyContent: 'space-between',
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  selectionScroll: {
-    flex: 1,
-    marginVertical: PADDING,
-  },
-  selectionContent: {
-    flexGrow: 1,
-    width: '100%',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: PADDING,
-  },
-  backButton: {
-    width: 48,
-    height: 48,
-    borderRadius: CARD_RADIUS,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  backArrowImage: {
-    width: 44,
-    height: 30,
-    transform: [{ scale: 1.2 }],
-  },
-  bannerContainer: {
-    flex: 1,
-    paddingVertical: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 2,
-  },
-  bannerTitle: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: '800',
-    letterSpacing: 1.5,
-  },
-  bannerSubtitle: {
-    color: '#ffffff',
-    opacity: 0.8,
-    fontSize: 11,
-    fontWeight: '600',
-    letterSpacing: 1,
-  },
-  previewCard: {
-    width: '100%',
-    maxWidth: 440,
-    alignSelf: 'center',
-    aspectRatio: 1.2,
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: PADDING,
-  },
-  instructionBox: {
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
-    marginTop: 4,
-  },
-  instructionText: {
-    color: '#e2e8f0',
-    fontSize: 13,
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-  avatarWrapper: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginVertical: 8,
-  },
-  avatarImage: {
-    width: 90,
-    height: 120,
-  },
-  playerBadge: {
-    marginTop: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-    borderRadius: 8,
-  },
-  badgeText: {
-    color: '#ffffff',
-    fontWeight: '800',
-    fontSize: 14,
-  },
-  summaryRow: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  summaryDot: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  activeSummaryDot: {
-    borderColor: '#ffffff',
-    borderWidth: 2.5,
-  },
-  summaryDotText: {
-    color: '#ffffff',
-    fontSize: 10,
-    fontWeight: '800',
-  },
-  colorGrid: {
-    width: '100%',
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-    justifyContent: 'center',
-  },
-  colorBox: {
-    width: '47%',
-    height: 80,
-    borderRadius: CARD_RADIUS,
-    justifyContent: 'center',
-    alignItems: 'center',
-    overflow: 'hidden',
-  },
-  selectedBoxBorder: {
-    borderWidth: 4,
-    borderColor: '#ffffff',
-  },
-  disabledBox: {
-    opacity: 0.25,
-  },
-  takenOverlay: {
-    ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  takenText: {
-    color: '#ffffff',
-    fontWeight: '800',
-    fontSize: 12,
-    letterSpacing: 1,
-  },
-  actionButton: {
-    paddingVertical: 16,
-    alignItems: 'center',
-  },
-  disabledButton: {
-    opacity: 0.4,
-  },
-  actionText: {
-    color: '#ffffff',
-    fontSize: 18,
-    fontWeight: '800',
-    letterSpacing: 1,
-  },
+  container: { flex: 1, width: '100%' },
+  content: { flex: 1, width: '100%', maxWidth: 420, alignSelf: 'center', padding: PADDING, justifyContent: 'space-between' },
+  headerRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  backButton: { width: 48, height: 48, borderRadius: CARD_RADIUS, justifyContent: 'center', alignItems: 'center' },
+  backArrowImage: { width: 44, height: 30, transform: [{ scale: 1.2 }] },
+  headerBanner: { flex: 1, minHeight: 48, paddingVertical: 12, alignItems: 'center', justifyContent: 'center' },
+  headerTitle: { color: '#ffffff', fontSize: 18, fontWeight: '800', letterSpacing: 1.5, textAlign: 'center' },
+  scroll: { flex: 1, marginVertical: PADDING },
+  scrollContent: { flexGrow: 1, justifyContent: 'center', gap: PADDING },
+  playerCard: { padding: PADDING, minHeight: 110 },
+  playerCardContent: { flexDirection: 'row', alignItems: 'center', gap: 16 },
+  previewContainer: { width: 64, height: 64, alignItems: 'center', justifyContent: 'center' },
+  playerPreviewImage: { width: '100%', height: '100%' },
+  controlsSection: { flex: 1, gap: 8 },
+  playerName: { color: '#ffffff', fontSize: 16, fontWeight: '700' },
+  colorPalette: { flexDirection: 'row', gap: 10 },
+  colorSwatch: { width: 32, height: 32, borderRadius: 16, borderWidth: 2, borderColor: 'transparent' },
+  colorSwatchSelected: { borderColor: '#ffffff', transform: [{ scale: 1.15 }] },
+  startButton: { paddingVertical: 16, alignItems: 'center' },
+  startText: { color: '#ffffff', fontSize: 18, fontWeight: '800', letterSpacing: 1 },
 });

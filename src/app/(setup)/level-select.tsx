@@ -11,10 +11,10 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useScreenTransition } from '../../TransitionContext';
+import { useWoodKnock } from '../../audio/useWoodKnock';
 import { TutorialTarget, useTutorial, useTutorialScene } from '../../components/TutorialOverlay';
 import { getWoodframeSource } from '../../components/woodframes';
 
-// Constants
 const PADDING = 16;
 const CARD_RADIUS = 16;
 
@@ -43,6 +43,7 @@ export default function LevelSelectScreen() {
   const tutorial = useTutorial();
   useTutorialScene('level-select');
   const { setBookcaseLevel } = useScreenTransition();
+  const playKnock = useWoodKnock();
   const [selectedLevel, setSelectedLevel] = useState<string | null>(null);
   const [difficultyIndex, setDifficultyIndex] = useState(1);
   const [questionTimer, setQuestionTimer] = useState(15);
@@ -116,6 +117,7 @@ export default function LevelSelectScreen() {
                   <TouchableOpacity
                     activeOpacity={0.85}
                     onPress={() => {
+                      playKnock();
                       setSelectedLevel(level.id);
                       setBookcaseLevel(level.id);
                       tutorial.notify('map-selected');

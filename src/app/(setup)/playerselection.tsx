@@ -3,12 +3,14 @@ import { useState } from 'react';
 import {
   Image,
   ImageBackground,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useWoodKnock } from '../../audio/useWoodKnock';
 import { TutorialTarget, useTutorial, useTutorialScene } from '../../components/TutorialOverlay';
 import { getWoodframeSource } from '../../components/woodframes';
 
@@ -23,185 +25,116 @@ const PLAYER_OPTIONS = [
 
 export default function PlayerSelectionScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams(); // Captures level, difficulty, and timer from level-select
-  const [selectedCount, setSelectedCount] = useState<number>(2);
   const tutorial = useTutorial();
-  useTutorialScene('playerselection');
+  useTutorialScene('player-select');
+  const playKnock = useWoodKnock();
 
-  const handleBack = () => {
-    router.back();
+  const params = useLocalSearchParams<{
+    level?: string;
+    difficulty?: string;
+    timer?: string;
+  }>();
+
+  const [selectedCount, setSelectedCount] = useState<number>(2);
+
+  const handleSelectCount = (count: number) => {
+    playKnock();
+    setSelectedCount(count);
+    tutorial.notify('player-count-selected', String(count));
   };
 
-  const handleContinue = () => {
+  const handleNext = () => {
     tutorial.notify('screen-next');
     router.push({
       pathname: '/customize',
       params: {
-        ...params, // Forwards level, difficulty, and timer
+        ...params,
         players: selectedCount,
       },
     });
   };
 
   return (
-      <SafeAreaView edges={['top', 'bottom']} style={styles.container}>
-        <View style={styles.content}>
-          {/* Header Banner */}
-          <View style={styles.headerRow}>
-            <TouchableOpacity
-              style={styles.backButton}
-              onPress={handleBack}
-              activeOpacity={0.7}
-            >
-              <Image
-                source={require('../../../assets/images/Backbutton.png')}
-                style={styles.backArrowImage}
-                resizeMode="contain"
-              />
-            </TouchableOpacity>
+    <SafeAreaView edges={['top', 'bottom']} style={styles.container}>
+      <View style={styles.content}>
+        <View style={styles.headerRow}>
+          <TouchableOpacity style={styles.backButton} onPress={() => router.back()} activeOpacity={0.7}>
+            <Image
+              source={require('../../../assets/images/Backbutton.png')}
+              style={styles.backArrowImage}
+              resizeMode="contain"
+            />
+          </TouchableOpacity>
+          <ImageBackground
+            source={getWoodframeSource(params.level, '6to1')}
+            resizeMode="stretch"
+            style={styles.headerBanner}
+          >
+            <Text style={styles.headerTitle}>NUMBER OF PLAYERS</Text>
+          </ImageBackground>
+        </View>
 
-            <ImageBackground
-              source={getWoodframeSource(params.level, '6to1')}
-              resizeMode="stretch"
-              style={styles.bannerContainer}
-            >
-              <Text style={styles.bannerTitle}>SELECT PLAYERS</Text>
-            </ImageBackground>
-          </View>
-
-          {/* Player Count Selection Cards */}
-          <View style={styles.optionsContainer}>
-            {PLAYER_OPTIONS.map((opt) => {
-              const isSelected = selectedCount === opt.count;
+        <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          <View style={styles.cardsContainer}>
+            {PLAYER_OPTIONS.map((option) => {
+              const isSelected = selectedCount === option.count;
               return (
-                <TutorialTarget key={opt.count} id="player-option">
-                <TouchableOpacity
-                  activeOpacity={0.85}
-                  onPress={() => {
-                    setSelectedCount(opt.count);
-                    tutorial.notify('players-selected');
-                  }}
-                  style={[
-                    styles.optionCardTouch,
-                    !isSelected && styles.unselectedOptionCard,
-                  ]}
-                >
-                  <ImageBackground
-                    source={getWoodframeSource(params.level, '4to1')}
-                    resizeMode="stretch"
-                    style={styles.optionCard}
+                <TutorialTarget key={option.count} id="player-card">
+                  <TouchableOpacity
+                    activeOpacity={0.85}
+                    onPress={() => handleSelectCount(option.count)}
+                    style={[styles.cardWrapper, !isSelected && styles.unselectedCard]}
                   >
-                    <Text
-                      style={[
-                        styles.optionTitle,
-                        isSelected && styles.selectedText,
-                      ]}
+                    <ImageBackground
+                      source={getWoodframeSource(params.level, '4to1')}
+                      resizeMode="stretch"
+                      style={styles.cardBackground}
                     >
-                      {opt.label}
-                    </Text>
-                    <Text style={styles.optionSubtitle}>{opt.subtitle}</Text>
-                  </ImageBackground>
-                </TouchableOpacity>
+                      <View style={styles.cardInner}>
+                        <Text style={styles.cardLabel}>{option.label}</Text>
+                        <Text style={styles.cardSubtitle}>{option.subtitle}</Text>
+                      </View>
+                    </ImageBackground>
+                  </TouchableOpacity>
                 </TutorialTarget>
               );
             })}
           </View>
+        </ScrollView>
 
-          {/* Continue Button */}
-          <TutorialTarget id="screen-next">
-            <TouchableOpacity onPress={handleContinue} activeOpacity={0.9}>
-              <ImageBackground
-                source={getWoodframeSource(params.level, '6to1')}
-                resizeMode="stretch"
-                style={styles.continueButton}
-              >
-                <Text style={styles.continueText}>NEXT</Text>
-              </ImageBackground>
-            </TouchableOpacity>
-          </TutorialTarget>
-        </View>
-      </SafeAreaView>
+        <TutorialTarget id="screen-next">
+          <TouchableOpacity onPress={handleNext} activeOpacity={0.9}>
+            <ImageBackground
+              source={getWoodframeSource(params.level, '6to1')}
+              resizeMode="stretch"
+              style={styles.nextButton}
+            >
+              <Text style={styles.nextText}>NEXT</Text>
+            </ImageBackground>
+          </TouchableOpacity>
+        </TutorialTarget>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  content: {
-    flex: 1,
-    width: '100%',
-    maxWidth: 420,
-    alignSelf: 'center',
-    padding: PADDING,
-    justifyContent: 'space-between',
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  backButton: {
-    width: 48,
-    height: 48,
-    borderRadius: CARD_RADIUS,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  backArrowImage: {
-    width: 44,
-    height: 30,
-    transform: [{ scale: 1.2 }],
-  },
-  bannerContainer: {
-    flex: 1,
-    paddingVertical: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  bannerTitle: {
-    color: '#ffffff',
-    fontSize: 18,
-    fontWeight: '800',
-    letterSpacing: 1.5,
-  },
-  optionsContainer: {
-    gap: 16,
-    marginVertical: PADDING,
-  },
-  optionCardTouch: {
-    width: '100%',
-  },
-  unselectedOptionCard: {
-    opacity: 0.55,
-  },
-  optionCard: {
-    paddingVertical: 20,
-    paddingHorizontal: PADDING,
-    alignItems: 'center',
-    gap: 4,
-  },
-  optionTitle: {
-    color: '#e2e8f0',
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  selectedText: {
-    color: '#ffffff',
-    fontWeight: '800',
-  },
-  optionSubtitle: {
-    color: '#FBF7F5',
-    fontSize: 13,
-  },
-  continueButton: {
-    paddingVertical: 16,
-    alignItems: 'center',
-  },
-  continueText: {
-    color: '#ffffff',
-    fontSize: 18,
-    fontWeight: '800',
-    letterSpacing: 1,
-  },
+  container: { flex: 1, width: '100%' },
+  content: { flex: 1, width: '100%', maxWidth: 420, alignSelf: 'center', padding: PADDING, justifyContent: 'space-between' },
+  headerRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  backButton: { width: 48, height: 48, borderRadius: CARD_RADIUS, justifyContent: 'center', alignItems: 'center' },
+  backArrowImage: { width: 44, height: 30, transform: [{ scale: 1.2 }] },
+  headerBanner: { flex: 1, minHeight: 48, paddingVertical: 12, alignItems: 'center', justifyContent: 'center' },
+  headerTitle: { color: '#ffffff', fontSize: 18, fontWeight: '800', letterSpacing: 1.5, textAlign: 'center' },
+  scroll: { flex: 1, marginVertical: PADDING },
+  scrollContent: { flexGrow: 1, justifyContent: 'center' },
+  cardsContainer: { gap: PADDING },
+  cardWrapper: { height: 96 },
+  unselectedCard: { opacity: 0.55 },
+  cardBackground: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  cardInner: { alignItems: 'center', gap: 4 },
+  cardLabel: { color: '#ffffff', fontSize: 20, fontWeight: '800', letterSpacing: 1 },
+  cardSubtitle: { color: '#FBF7F5', fontSize: 13, fontWeight: '600' },
+  nextButton: { paddingVertical: 16, alignItems: 'center' },
+  nextText: { color: '#ffffff', fontSize: 18, fontWeight: '800', letterSpacing: 1 },
 });
