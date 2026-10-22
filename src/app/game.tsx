@@ -888,6 +888,11 @@ export default function GameScreen() {
         Animated.subtract(gridSize / 2, Animated.multiply(cameraScale, movementY)),
       )
     : 0;
+  const boardNumbersOpacity = cameraScale.interpolate({
+    inputRange: [1, BOARD_CAMERA_ZOOM],
+    outputRange: [1, 0],
+    extrapolate: 'clamp',
+  });
   const diceSize = Math.min(84, boardSize * 0.37);
 
   return (
@@ -951,6 +956,18 @@ export default function GameScreen() {
                   source={require('../../assets/images/board.png')}
                   style={[styles.boardImage, { transform: [{ scale: BOARD_IMAGE_SCALE }] }]}
                   resizeMode="cover"
+                />
+                <Animated.Image
+                  source={require('../../assets/images/boardnumbers.png')}
+                  style={[
+                    styles.boardImage,
+                    {
+                      transform: [{ scale: BOARD_IMAGE_SCALE }],
+                      opacity: boardNumbersOpacity,
+                    },
+                  ]}
+                  resizeMode="cover"
+                  pointerEvents="none"
                 />
                 
                 {powerUpTiles.map((tileNum) => {
