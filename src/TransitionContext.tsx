@@ -5,7 +5,7 @@ import BookcaseBackground from './components/BookcaseBackground';
 
 type ScreenContextValue = {
   fadeThroughBlack: (navigate: () => void) => void;
-  setBookcaseDifficulty: (difficulty: string) => void;
+  setBookcaseLevel: (level: string | null) => void;
 };
 
 const ScreenContext = createContext<ScreenContextValue | null>(null);
@@ -15,7 +15,7 @@ export function TransitionProvider({ children }: { children: React.ReactNode }) 
   const pathname = usePathname();
   const opacity = useRef(new Animated.Value(0)).current;
   const [transitionActive, setTransitionActive] = useState(false);
-  const [bookcaseDifficulty, setBookcaseDifficulty] = useState('Normal');
+  const [bookcaseLevel, setBookcaseLevel] = useState<string | null>(null);
   const transitionRunning = useRef(false);
   const timeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -55,11 +55,11 @@ export function TransitionProvider({ children }: { children: React.ReactNode }) 
   }, [opacity]);
 
   return (
-    <ScreenContext.Provider value={{ fadeThroughBlack, setBookcaseDifficulty }}>
+    <ScreenContext.Provider value={{ fadeThroughBlack, setBookcaseLevel }}>
       <View style={styles.root}>
         {BOOKCASE_ROUTES.has(pathname) && (
           <View pointerEvents="none" style={StyleSheet.absoluteFill}>
-            <BookcaseBackground difficulty={bookcaseDifficulty} />
+            <BookcaseBackground level={bookcaseLevel ?? undefined} />
           </View>
         )}
         {children}

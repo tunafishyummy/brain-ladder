@@ -2,10 +2,12 @@ import React, { useEffect, useRef } from 'react';
 import { Animated, Easing, Image, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { useAudio } from '../AudioContext';
 
-const BOOKCASE = require('../../assets/images/bookcase.png');
-const EASY_BOOKCASE = require('../../assets/images/normalbookcase.png');
-const NORMAL_BOOKCASE = require('../../assets/images/normalbookcase.png');
-const HARD_BOOKCASE = require('../../assets/images/normalbookcase.png');
+const DEFAULT_BOOKCASE = require('../../assets/images/bookcase.png');
+const BOOKCASES_BY_LEVEL: Record<string, number> = {
+  reading: require('../../assets/images/LanguageBookcase.png'),
+  research: require('../../assets/images/ScienceBookcase.png'),
+  collections: require('../../assets/images/HistoryBookcase.png'),
+};
 const BOOKCASE_SIZE = { width: 1024, height: 1536 };
 const BACKGROUND_ZOOM = 2.5;
 
@@ -17,29 +19,66 @@ export const getBookcaseTileSize = (width: number, height: number) => {
   };
 };
 
-export const getBookcaseSource = (difficulty?: string | string[]) => {
-  const selectedDifficulty = Array.isArray(difficulty) ? difficulty[0] : difficulty;
-  if (selectedDifficulty === 'Easy') return EASY_BOOKCASE;
-  if (selectedDifficulty === 'Hard') return HARD_BOOKCASE;
-  if (selectedDifficulty === 'Normal') return NORMAL_BOOKCASE;
-  return BOOKCASE;
+export const getBookcaseSource = (level?: string | string[]) => {
+  const selectedLevel = Array.isArray(level) ? level[0] : level;
+  return selectedLevel ? BOOKCASES_BY_LEVEL[selectedLevel] ?? DEFAULT_BOOKCASE : DEFAULT_BOOKCASE;
 };
 
 /** Shared, gently scrolling bookcase backdrop. */
 export default function BookcaseBackground({
   children,
-  difficulty,
+  level,
 }: {
   children?: React.ReactNode;
-  difficulty?: string | string[];
+  level?: string | string[];
 }) {
   const { width, height } = useWindowDimensions();
   const { backgroundSpeed } = useAudio();
-  const bookcaseSource = getBookcaseSource(difficulty);
+  const bookcaseSource = getBookcaseSource(level);
+  const [activeSource, setActiveSource] = React.useState(bookcaseSource);
+  const [previousSource, setPreviousSource] = React.useState<number | null>(null);
+  const activeSourceRef = useRef(bookcaseSource);
+  const incomingOpacity = useRef(new Animated.Value(1)).current;
+  const outgoingOpacity = useRef(new Animated.Value(0)).current;
   const offset = useRef(new Animated.Value(0)).current;
   const { width: tileWidth, height: tileHeight } = getBookcaseTileSize(width, height);
   const columns = Math.max(1, Math.ceil(width / tileWidth) + 1);
   const rows = Math.max(1, Math.ceil(height / tileHeight) + 1);
+
+  useEffect(() => {
+    if (bookcaseSource === activeSourceRef.current) return;
+
+    const outgoingSource = activeSourceRef.current;
+    activeSourceRef.current = bookcaseSource;
+    setPreviousSource(outgoingSource);
+    setActiveSource(bookcaseSource);
+    incomingOpacity.stopAnimation();
+    outgoingOpacity.stopAnimation();
+    incomingOpacity.setValue(0);
+    outgoingOpacity.setValue(1);
+
+    const animation = Animated.parallel([
+      Animated.timing(incomingOpacity, {
+        toValue: 1,
+        duration: 450,
+        easing: Easing.inOut(Easing.ease),
+        useNativeDriver: true,
+      }),
+      Animated.timing(outgoingOpacity, {
+        toValue: 0,
+        duration: 450,
+        easing: Easing.inOut(Easing.ease),
+        useNativeDriver: true,
+      }),
+    ]);
+    animation.start(({ finished }) => {
+      if (finished && activeSourceRef.current === bookcaseSource) {
+        setPreviousSource(null);
+      }
+    });
+
+    return () => animation.stop();
+  }, [bookcaseSource, incomingOpacity, outgoingOpacity]);
 
   useEffect(() => {
     offset.stopAnimation();
@@ -59,29 +98,40 @@ export default function BookcaseBackground({
   const translateX = offset.interpolate({ inputRange: [0, 1], outputRange: [0, -tileWidth] });
   const translateY = offset.interpolate({ inputRange: [0, 1], outputRange: [0, -tileHeight] });
 
+  const renderTileLayer = (source: number, opacity: Animated.Value) => (
+    <Animated.View
+      key={source}
+      pointerEvents="none"
+      style={[StyleSheet.absoluteFill, { opacity }]}
+    >
+      <Animated.View
+        style={{
+          width: columns * tileWidth,
+          height: rows * tileHeight,
+          flexDirection: 'row',
+          flexWrap: 'wrap',
+          alignContent: 'flex-start',
+          transform: [{ translateX }, { translateY }],
+        }}
+      >
+        {Array.from({ length: rows * columns }, (_, tile) => (
+          <Image
+            key={tile}
+            source={source}
+            resizeMode="cover"
+            fadeDuration={0}
+            style={{ width: tileWidth, height: tileHeight, flexShrink: 0 }}
+          />
+        ))}
+      </Animated.View>
+    </Animated.View>
+  );
+
   return (
     <View style={styles.root}>
       <View pointerEvents="none" style={StyleSheet.absoluteFill}>
-        <Animated.View
-          style={{
-            width: columns * tileWidth,
-            height: rows * tileHeight,
-            flexDirection: 'row',
-            flexWrap: 'wrap',
-            alignContent: 'flex-start',
-            transform: [{ translateX }, { translateY }],
-          }}
-        >
-          {Array.from({ length: rows * columns }, (_, tile) => (
-            <Image
-              key={tile}
-              source={bookcaseSource}
-              resizeMode="cover"
-              fadeDuration={0}
-              style={{ width: tileWidth, height: tileHeight, flexShrink: 0 }}
-            />
-          ))}
-        </Animated.View>
+        {previousSource !== null && renderTileLayer(previousSource, outgoingOpacity)}
+        {renderTileLayer(activeSource, incomingOpacity)}
       </View>
       {children}
     </View>

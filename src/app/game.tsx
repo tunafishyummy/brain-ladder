@@ -768,7 +768,11 @@ export default function GameScreen() {
 
     router.push({
       pathname: '/stats',
-      params: { gameData: JSON.stringify(gameStats), difficulty: selectedDifficulty },
+      params: {
+        gameData: JSON.stringify(gameStats),
+        difficulty: selectedDifficulty,
+        level: params.level,
+      },
     });
   };
 
@@ -811,7 +815,7 @@ export default function GameScreen() {
   const diceSize = Math.min(84, boardSize * 0.37);
 
   return (
-    <BookcaseBackground difficulty={selectedDifficulty}>
+    <BookcaseBackground level={params.level}>
       <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1 }}>
         <View style={styles.mainContainer}>
           {/* TOP BANNER & EXIT BUTTON */}
@@ -1178,7 +1182,7 @@ export default function GameScreen() {
               <View style={styles.quizPopupGroup}>
                 <View style={styles.quizSceneStage}>
                   <ImageBackground
-                    source={getBookcaseSource(selectedDifficulty)}
+                    source={getBookcaseSource(params.level)}
                     style={styles.quizSceneCard}
                     imageStyle={styles.quizSceneBackgroundImage}
                     resizeMode="cover"

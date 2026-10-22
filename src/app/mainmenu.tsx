@@ -29,7 +29,7 @@ export default function MainMenuScreen() {
   const controlSize = Math.min(220, artworkWidth * 0.4);
   const playImageWidth = artworkWidth * 0.48;
   const playImageHeight = playImageWidth * (716 / 1549);
-  const { fadeThroughBlack } = useScreenTransition();
+  const { fadeThroughBlack, setBookcaseLevel } = useScreenTransition();
   const zoomProgress = useRef(new Animated.Value(0)).current;
   const playRock = useRef(new Animated.Value(0)).current;
   const transitionStarted = useRef(false);
@@ -81,6 +81,7 @@ export default function MainMenuScreen() {
   const handlePlay = () => {
     if (transitionStarted.current) return;
 
+    setBookcaseLevel(null);
     transitionStarted.current = true;
     setIsTransitioning(true);
 

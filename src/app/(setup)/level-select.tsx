@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
   Image,
   ImageBackground,
@@ -47,14 +47,10 @@ const TIMERS = [
 
 export default function LevelSelectScreen() {
   const router = useRouter();
-  const { setBookcaseDifficulty } = useScreenTransition();
-  const [selectedLevel, setSelectedLevel] = useState('collections');
+  const { setBookcaseLevel } = useScreenTransition();
+  const [selectedLevel, setSelectedLevel] = useState<string | null>(null);
   const [difficultyIndex, setDifficultyIndex] = useState(1);
   const [questionTimer, setQuestionTimer] = useState(15);
-
-  useEffect(() => {
-    setBookcaseDifficulty(DIFFICULTIES[difficultyIndex]);
-  }, [difficultyIndex, setBookcaseDifficulty]);
 
   const handlePrevDifficulty = () => {
     setDifficultyIndex((prev) => (prev > 0 ? prev - 1 : DIFFICULTIES.length - 1));
@@ -65,6 +61,8 @@ export default function LevelSelectScreen() {
   };
 
   const handleContinue = () => {
+    if (!selectedLevel) return;
+
     router.push({
       pathname: '/playerselection',
       params: {
@@ -112,7 +110,10 @@ export default function LevelSelectScreen() {
                   <TouchableOpacity
                     key={level.id}
                     activeOpacity={0.85}
-                    onPress={() => setSelectedLevel(level.id)}
+                    onPress={() => {
+                      setSelectedLevel(level.id);
+                      setBookcaseLevel(level.id);
+                    }}
                     style={[
                       styles.levelCardWrapper,
                       !isSelected && styles.unselectedLevelCard,
@@ -193,7 +194,7 @@ export default function LevelSelectScreen() {
 
           </ScrollView>
 
-          <TouchableOpacity onPress={handleContinue} activeOpacity={0.9}>
+          <TouchableOpacity onPress={handleContinue} activeOpacity={0.9} disabled={!selectedLevel}>
             <ImageBackground
               source={require('../../../assets/images/woodframe6to1.png')}
               resizeMode="stretch"
