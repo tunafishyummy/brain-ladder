@@ -181,7 +181,7 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   optionSubtitle: {
-    color: '#a0a5b5',
+    color: '#FBF7F5',
     fontSize: 13,
   },
   continueButton: {
