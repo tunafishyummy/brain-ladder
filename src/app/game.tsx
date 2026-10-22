@@ -75,11 +75,6 @@ const BOARD_BACKGROUNDS: Record<string, number> = {
 const PLAYER_MOVEMENT_WARMUP_MS = 650;
 const PLAYER_MOVEMENT_COOLDOWN_MS = 500;
 const PLAYER_TILE_MOVE_MS = 150;
-const TILE_NUMBER_FONT_SIZE = 9;
-const TILE_NUMBER_FONT_WEIGHT = '900' as const;
-const TILE_NUMBER_WIDTH = 24;
-const TILE_NUMBER_HEIGHT = 18;
-const TILE_NUMBER_INSET = 3;
 const TYPEWRITER_CHARACTER_INTERVAL_MS = 18;
 const DIALOGUE_LINE_HEIGHT = 20;
 const DIALOGUE_MAX_LINES = 3;
@@ -893,16 +888,6 @@ export default function GameScreen() {
         Animated.subtract(gridSize / 2, Animated.multiply(cameraScale, movementY)),
       )
     : 0;
-  const tileNumberScale = cameraScale.interpolate({
-    inputRange: [1, BOARD_CAMERA_ZOOM],
-    outputRange: [1, 1 / BOARD_CAMERA_ZOOM],
-    extrapolate: 'clamp',
-  });
-  const tileNumberOpacity = cameraScale.interpolate({
-    inputRange: [1, BOARD_CAMERA_ZOOM],
-    outputRange: [1, 0],
-    extrapolate: 'clamp',
-  });
   const diceSize = Math.min(84, boardSize * 0.37);
 
   return (
@@ -1040,29 +1025,6 @@ export default function GameScreen() {
                     >
                       <Image source={getCharacterAssetForColor(player.color)} style={styles.playerToken} />
                     </View>
-                  );
-                })}
-                {Array.from({ length: 100 }, (_, index) => index + 1).map((number) => {
-                  const { x, y } = getCoordinatesForPosition(number);
-                  return (
-                    <Animated.View
-                      key={number}
-                      pointerEvents="none"
-                      style={{
-                        position: 'absolute',
-                        left: x + cellSize - TILE_NUMBER_WIDTH - TILE_NUMBER_INSET,
-                        top: y + TILE_NUMBER_INSET,
-                        width: TILE_NUMBER_WIDTH,
-                        height: TILE_NUMBER_HEIGHT,
-                        alignItems: 'flex-end',
-                        zIndex: 5,
-                        opacity: tileNumberOpacity,
-                        transformOrigin: [TILE_NUMBER_WIDTH, 0, 0],
-                        transform: [{ scale: tileNumberScale }],
-                      }}
-                    >
-                      <Text style={styles.tileNumber}>{number}</Text>
-                    </Animated.View>
                   );
                 })}
               </Animated.View>
@@ -1441,7 +1403,6 @@ const styles = StyleSheet.create({
   boardFrame: { ...BOARD_FRAME, overflow: 'hidden', alignSelf: 'center', alignItems: 'center', justifyContent: 'center' },
   boardFrameBackground: { position: 'absolute' },
   boardImage: { position: 'absolute', width: '100%', height: '100%' },
-  tileNumber: { color: '#fff', fontSize: TILE_NUMBER_FONT_SIZE, fontWeight: TILE_NUMBER_FONT_WEIGHT, textAlign: 'right', includeFontPadding: false, textShadowColor: 'rgba(0,0,0,0.9)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 },
   playerTokenWrapper: { position: 'absolute', borderWidth: 2, borderColor: '#0f172a', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.5, shadowRadius: 3, elevation: 5 },
   playerToken: { width: '82%', height: '82%', resizeMode: 'contain' },
   diceSection: { flexDirection: 'row', width: '100%', minHeight: 84, alignItems: 'center' },
