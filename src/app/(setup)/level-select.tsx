@@ -108,9 +108,7 @@ export default function LevelSelectScreen() {
           <View style={styles.levelsContainer}>
             {LEVELS.map((level) => {
               const isSelected = selectedLevel === level.id;
-              const frameSource = isSelected && SELECTED_LEVEL_FRAMES[level.id]
-                ? SELECTED_LEVEL_FRAMES[level.id]
-                : getWoodframeSource(level.id, '4to1');
+              const frameSource = SELECTED_LEVEL_FRAMES[level.id];
 
               return (
                 <TutorialTarget key={level.id} id="map-card">
