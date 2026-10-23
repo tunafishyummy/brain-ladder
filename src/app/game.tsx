@@ -1592,7 +1592,7 @@ const styles = StyleSheet.create({
   answerIncorrectButton: { backgroundColor: '#dc2626' },
   continueButtonText: { color: '#1e293b', fontWeight: 'bold', fontSize: 14 },
   answerResultButtonText: { color: '#fff' },
-  powerUpsBar: { width: '72%', alignSelf: 'center', flexDirection: 'row', justifyContent: 'space-between', gap: 8, paddingVertical: 80 },
+  powerUpsBar: { width: '72%', alignSelf: 'center', flexDirection: 'row', justifyContent: 'space-between', gap: 8, paddingVertical: 8 },
   powerUpButton: { flex: 1, backgroundColor: 'transparent', paddingVertical: 10, alignItems: 'center', justifyContent: 'center' },
   powerUpDisabled: { opacity: 0.4 },
   powerUpIcon: { width: 28, height: 28, marginBottom: 4 },
