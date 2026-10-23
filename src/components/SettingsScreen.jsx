@@ -1,6 +1,7 @@
 import Slider from '@react-native-community/slider';
 import { useState } from 'react';
-import { Image, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
+import { Image, ScrollView, StyleSheet, Switch, TouchableOpacity, View } from 'react-native';
+import Text from './AdaptiveText';
 import { useAudio } from '../AudioContext';
 
 export default function SettingsScreen({ onReturnToMenu }) {
@@ -216,6 +217,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    gap: 8,
   },
   muteRow: {
     flexDirection: 'row',
@@ -240,6 +242,8 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   label: {
+    flex: 1,
+    minWidth: 0,
     color: '#fff',
     fontSize: 12,
     fontWeight: 'bold',

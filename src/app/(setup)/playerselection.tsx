@@ -5,10 +5,10 @@ import {
   ImageBackground,
   ScrollView,
   StyleSheet,
-  Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+import Text from '../../components/AdaptiveText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useWoodKnock } from '../../audio/useWoodKnock';
 import { getWoodframeSource } from '../../components/woodframes';
@@ -122,9 +122,9 @@ const styles = StyleSheet.create({
   scroll: { flex: 1, marginVertical: PADDING },
   scrollContent: { flexGrow: 1, justifyContent: 'center' },
   cardsContainer: { gap: PADDING },
-  cardWrapper: { height: 96 },
+  cardWrapper: { minHeight: 96, paddingVertical: 6 },
   unselectedCard: { opacity: 0.55 },
-  cardBackground: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  cardBackground: { flex: 1, minHeight: 84, paddingVertical: 8, justifyContent: 'center', alignItems: 'center' },
   cardInner: { alignItems: 'center', gap: 4 },
   cardLabel: { color: '#ffffff', fontSize: 20, fontWeight: '800', letterSpacing: 1 },
   cardSubtitle: { color: '#FBF7F5', fontSize: 13, fontWeight: '600' },

@@ -10,13 +10,13 @@ import {
   Modal,
   ScrollView,
   StyleSheet,
-  Text,
   TextInput,
   TouchableOpacity,
   View,
   useWindowDimensions,
   type ViewStyle,
 } from 'react-native';
+import Text from '../components/AdaptiveText';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAudio } from '../AudioContext';
 import BookcaseBackground, { getBookcaseSource } from '../components/BookcaseBackground';
@@ -1250,6 +1250,7 @@ export default function GameScreen() {
               <Text style={styles.debugMoveLabel}>Destination tile (1–100)</Text>
               <TextInput
                 style={styles.debugMoveInput}
+                maxFontSizeMultiplier={1.5}
                 value={debugTile}
                 onChangeText={(value) => setDebugTile(value.replace(/\D/g, '').slice(0, 3))}
                 keyboardType="number-pad"
@@ -1538,7 +1539,7 @@ const styles = StyleSheet.create({
   debugPowerUpIcon: { width: 26, height: 26, flexShrink: 0 },
   debugPowerUpChoiceText: { flexShrink: 1, color: '#ffffff', fontSize: 12, fontWeight: '700', textAlign: 'center' },
   debugMoveLabel: { width: '100%', color: '#ffffff', fontSize: 14, fontWeight: '700', marginBottom: 20 },
-  debugMoveInput: { width: '100%', height: 48, borderRadius: 8, borderWidth: 1, borderColor: '#64748b', backgroundColor: '#ffffff', color: '#111827', fontSize: 20, fontWeight: '700', textAlign: 'center', marginBottom: 8 },
+  debugMoveInput: { width: '100%', minHeight: 48, paddingVertical: 8, borderRadius: 8, borderWidth: 1, borderColor: '#64748b', backgroundColor: '#ffffff', color: '#111827', fontSize: 20, fontWeight: '700', textAlign: 'center', marginBottom: 8 },
   debugMoveConfirm: { backgroundColor: '#facc15', borderColor: '#facc15' },
   debugMoveConfirmDisabled: { opacity: 0.45 },
   exitCard: { width: '88%', maxWidth: 380, backgroundColor: '#1b2338', borderRadius: 8, paddingVertical: 24, paddingHorizontal: 20, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.5, shadowRadius: 10, elevation: 12 },
@@ -1551,8 +1552,8 @@ const styles = StyleSheet.create({
   victorySubtitle: { fontSize: 18, color: '#fff', fontWeight: 'bold', textShadowColor: 'rgba(0,0,0,0.75)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 },
   tapToContinueText: { color: '#facc15', fontWeight: 'bold', fontSize: 14, textShadowColor: 'rgba(0,0,0,0.75)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 },
   quizPopupScrollView: { flex: 1, width: '100%' },
-  quizPopupScrollContent: { flexGrow: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 20 },
-  quizPopupGroup: { width: '94%', maxWidth: 480, alignItems: 'center', gap: 10, marginTop: 80 },
+  quizPopupScrollContent: { flexGrow: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: '5%' },
+  quizPopupGroup: { width: '94%', maxWidth: 480, alignItems: 'center', gap: 10, marginTop: '20%' },
   quizSceneStage: { position: 'relative', width: '100%', height: QUIZ_SCENE_HEIGHT, zIndex: 2, elevation: 2 },
   quizSceneCard: { width: '100%', height: QUIZ_SCENE_HEIGHT, borderRadius: 16, borderWidth: 2, borderColor: '#475569', overflow: 'hidden', zIndex: 0 },
   quizSceneBackgroundImage: { borderRadius: 16 },
@@ -1564,9 +1565,9 @@ const styles = StyleSheet.create({
   quizDialogueText: { color: '#fff', fontSize: 18, lineHeight: DIALOGUE_LINE_HEIGHT, fontWeight: '700', textShadowColor: '#000', textShadowOffset: { width: 1, height: 1 }, textShadowRadius: 3 },
   timerDisplayLow: { color: '#ef4444' },
   timerDisplay: { alignSelf: 'stretch', paddingHorizontal: 20, fontSize: 30, lineHeight: 36, fontWeight: '900', color: '#facc15', textAlign: 'left', marginVertical: 4, textShadowColor: 'rgba(0,0,0,0.8)', textShadowOffset: { width: 1, height: 1 }, textShadowRadius: 2 },
-  quizCard: { zIndex: 5, position: 'relative', overflow: 'visible' },
-  quizQuestionScroll: { position: 'absolute', top: 0, right: 0, bottom: 106, left: 0 },
-  quizQuestionContent: { paddingHorizontal: 84, paddingTop: 80, paddingBottom: 12 },
+  quizCard: { zIndex: 5, overflow: 'visible' },
+  quizQuestionScroll: { flex: 1 },
+  quizQuestionContent: { paddingHorizontal: '22%', paddingTop: '21%', paddingBottom: 12 },
   quizSubheader: { fontSize: 16, color: '#fff', textAlign: 'center', fontWeight: '700', marginBottom: 10, textShadowColor: '#000', textShadowOffset: { width: 1, height: 1 }, textShadowRadius: 2 },
   quizPrompt: { fontSize: 15, color: '#f8fafc', textAlign: 'center', marginBottom: 16, fontWeight: '600' },
   hintBanner: { backgroundColor: '#334155', borderWidth: 1.5, borderColor: '#facc15', borderRadius: 10, padding: 10, marginBottom: 14 },
@@ -1584,7 +1585,7 @@ const styles = StyleSheet.create({
   answerIncorrectButton: { backgroundColor: '#dc2626' },
   continueButtonText: { color: '#1e293b', fontWeight: 'bold', fontSize: 14 },
   answerResultButtonText: { color: '#fff' },
-  powerUpsBar: { position: 'absolute', flexDirection: 'row', justifyContent: 'space-between', left: 64, right: 64, bottom: 70, gap: 8 },
+  powerUpsBar: { width: '72%', alignSelf: 'center', flexDirection: 'row', justifyContent: 'space-between', gap: 8, paddingVertical: 8 },
   powerUpButton: { flex: 1, backgroundColor: 'transparent', paddingVertical: 10, alignItems: 'center', justifyContent: 'center' },
   powerUpDisabled: { opacity: 0.4 },
   powerUpIcon: { width: 28, height: 28, marginBottom: 4 },

@@ -1,5 +1,6 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Image, ImageBackground, ScrollView, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
+import { Image, ImageBackground, ScrollView, StyleSheet, TouchableOpacity, View, useWindowDimensions } from 'react-native';
+import Text from '../components/AdaptiveText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import BookcaseBackground from '../components/BookcaseBackground';
 import { getWoodframeSource } from '../components/woodframes';
@@ -292,6 +293,7 @@ const styles = StyleSheet.create({
     paddingVertical: 1,
   },
   statLabel: {
+    flexShrink: 1,
     fontSize: 14,
     color: '#f8fafc',
     fontWeight: '800',

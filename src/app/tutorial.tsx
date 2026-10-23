@@ -9,11 +9,11 @@ import {
     Pressable,
     ScrollView,
     StyleSheet,
-    Text,
     TouchableOpacity,
     View,
     useWindowDimensions,
 } from 'react-native';
+import Text from '../components/AdaptiveText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useWoodKnock } from '../audio/useWoodKnock';
 import BookcaseBackground from '../components/BookcaseBackground';
@@ -1043,8 +1043,8 @@ const styles = StyleSheet.create({
   timerChipText: { color: '#FBF7F5', fontSize: 14, fontWeight: '700' },
   timerChipTextSelected: { color: '#0f121c' },
 
-  playerOption: { height: 96 },
-  playerOptionBg: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 4 },
+  playerOption: { minHeight: 96, paddingVertical: 6 },
+  playerOptionBg: { flex: 1, minHeight: 84, paddingVertical: 8, justifyContent: 'center', alignItems: 'center', gap: 4 },
   playerOptionLabel: { color: '#ffffff', fontSize: 20, fontWeight: '800', letterSpacing: 1 },
   playerOptionSubtitle: { color: '#FBF7F5', fontSize: 13, fontWeight: '600' },
 

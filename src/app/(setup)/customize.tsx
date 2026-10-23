@@ -5,10 +5,10 @@ import {
   ImageBackground,
   ScrollView,
   StyleSheet,
-  Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+import Text from '../../components/AdaptiveText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useWoodKnock } from '../../audio/useWoodKnock';
 import { getWoodframeSource } from '../../components/woodframes';
@@ -213,9 +213,9 @@ const styles = StyleSheet.create({
   scrollContent: { flexGrow: 1, justifyContent: 'center', gap: PADDING },
   playerCard: { padding: PADDING, minHeight: 192 },
   playerCardContent: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  previewContainer: { width: 140, height: 160, alignItems: 'center', justifyContent: 'center' },
+  previewContainer: { width: '38%', maxWidth: 140, aspectRatio: 0.875, alignItems: 'center', justifyContent: 'center' },
   playerPreviewImage: { width: '100%', height: '100%' },
-  controlsSection: { flex: 1, minWidth: 0, paddingRight: 40, alignItems: 'flex-end', gap: 8 },
+  controlsSection: { flex: 1, minWidth: 0, paddingRight: 12, alignItems: 'flex-end', gap: 8 },
   playerName: { width: '100%', color: '#ffffff', fontSize: 16, fontWeight: '700', textAlign: 'right' },
   colorPalette: { width: '100%', flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-end', gap: 8 },
   colorSwatch: { width: 32, height: 32, borderRadius: 16, borderWidth: 2, borderColor: 'transparent' },

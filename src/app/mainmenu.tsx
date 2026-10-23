@@ -10,11 +10,11 @@ import {
   Modal,
   Platform,
   StyleSheet,
-  Text,
   TouchableOpacity,
   useWindowDimensions,
   View,
 } from 'react-native';
+import Text from '../components/AdaptiveText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAudio } from '../AudioContext';
 import MainMenuArtwork from '../components/MainMenuArtwork';

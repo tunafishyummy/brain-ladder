@@ -4,9 +4,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   ActivityIndicator,
   StyleSheet,
-  Text,
   View,
 } from 'react-native';
+import Text from '../components/AdaptiveText';
 import { useAudio } from '../AudioContext';
 import AnimatedLogoStack from '../components/AnimatedLogoStack';
 import BookcaseBackground from '../components/BookcaseBackground';

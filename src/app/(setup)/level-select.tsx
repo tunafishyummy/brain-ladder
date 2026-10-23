@@ -8,11 +8,11 @@ import {
   ImageBackground,
   ScrollView,
   StyleSheet,
-  Text,
   TouchableOpacity,
   View,
   type ViewStyle,
 } from 'react-native';
+import Text from '../../components/AdaptiveText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useScreenTransition } from '../../TransitionContext';
 import { useWoodKnock } from '../../audio/useWoodKnock';
