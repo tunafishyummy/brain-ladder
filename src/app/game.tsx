@@ -38,6 +38,8 @@ const ADDER_DIALOGUE_IMG = require('../../assets/images/AdderDialogue.png');
 const LAD_DIALOGUE_IMG = require('../../assets/images/LadDialogue.png');
 const LAD_DIALOGUE_CHEER_IMG = require('../../assets/images/LadDialogueCheer.png');
 const LAD_DIALOGUE_SHOCK_IMG = require('../../assets/images/LadDialogueShock.png');
+const ADDER_ANGER_IMG = require('../../assets/images/Adderanger.png');
+const ADDER_SPARKLES_IMG = require('../../assets/images/Addersparkles.png');
 const TURN_IMAGES: Record<string, number> = {
   '#fed330': require('../../assets/images/yellowturn.png'),
   '#dc2626': require('../../assets/images/redturn.png'),
@@ -81,7 +83,7 @@ const PLAYER_MOVEMENT_WARMUP_MS = 650;
 const PLAYER_MOVEMENT_COOLDOWN_MS = 500;
 const PLAYER_TILE_MOVE_MS = 150;
 const TYPEWRITER_CHARACTER_INTERVAL_MS = 18;
-const DIALOGUE_LINE_HEIGHT = 20;
+const DIALOGUE_LINE_HEIGHT = 25;
 const DIALOGUE_MAX_LINES = 3;
 const QUIZ_DIALOGUE_BOX_HEIGHT = DIALOGUE_LINE_HEIGHT * DIALOGUE_MAX_LINES + 26;
 const QUIZ_SCENE_HEIGHT = QUIZ_DIALOGUE_BOX_HEIGHT + 36;
@@ -167,6 +169,7 @@ type BoardMovement = {
 };
 
 type EventType = 'ladder' | 'snake';
+type AdderEffect = { id: number; source: number; left: number; top: number; size: number };
 
 type PendingEvent = {
   type: EventType;
@@ -358,6 +361,11 @@ export default function GameScreen() {
   const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [isAnswerCorrect, setIsAnswerCorrect] = useState<boolean | null>(null);
+  const [adderEffects, setAdderEffects] = useState<AdderEffect[]>([]);
+  const ladHop = useRef(new Animated.Value(0)).current;
+  const ladTilt = useRef(new Animated.Value(0)).current;
+  const adderShake = useRef(new Animated.Value(0)).current;
+  const adderEffectOpacity = useRef(new Animated.Value(0)).current;
   const questionDeck = useRef<Question[]>([]);
 
   const [showExitModal, setShowExitModal] = useState(false);
@@ -443,6 +451,58 @@ export default function GameScreen() {
   }, [isAnswerCorrect, correctSoundPlayer, wrongSoundPlayer]);
 
   useEffect(() => {
+    ladHop.stopAnimation();
+    ladTilt.stopAnimation();
+    adderShake.stopAnimation();
+    adderEffectOpacity.stopAnimation();
+    ladHop.setValue(0);
+    ladTilt.setValue(0);
+    adderShake.setValue(0);
+    adderEffectOpacity.setValue(0);
+    setAdderEffects([]);
+
+    if (isAnswerCorrect === null || !pendingEvent) return;
+
+    if (pendingEvent.type === 'ladder') {
+      const animation = isAnswerCorrect
+        ? Animated.sequence([
+            Animated.timing(ladHop, { toValue: -22, duration: 150, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+            Animated.timing(ladHop, { toValue: 0, duration: 220, easing: Easing.in(Easing.cubic), useNativeDriver: true }),
+          ])
+        : Animated.timing(ladTilt, { toValue: 1, duration: 900, easing: Easing.out(Easing.cubic), useNativeDriver: true });
+      animation.start();
+      return () => animation.stop();
+    }
+
+    const effects: AdderEffect[] = isAnswerCorrect
+      ? [{ id: Date.now(), source: ADDER_ANGER_IMG, left: 70, top: 0, size: 38 }]
+      : [{ id: Date.now(), source: ADDER_SPARKLES_IMG, left: 0, top: 0, size: 100 }];
+    setAdderEffects(effects);
+    adderEffectOpacity.setValue(1);
+
+    const shake = Animated.sequence([
+      ...Array.from({ length: 12 }, (_, index) => Animated.timing(adderShake, {
+        toValue: index % 2 === 0 ? 1 : -1,
+        duration: 65,
+        useNativeDriver: true,
+      })),
+      Animated.timing(adderShake, { toValue: 0, duration: 100, useNativeDriver: true }),
+    ]);
+    const fade = Animated.sequence([
+      Animated.delay(1200),
+      Animated.timing(adderEffectOpacity, { toValue: 0, duration: 800, useNativeDriver: true }),
+    ]);
+    const animations = isAnswerCorrect ? [shake, fade] : [fade];
+    Animated.parallel(animations).start(({ finished }) => {
+      if (finished) setAdderEffects([]);
+    });
+    return () => {
+      shake.stop();
+      fade.stop();
+    };
+  }, [isAnswerCorrect, pendingEvent?.type, ladHop, ladTilt, adderShake, adderEffectOpacity]);
+
+  useEffect(() => {
     if (!winner) return;
     void victorySoundPlayer.seekTo(0).then(() => victorySoundPlayer.play()).catch((error: unknown) => {
       console.warn('Unable to play victory sound', error);
@@ -463,6 +523,12 @@ export default function GameScreen() {
         ? LAD_DIALOGUE_SHOCK_IMG
         : LAD_DIALOGUE_IMG
     : ADDER_DIALOGUE_IMG;
+  const ladRotation = ladTilt.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '-5deg'] });
+  const adderShakeX = adderShake.interpolate({ inputRange: [-1, 1], outputRange: [-12, 12] });
+  const adderShakeRotation = adderShake.interpolate({ inputRange: [-1, 1], outputRange: ['-7deg', '7deg'] });
+  const dialogueImageTransform = pendingEvent?.type === 'ladder'
+    ? [{ translateY: ladHop }, { rotate: ladRotation }, { scale: 1.5 }]
+    : [{ translateX: adderShakeX }, { rotate: adderShakeRotation }, { scale: 1.5 }];
 
   const getNextQuestion = (eventType: EventType): Question => {
     const rawQuestions = QUESTION_BANKS[dialogueSubject];
@@ -1263,11 +1329,29 @@ export default function GameScreen() {
                     </View>
                   </ImageBackground>
                   <View pointerEvents="none" style={styles.quizCharacterWrapper}>
-                    <Image
+                    <Animated.Image
                       source={dialogueImage}
-                      style={styles.quizCharacterImage}
+                      style={[styles.quizCharacterImage, { transform: dialogueImageTransform }]}
                       resizeMode="contain"
                     />
+                    {adderEffects.map((effect) => (
+                      <Animated.Image
+                        key={effect.id}
+                        source={effect.source}
+                        style={[
+                          styles.adderEffectParticle,
+                          {
+                            left: `${effect.left}%`,
+                            top: `${effect.top}%`,
+                            width: `${effect.size}%`,
+                            height: `${effect.size}%`,
+                            opacity: adderEffectOpacity,
+                            transform: [{ scale: effect.source === ADDER_SPARKLES_IMG ? 1.5 : 1 }],
+                          },
+                        ]}
+                        resizeMode="contain"
+                      />
+                    ))}
                   </View>
                 </View>
 
@@ -1289,15 +1373,11 @@ export default function GameScreen() {
                     showsVerticalScrollIndicator={false}
                     nestedScrollEnabled
                   >
-                  <Text style={styles.quizHeader}>
-                    {pendingEvent?.type === 'ladder' ? '🪜 Ladder Challenge!' : '🐍 Snake Challenge!'}
-                  </Text>
                   <Text style={styles.quizSubheader}>
                     {pendingEvent?.type === 'ladder'
-                      ? `Answer right to climb from ${pendingEvent.landedPos} to ${pendingEvent.target}.`
-                      : `Answer right to stay safe from the snake at ${pendingEvent?.landedPos}.`}
+                      ? `At tile ${pendingEvent.landedPos}, you find a ladder!`
+                      : `At tile ${pendingEvent?.landedPos}, you run into a Know-it-Adder!`}
                   </Text>
-
                   <Text style={styles.quizPrompt}>{currentQuestion?.prompt}</Text>
 
                   {hintMessage && (
@@ -1468,22 +1548,22 @@ const styles = StyleSheet.create({
   tapToContinueText: { color: '#facc15', fontWeight: 'bold', fontSize: 14, textShadowColor: 'rgba(0,0,0,0.75)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 },
   quizPopupScrollView: { flex: 1, width: '100%' },
   quizPopupScrollContent: { flexGrow: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 20 },
-  quizPopupGroup: { width: '94%', maxWidth: 480, alignItems: 'center', gap: 10 },
+  quizPopupGroup: { width: '94%', maxWidth: 480, alignItems: 'center', gap: 10, marginTop: 80 },
   quizSceneStage: { position: 'relative', width: '100%', height: QUIZ_SCENE_HEIGHT, zIndex: 2, elevation: 2 },
   quizSceneCard: { width: '100%', height: QUIZ_SCENE_HEIGHT, borderRadius: 16, borderWidth: 2, borderColor: '#475569', overflow: 'hidden', zIndex: 0 },
   quizSceneBackgroundImage: { borderRadius: 16 },
   quizSceneForeground: { ...StyleSheet.absoluteFill, justifyContent: 'center', padding: 16, overflow: 'visible' },
-  quizCharacterWrapper: { position: 'absolute', right: '4%', top: '-40%', width: '46%', aspectRatio: 1, zIndex: 3, elevation: 3 },
-  quizCharacterImage: { width: '100%', height: '100%', transform: [{ scale: 1.5 }] },
-  quizDialogueBox: { width: '45%', height: QUIZ_DIALOGUE_BOX_HEIGHT, justifyContent: 'center', padding: 12, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(255,255,255,0.24)', backgroundColor: 'rgba(15,23,42,0.86)', zIndex: 2 },
-  quizDialogueText: { color: '#fff', fontSize: 14, lineHeight: DIALOGUE_LINE_HEIGHT, fontWeight: '600' },
+  quizCharacterWrapper: { position: 'absolute', right: '4%', top: '-15%', width: '46%', aspectRatio: 1, zIndex: 3, elevation: 3 },
+  quizCharacterImage: { width: '100%', height: '100%' },
+  adderEffectParticle: { position: 'absolute', zIndex: 4, elevation: 4 },
+  quizDialogueBox: { width: '45%', height: QUIZ_DIALOGUE_BOX_HEIGHT, justifyContent: 'center', padding: 12, backgroundColor: 'transparent', zIndex: 2 },
+  quizDialogueText: { color: '#fff', fontSize: 18, lineHeight: DIALOGUE_LINE_HEIGHT, fontWeight: '700', textShadowColor: '#000', textShadowOffset: { width: 1, height: 1 }, textShadowRadius: 3 },
   timerDisplayLow: { color: '#ef4444' },
-  timerDisplay: { alignSelf: 'stretch', paddingHorizontal: 20, fontSize: 18, fontWeight: '900', color: '#facc15', textAlign: 'left', marginVertical: 4, textShadowColor: 'rgba(0,0,0,0.8)', textShadowOffset: { width: 1, height: 1 }, textShadowRadius: 2 },
+  timerDisplay: { alignSelf: 'stretch', paddingHorizontal: 20, fontSize: 30, lineHeight: 36, fontWeight: '900', color: '#facc15', textAlign: 'left', marginVertical: 4, textShadowColor: 'rgba(0,0,0,0.8)', textShadowOffset: { width: 1, height: 1 }, textShadowRadius: 2 },
   quizCard: { zIndex: 5, position: 'relative', overflow: 'visible' },
   quizQuestionScroll: { position: 'absolute', top: 0, right: 0, bottom: 106, left: 0 },
   quizQuestionContent: { paddingHorizontal: 84, paddingTop: 80, paddingBottom: 12 },
-  quizHeader: { fontSize: 20, fontWeight: 'bold', color: '#fff', textAlign: 'center', marginBottom: 4 },
-  quizSubheader: { fontSize: 13, color: '#cbd5e1', textAlign: 'center', marginBottom: 14 },
+  quizSubheader: { fontSize: 16, color: '#fff', textAlign: 'center', fontWeight: '700', marginBottom: 10, textShadowColor: '#000', textShadowOffset: { width: 1, height: 1 }, textShadowRadius: 2 },
   quizPrompt: { fontSize: 15, color: '#f8fafc', textAlign: 'center', marginBottom: 16, fontWeight: '600' },
   hintBanner: { backgroundColor: '#334155', borderWidth: 1.5, borderColor: '#facc15', borderRadius: 10, padding: 10, marginBottom: 14 },
   hintBannerText: { color: '#fef08a', fontSize: 13, fontWeight: '700', textAlign: 'center' },
