@@ -864,6 +864,8 @@ export default function GameScreen() {
     extrapolate: 'clamp',
   });
   const diceSize = Math.min(84, boardSize * 0.37);
+  const quizPopupWidth = Math.min(screenWidth * 0.94, 480);
+  const quizFrameHeight = quizPopupWidth * 4 / 3 * 1.1;
 
   return (
     <BookcaseBackground level={params.level}>
@@ -1225,7 +1227,7 @@ export default function GameScreen() {
               contentContainerStyle={styles.quizPopupScrollContent}
               showsVerticalScrollIndicator={false}
             >
-              <View style={styles.quizPopupGroup}>
+              <View style={[styles.quizPopupGroup, { width: quizPopupWidth }]}>
                 <View style={styles.quizSceneStage}>
                   <ImageBackground
                     source={getBookcaseSource(params.level)}
@@ -1257,7 +1259,17 @@ export default function GameScreen() {
                   </Text>
                 )}
 
-                <View style={styles.quizCard}>
+                <ImageBackground
+                  source={getWoodframeSource(params.level, '3to4')}
+                  resizeMode="stretch"
+                  style={[styles.quizCard, { width: quizPopupWidth, height: quizFrameHeight }]}
+                >
+                  <ScrollView
+                    style={styles.quizQuestionScroll}
+                    contentContainerStyle={styles.quizQuestionContent}
+                    showsVerticalScrollIndicator={false}
+                    nestedScrollEnabled
+                  >
                   <Text style={styles.quizHeader}>
                     {pendingEvent?.type === 'ladder' ? '🪜 Ladder Challenge!' : '🐍 Snake Challenge!'}
                   </Text>
@@ -1329,7 +1341,7 @@ export default function GameScreen() {
                       </Text>
                     </TouchableOpacity>
                   </View>
-                </View>
+                  </ScrollView>
 
                 <View style={styles.powerUpsBar}>
                   {availablePowerUps.map((pType) => {
@@ -1350,6 +1362,7 @@ export default function GameScreen() {
                     );
                   })}
                 </View>
+                </ImageBackground>
 
               </View>
             </ScrollView>
@@ -1436,7 +1449,7 @@ const styles = StyleSheet.create({
   tapToContinueText: { color: '#facc15', fontWeight: 'bold', fontSize: 14, textShadowColor: 'rgba(0,0,0,0.75)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 },
   quizPopupScrollView: { flex: 1, width: '100%' },
   quizPopupScrollContent: { flexGrow: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 20 },
-  quizPopupGroup: { width: '88%', maxWidth: 420, alignItems: 'center', gap: 10 },
+  quizPopupGroup: { width: '94%', maxWidth: 480, alignItems: 'center', gap: 10 },
   quizSceneStage: { position: 'relative', width: '100%', height: QUIZ_SCENE_HEIGHT, zIndex: 2, elevation: 2 },
   quizSceneCard: { width: '100%', height: QUIZ_SCENE_HEIGHT, borderRadius: 16, borderWidth: 2, borderColor: '#475569', overflow: 'hidden', zIndex: 0 },
   quizSceneBackgroundImage: { borderRadius: 16 },
@@ -1447,14 +1460,16 @@ const styles = StyleSheet.create({
   quizDialogueText: { color: '#fff', fontSize: 14, lineHeight: DIALOGUE_LINE_HEIGHT, fontWeight: '600' },
   timerDisplayLow: { color: '#ef4444' },
   timerDisplay: { alignSelf: 'stretch', paddingHorizontal: 20, fontSize: 18, fontWeight: '900', color: '#facc15', textAlign: 'left', marginVertical: 4, textShadowColor: 'rgba(0,0,0,0.8)', textShadowOffset: { width: 1, height: 1 }, textShadowRadius: 2 },
-  quizCard: { width: '100%', backgroundColor: '#1e293b', borderRadius: 16, padding: 20, borderWidth: 2, borderColor: '#475569', shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.4, shadowRadius: 10, elevation: 10, zIndex: 5, position: 'relative' },
+  quizCard: { zIndex: 5, position: 'relative', overflow: 'visible' },
+  quizQuestionScroll: { position: 'absolute', top: 0, right: 0, bottom: 106, left: 0 },
+  quizQuestionContent: { paddingHorizontal: 84, paddingTop: 80, paddingBottom: 12 },
   quizHeader: { fontSize: 20, fontWeight: 'bold', color: '#fff', textAlign: 'center', marginBottom: 4 },
   quizSubheader: { fontSize: 13, color: '#cbd5e1', textAlign: 'center', marginBottom: 14 },
   quizPrompt: { fontSize: 15, color: '#f8fafc', textAlign: 'center', marginBottom: 16, fontWeight: '600' },
   hintBanner: { backgroundColor: '#334155', borderWidth: 1.5, borderColor: '#facc15', borderRadius: 10, padding: 10, marginBottom: 14 },
   hintBannerText: { color: '#fef08a', fontSize: 13, fontWeight: '700', textAlign: 'center' },
-  optionsGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 10 },
-  optionButton: { width: '48%', backgroundColor: '#334155', paddingVertical: 14, paddingHorizontal: 8, borderRadius: 10, alignItems: 'center', borderWidth: 2, borderColor: 'transparent' },
+  optionsGrid: { flexDirection: 'column', rowGap: 10 },
+  optionButton: { width: '100%', backgroundColor: '#334155', paddingVertical: 14, paddingHorizontal: 8, borderRadius: 10, alignItems: 'center', borderWidth: 2, borderColor: 'transparent' },
   optionCorrect: { backgroundColor: '#166534', borderColor: '#22c55e' },
   optionSelected: { backgroundColor: '#475569', borderColor: '#facc15' },
   optionWrong: { backgroundColor: '#7f1d1d', borderColor: '#ef4444' },
@@ -1466,8 +1481,8 @@ const styles = StyleSheet.create({
   answerIncorrectButton: { backgroundColor: '#dc2626' },
   continueButtonText: { color: '#1e293b', fontWeight: 'bold', fontSize: 14 },
   answerResultButtonText: { color: '#fff' },
-  powerUpsBar: { flexDirection: 'row', justifyContent: 'space-between', width: '100%', marginTop: 10, gap: 8 },
-  powerUpButton: { flex: 1, backgroundColor: '#c2410c', borderRadius: 12, paddingVertical: 10, alignItems: 'center', borderWidth: 2, borderColor: '#ea580c' },
+  powerUpsBar: { position: 'absolute', flexDirection: 'row', justifyContent: 'space-between', left: 64, right: 64, bottom: 70, gap: 8 },
+  powerUpButton: { flex: 1, backgroundColor: 'transparent', paddingVertical: 10, alignItems: 'center', justifyContent: 'center' },
   powerUpDisabled: { opacity: 0.4 },
   powerUpIcon: { width: 28, height: 28, marginBottom: 4 },
   powerUpCountText: { color: '#fff', fontSize: 12, fontWeight: '900' },

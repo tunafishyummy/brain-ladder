@@ -1,4 +1,5 @@
 const GENERIC_WOODFRAMES = {
+  '3to4': require('../../assets/images/Languagewoodframe3to4.png'),
   '4to3': require('../../assets/images/Languagewoodframe4to3.png'),
   '4to1': require('../../assets/images/Languagewoodframe4to1.png'),
   '6to1': require('../../assets/images/Languagewoodframe6to1.png'),
@@ -6,16 +7,19 @@ const GENERIC_WOODFRAMES = {
 
 const LEVEL_WOODFRAMES: Record<string, Partial<typeof GENERIC_WOODFRAMES>> = {
   reading: {
+    '3to4': require('../../assets/images/Languagewoodframe3to4.png'),
     '4to3': require('../../assets/images/Languagewoodframe4to3.png'),
     '4to1': require('../../assets/images/Languagewoodframe4to1.png'),
     '6to1': require('../../assets/images/Languagewoodframe6to1.png'),
   },
   research: {
+    '3to4': require('../../assets/images/Sciencewoodframe3to4.png'),
     '4to3': require('../../assets/images/Sciencewoodframe4to3.png'),
     '4to1': require('../../assets/images/Sciencewoodframe4to1.png'),
     '6to1': require('../../assets/images/Sciencewoodframe6to1.png'),
   },
   collections: {
+    '3to4': require('../../assets/images/Historywoodframe3to4.png'),
     '4to3': require('../../assets/images/Historywoodframe4to3.png'),
     '4to1': require('../../assets/images/Historywoodframe4to1.png'),
     '6to1': require('../../assets/images/Historywoodframe6to1.png'),
