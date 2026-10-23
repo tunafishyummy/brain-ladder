@@ -29,6 +29,7 @@ const VICTORY_SOUND = require('../../assets/audio/victory-trumpet.mp3');
 const CORRECT_SOUND = require('../../assets/audio/xylophone-correct.mp3');
 const WRONG_SOUND = require('../../assets/audio/book-drop-wrong.mp3');
 const TICKING_SOUND = require('../../assets/audio/clock-ticking.mp3');
+const BOX_SHAKE_SOUND = require('../../assets/audio/box-shake.mp3');
 const POWER_UP_IMG = require('../../assets/images/power-up.png');
 const HINT_IMG = require('../../assets/images/hint.png');
 const SKIP_IMG = require('../../assets/images/skip.png');
@@ -265,6 +266,7 @@ export default function GameScreen() {
   const correctSoundPlayer = useAudioPlayer(CORRECT_SOUND);
   const wrongSoundPlayer = useAudioPlayer(WRONG_SOUND);
   const tickingSoundPlayer = useAudioPlayer(TICKING_SOUND);
+  const boxShakeSoundPlayer = useAudioPlayer(BOX_SHAKE_SOUND);
 
   const frameWidth = screenWidth - BOARD_FRAME_SIDE_INSET * 2;
   const turnBannerWidth = frameWidth - 58;
@@ -414,13 +416,15 @@ export default function GameScreen() {
     correctSoundPlayer.volume = sfxVolume;
     wrongSoundPlayer.volume = sfxVolume;
     tickingSoundPlayer.volume = sfxVolume;
+    boxShakeSoundPlayer.volume = sfxVolume;
+    boxShakeSoundPlayer.loop = false;
     tickingSoundPlayer.loop = false;
     correctSoundPlayer.loop = false;
     wrongSoundPlayer.loop = false;
     rollSoundPlayer.loop = false;
     resultSoundPlayer.loop = false;
     victorySoundPlayer.loop = false;
-  }, [masterVol, masterMute, sfxVol, sfxMute, rollSoundPlayer, resultSoundPlayer, victorySoundPlayer, correctSoundPlayer, wrongSoundPlayer, tickingSoundPlayer]);
+  }, [masterVol, masterMute, sfxVol, sfxMute, rollSoundPlayer, resultSoundPlayer, victorySoundPlayer, correctSoundPlayer, wrongSoundPlayer, tickingSoundPlayer, boxShakeSoundPlayer]);
 
   const isTimerLow = !isInfiniteTimer && challengeSeconds <= 5 && isAnswerCorrect !== true;
   const shouldTick = isTimerLow && isChallengeActive && challengeSeconds > 0;
@@ -669,6 +673,9 @@ export default function GameScreen() {
   const triggerPowerUpRoulette = (mover: Player, newPos: number, moverIndex: number) => {
     setPowerUpTiles((prev) => prev.filter((t) => t !== newPos));
     setRouletteModalVisible(true);
+    void boxShakeSoundPlayer.seekTo(0).then(() => boxShakeSoundPlayer.play()).catch((error: unknown) => {
+      console.warn('Unable to play box shake sound', error);
+    });
 
     let counter = 0;
     const maxTicks = 12;
