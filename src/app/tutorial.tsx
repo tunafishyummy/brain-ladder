@@ -13,29 +13,19 @@ import {
     View,
     useWindowDimensions,
 } from 'react-native';
-import Text from '../components/AdaptiveText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useWoodKnock } from '../audio/useWoodKnock';
+import Text from '../components/AdaptiveText';
 import BookcaseBackground from '../components/BookcaseBackground';
 import Dice3D, { type Dice3DHandle } from '../components/Dice3D';
 import { getWoodframeSource } from '../components/woodframes';
 
-// pointerEvents is not part of the Image/ImageBackground prop types, so it is passed as a spread
 const NO_POINTER_EVENTS = { pointerEvents: 'none' } as any;
-
-/* -------------------------------------------------------------------------- */
-/*  HOW THIS WORKS                                                            */
-/*  The tutorial is a plain slideshow. Nothing here touches the real game:    */
-/*  every page is a "mock" of a real screen, the player's taps only change    */
-/*  cosmetic state, and the NEXT button is never blocked. What is on screen   */
-/*  is always derived from the current slide, so there is nothing to desync.  */
-/* -------------------------------------------------------------------------- */
 
 const SEEN_KEY = '@has_seen_game_tutorial';
 const TYPE_MS = 18;
 const PADDING = 16;
 const CARD_RADIUS = 16;
-
 const LAD_IMG = require('../../assets/images/LadDialogue.png');
 const SNAKE_IMG = require('../../assets/images/AdderDialogue.png');
 const BACK_IMG = require('../../assets/images/Backbutton.png');
@@ -45,21 +35,17 @@ const HINT_IMG = require('../../assets/images/hint.png');
 const SKIP_IMG = require('../../assets/images/skip.png');
 const ADD_TIME_IMG = require('../../assets/images/add-time.png');
 const REFRESH_IMG = require('../../assets/images/refresh.png');
-
 const LEVELS = ['reading', 'research', 'collections'] as const;
-
 const SELECTED_LEVEL_FRAMES: Record<string, number> = {
   reading: require('../../assets/images/Languagewoodframe4to1selected.png'),
   research: require('../../assets/images/Sciencewoodframe4to1selected.png'),
   collections: require('../../assets/images/Historywoodframe4to1selected.png'),
 };
-
 const BOARD_BACKGROUNDS: Record<string, number> = {
   reading: require('../../assets/images/LanguageBoardBG.png'),
   research: require('../../assets/images/ScienceBoardBG.png'),
   collections: require('../../assets/images/HistoryBoardBG.png'),
 };
-
 const DIFFICULTIES = ['Easy', 'Normal', 'Hard'];
 const TIMERS = [
   { label: 'Off', value: 0 },
@@ -67,13 +53,11 @@ const TIMERS = [
   { label: '15s', value: 15 },
   { label: '20s', value: 20 },
 ];
-
 const PLAYER_OPTIONS = [
   { count: 1, label: '1 Player', subtitle: 'Solo Mode' },
   { count: 2, label: '2 Players', subtitle: 'Head to Head' },
   { count: 3, label: '3 Players', subtitle: 'Triple Threat' },
 ];
-
 const COLOR_OPTIONS = [
   { id: 'blue', hex: '#4b7bec' },
   { id: 'red', hex: '#ff5252' },
@@ -81,7 +65,6 @@ const COLOR_OPTIONS = [
   { id: 'yellow', hex: '#fed330' },
 ];
 const DEFAULT_COLORS = ['#16a34a', '#dc2626', '#2563eb'];
-
 const DEFAULT_PLAYER_IMG = require('../../assets/images/Playergrey.png');
 const PLAYER_IMG_BY_COLOR: Record<string, number> = {
   '#4b7bec': require('../../assets/images/Playerblue.png'),
@@ -89,7 +72,7 @@ const PLAYER_IMG_BY_COLOR: Record<string, number> = {
   '#26de81': require('../../assets/images/Playergreen.png'),
   '#fed330': require('../../assets/images/Playeryellow.png'),
 };
-// Same colour -> character mapping the real game uses for its board tokens.
+
 const getTokenImage = (color: string): number => {
   switch (color) {
     case '#dc2626':
@@ -104,18 +87,12 @@ const getTokenImage = (color: string): number => {
       return require('../../assets/images/Playerblue.png');
   }
 };
-
 const POWER_UPS = [
   { id: 'hint', label: 'Hint', img: HINT_IMG },
   { id: 'skip', label: 'Skip', img: SKIP_IMG },
   { id: 'add-time', label: 'Add Time', img: ADD_TIME_IMG },
   { id: 'refresh', label: 'Refresh', img: REFRESH_IMG },
 ];
-
-/* -------------------------------------------------------------------------- */
-/*  SCRIPT                                                                    */
-/* -------------------------------------------------------------------------- */
-
 type Speaker = 'LAD' | 'SNAKE';
 type SlideKind =
   | 'intro'
@@ -128,7 +105,6 @@ type SlideKind =
   | 'quiz'
   | 'powerups'
   | 'outro';
-
 interface QuizSpec {
   type: 'ladder' | 'snake';
   subheader: string;
@@ -136,39 +112,26 @@ interface QuizSpec {
   options: string[];
   correctIndex: number;
 }
-
 interface BoardSpec {
-  /** Tile the active player stands on when the slide opens. */
   from: number;
-  /** Tile after the move. */
   to?: number;
-  /** Tile after the move when the (cosmetic) quiz answer on the snake slide was right. */
   toAlt?: number;
-  /** Shows a tappable die that "rolls" this number, then moves the token. */
   dice?: number;
-  /** Moves the token by itself shortly after the slide opens. */
   auto?: boolean;
 }
-
 interface Slide {
   id: string;
-  /** Text shown in the wooden banner at the top (mirrors the real screens' titles). */
   title: string;
   kind: SlideKind;
   speaker: Speaker;
   text: string;
-  /** Small caption under the mock screen, nudging the player to tap something. */
   prompt?: string;
-  /** Dialogue shown after the player does the thing on this slide (quiz: right answer). */
   afterText?: string;
-  /** Quiz slides: dialogue after a wrong answer. */
   afterWrong?: string;
-  /** snake-result slide: dialogue when the snake quiz was answered correctly. */
   altText?: string;
   board?: BoardSpec;
   quiz?: QuizSpec;
 }
-
 const LADDER_QUIZ: QuizSpec = {
   type: 'ladder',
   subheader: 'Answer right to climb from 2 to 23.',
@@ -176,7 +139,6 @@ const LADDER_QUIZ: QuizSpec = {
   options: ['Britannic', 'Titanic', 'Olympic', 'Lusitania'],
   correctIndex: 1,
 };
-
 const SNAKE_QUIZ: QuizSpec = {
   type: 'snake',
   subheader: 'Answer right to stay safe from the snake at 29.',
@@ -184,17 +146,14 @@ const SNAKE_QUIZ: QuizSpec = {
   options: ['Mercury', 'Venus', 'Jupiter', 'Mars'],
   correctIndex: 3,
 };
-
 const SLIDES: Slide[] = [
-  /* --------------------------------- INTRO --------------------------------- */
   { id: 'lad-hello', title: 'WELCOME', kind: 'intro', speaker: 'LAD', text: "Yo, I'm Lad! Anybody home?" },
   { id: 'snake-library', title: 'WELCOME', kind: 'intro', speaker: 'SNAKE', text: "What are ya'll doing in my library?!~" },
   { id: 'lad-knowledge', title: 'WELCOME', kind: 'intro', speaker: 'LAD', text: "We're here looking for knowledge!" },
   { id: 'lad-teach', title: 'WELCOME', kind: 'intro', speaker: 'LAD', text: 'Will you teach us Mr. Snake?' },
   { id: 'snake-well', title: 'WELCOME', kind: 'intro', speaker: 'SNAKE', text: "Very well. You've come to the right place." },
   { id: 'snake-ready', title: 'WELCOME', kind: 'intro', speaker: 'SNAKE', text: 'GET READY FOR BRAIN LADDER!' },
-
-  /* ------------------------------ SETUP SCREENS ----------------------------- */
+  
   {
     id: 'map', title: 'SELECT LEVEL', kind: 'map', speaker: 'SNAKE',
     text: 'First off, choose the map you want to learn. Be warned, each map has different topics you must face!',
@@ -221,8 +180,7 @@ const SLIDES: Slide[] = [
     afterText: "Looking sharp! Choose the colors ya'll want, then let's get started!",
     prompt: 'Tap a color for each player',
   },
-
-  /* ---------------------------------- GAME --------------------------------- */
+  
   { id: 'board-welcome', title: 'THE BOARD', kind: 'board', speaker: 'SNAKE', text: 'Welcome to Brain Ladder!', board: { from: 1 } },
   { id: 'board-twist', title: 'THE BOARD', kind: 'board', speaker: 'SNAKE', text: 'A game of snakes and ladders but with a twist!', board: { from: 1 } },
   {
@@ -290,8 +248,6 @@ const SLIDES: Slide[] = [
   },
 ];
 
-/* Dialogue reactions for the "illusion of choice": whatever is picked, the slide
-   answers it and the player can always press NEXT. */
 const MAP_REACT: Record<string, string> = {
   reading: 'Language! Words are weapons, kid. Press next whenever you are ready.',
   research: 'Science! Time to get those brain cells fizzing. Press next whenever you are ready.',
@@ -319,7 +275,6 @@ const POWER_REACT: Record<string, string> = {
   'add-time': 'Add Time: gives you 20 extra seconds on the clock.',
   refresh: 'Refresh: swaps your question for a brand new one.',
 };
-
 const getSlideText = (slide: Slide, key: string | undefined, snakeCorrect: boolean): string => {
   if (slide.id === 'snake-result') return snakeCorrect ? slide.altText ?? slide.text : slide.text;
   if (key === undefined) return slide.text;
@@ -342,11 +297,6 @@ const getSlideText = (slide: Slide, key: string | undefined, snakeCorrect: boole
       return slide.afterText ?? slide.text;
   }
 };
-
-/* -------------------------------------------------------------------------- */
-/*  SMALL PIECES                                                              */
-/* -------------------------------------------------------------------------- */
-
 const tileXY = (pos: number, cell: number) => {
   const zeroBased = pos - 1;
   const row = Math.floor(zeroBased / 10);
@@ -354,7 +304,6 @@ const tileXY = (pos: number, cell: number) => {
   if (row % 2 === 1) col = 9 - col;
   return { x: col * cell, y: (9 - row) * cell };
 };
-
 const Token: React.FC<{
   tile: number;
   cell: number;
@@ -364,7 +313,6 @@ const Token: React.FC<{
 }> = ({ tile, cell, color, index, total }) => {
   const marker = cell * 0.9;
   const xy = useRef(new Animated.ValueXY(tileXY(tile, cell))).current;
-
   useEffect(() => {
     const move = Animated.timing(xy, {
       toValue: tileXY(tile, cell),
@@ -375,9 +323,7 @@ const Token: React.FC<{
     move.start();
     return () => move.stop();
   }, [tile, cell, xy]);
-
   const spread = (index - (total - 1) / 2) * marker * 0.35;
-
   return (
     <Animated.View
       style={[
@@ -399,7 +345,6 @@ const Token: React.FC<{
     </Animated.View>
   );
 };
-
 const MockBoard: React.FC<{
   pos: number;
   level: string | null;
@@ -412,7 +357,6 @@ const MockBoard: React.FC<{
   const inset = (frame - size) / 2;
   const background = BOARD_BACKGROUNDS[level ?? 'collections'] ?? BOARD_BACKGROUNDS.collections;
   const active = colors.slice(0, count);
-
   return (
     <View style={[styles.boardFrame, { width: frame, height: frame }]}>
       <Image
@@ -445,7 +389,6 @@ const MockBoard: React.FC<{
     </View>
   );
 };
-
 const PIPS: Record<number, number[]> = {
   1: [4],
   2: [0, 8],
@@ -454,7 +397,6 @@ const PIPS: Record<number, number[]> = {
   5: [0, 2, 4, 6, 8],
   6: [0, 2, 3, 5, 6, 8],
 };
-
 const Die: React.FC<{
   value: number | null;
   size: number;
@@ -465,11 +407,9 @@ const Die: React.FC<{
   const glow = useRef(new Animated.Value(0)).current;
   const rolling = useRef(false);
   const alive = useRef(true);
-
   useEffect(() => () => {
     alive.current = false;
   }, []);
-
   useEffect(() => {
     if (disabled) return undefined;
     const loop = Animated.loop(
@@ -481,7 +421,6 @@ const Die: React.FC<{
     loop.start();
     return () => loop.stop();
   }, [disabled, glow]);
-
   const press = () => {
     if (disabled || rolling.current) return;
     rolling.current = true;
@@ -496,10 +435,8 @@ const Die: React.FC<{
       if (alive.current) onRoll();
     });
   };
-
   const pips = value !== null ? PIPS[value] ?? [] : [];
   const pipSize = size * 0.17;
-
   return (
     <Pressable onPress={press} disabled={disabled} hitSlop={12}>
       <Animated.View
@@ -533,7 +470,6 @@ const Die: React.FC<{
     </Pressable>
   );
 };
-
 const QuizCard: React.FC<{
   quiz: QuizSpec;
   pick: number | undefined;
@@ -570,17 +506,14 @@ const QuizCard: React.FC<{
     </View>
   );
 };
-
 const DialogueBox: React.FC<{ speaker: Speaker; text: string }> = ({ speaker, text }) => {
   const pop = useRef(new Animated.Value(0.4)).current;
   const [typed, setTyped] = useState({ text: '', count: 0 });
   const count = typed.text === text ? typed.count : 0;
   const isLad = speaker === 'LAD';
-
   useEffect(() => {
     Animated.spring(pop, { toValue: 1, friction: 4, tension: 150, useNativeDriver: true }).start();
   }, [pop]);
-
   useEffect(() => {
     if (!text) return undefined;
     let n = 0;
@@ -591,13 +524,12 @@ const DialogueBox: React.FC<{ speaker: Speaker; text: string }> = ({ speaker, te
     }, TYPE_MS);
     return () => clearInterval(timer);
   }, [text]);
-
   return (
     <View style={styles.dialogueWrap}>
       <View style={styles.badge}>
         <Text style={styles.badgeText}>{isLad ? 'LAD' : 'SNAKE'}</Text>
       </View>
-      {/* Tap the box to finish the typing instantly. */}
+      {}
       <Pressable style={styles.card} onPress={() => setTyped({ text, count: text.length })}>
         <Text style={styles.cardText}>
           {text.slice(0, count)}
@@ -614,34 +546,24 @@ const DialogueBox: React.FC<{ speaker: Speaker; text: string }> = ({ speaker, te
     </View>
   );
 };
-
-/* -------------------------------------------------------------------------- */
-/*  SCREEN                                                                    */
-/* -------------------------------------------------------------------------- */
-
 export default function TutorialScreen() {
   const router = useRouter();
   const playKnock = useWoodKnock();
   const { width, height } = useWindowDimensions();
-
   const [index, setIndex] = useState(0);
-  // Everything the player "chooses" is cosmetic: it only changes what the next slides look like.
   const [level, setLevel] = useState<string | null>(null);
   const [difficultyIndex, setDifficultyIndex] = useState(1);
   const [timer, setTimer] = useState(15);
   const [playerCount, setPlayerCount] = useState(2);
   const [colors, setColors] = useState<string[]>(DEFAULT_COLORS);
-  // One entry per slide: the last thing the player did on it (a map id, a tapped answer, 'rolled', ...).
   const [choice, setChoice] = useState<Record<string, string>>({});
   const [autoDone, setAutoDone] = useState<string | null>(null);
   const finishing = useRef(false);
-
-  // the same 3D die the real game uses
+  
   const diceRef = useRef<Dice3DHandle>(null);
   const [diceReady, setDiceReady] = useState(false);
   const [diceRolling, setDiceRolling] = useState(false);
-  const [diceFailed, setDiceFailed] = useState(false); // falls back to the flat die if WebGL is unavailable
-
+  const [diceFailed, setDiceFailed] = useState(false); 
   const slide = SLIDES[index];
   const isLast = index === SLIDES.length - 1;
   const key = choice[slide.id];
@@ -650,48 +572,38 @@ export default function TutorialScreen() {
   const levelArg = level ?? undefined;
   const frame4 = getWoodframeSource(levelArg, '4to1');
   const frame6 = getWoodframeSource(levelArg, '6to1');
-
   const remember = (value: string) => setChoice((prev) => ({ ...prev, [slide.id]: value }));
-
   useEffect(() => {
     setDiceReady(false);
     setDiceRolling(false);
   }, [slide.id]);
-
-  // Slides flagged `auto` move the token on their own a moment after opening.
+  
   useEffect(() => {
     if (slide.kind !== 'board' || !slide.board?.auto) return undefined;
     const timeout = setTimeout(() => setAutoDone(slide.id), 500);
     return () => clearTimeout(timeout);
   }, [slide]);
-
   const finish = async () => {
     if (finishing.current) return;
     finishing.current = true;
     try {
       await AsyncStorage.setItem(SEEN_KEY, 'true');
     } catch (e) {
-      // Not being able to save the flag must never trap the player in the tutorial.
     }
     router.replace('/level-select');
   };
-
   const goNext = () => {
     if (isLast) void finish();
     else setIndex((i) => Math.min(i + 1, SLIDES.length - 1));
   };
-
   const goBack = () => {
     if (index === 0) router.back();
     else setIndex((i) => Math.max(i - 1, 0));
   };
-
-  /* ------------------------------ stage (mock UI) ----------------------------- */
-
+  
   const stageWidth = Math.min(width, 420) - PADDING * 2;
   const boardSize = Math.min(stageWidth * 0.82, Math.max(200, height * 0.3), 320);
   const diceSize = Math.min(84, boardSize * 0.37);
-
   const renderStage = () => {
     switch (slide.kind) {
       case 'intro':
@@ -709,7 +621,6 @@ export default function TutorialScreen() {
             />
           </View>
         );
-
       case 'map':
         return (
           <View style={styles.stack}>
@@ -729,7 +640,6 @@ export default function TutorialScreen() {
             ))}
           </View>
         );
-
       case 'difficulty':
         return (
           <ImageBackground source={frame4} resizeMode="stretch" style={styles.banner}>
@@ -759,7 +669,6 @@ export default function TutorialScreen() {
             </View>
           </ImageBackground>
         );
-
       case 'timer':
         return (
           <ImageBackground source={frame4} resizeMode="stretch" style={[styles.banner, { gap: 12 }]}>
@@ -784,7 +693,6 @@ export default function TutorialScreen() {
             </View>
           </ImageBackground>
         );
-
       case 'players':
         return (
           <View style={styles.stack}>
@@ -807,7 +715,6 @@ export default function TutorialScreen() {
             ))}
           </View>
         );
-
       case 'customize':
         return (
           <View style={styles.stack}>
@@ -847,7 +754,6 @@ export default function TutorialScreen() {
             ))}
           </View>
         );
-
       case 'board':
       case 'outro': {
         const spec = slide.board ?? { from: 1 };
@@ -881,7 +787,6 @@ export default function TutorialScreen() {
                     activeOpacity={0.7}
                     disabled={!diceReady || diceRolling || rolled}
                     onPress={() => {
-                      // the roll is scripted: the 3D die always lands on the value this slide needs
                       if (diceRef.current?.roll(spec.dice as number)) setDiceRolling(true);
                     }}
                   >
@@ -891,7 +796,6 @@ export default function TutorialScreen() {
                       size={diceSize}
                       onReady={() => {
                         setDiceReady(true);
-                        // coming back to a slide that was already rolled: show the die on its result again
                         if (rolled) diceRef.current?.roll(spec.dice as number);
                       }}
                       onRollComplete={() => {
@@ -910,7 +814,6 @@ export default function TutorialScreen() {
           </View>
         );
       }
-
       case 'quiz':
         return slide.quiz ? (
           <QuizCard
@@ -922,7 +825,6 @@ export default function TutorialScreen() {
             }}
           />
         ) : null;
-
       case 'powerups':
         return (
           <View style={styles.powerGrid}>
@@ -942,12 +844,10 @@ export default function TutorialScreen() {
             ))}
           </View>
         );
-
       default:
         return null;
     }
   };
-
   return (
     <BookcaseBackground level={levelArg}>
       <SafeAreaView edges={['top', 'bottom']} style={styles.container}>
@@ -960,7 +860,6 @@ export default function TutorialScreen() {
               <Text style={styles.headerTitle}>{slide.title}</Text>
             </ImageBackground>
           </View>
-
           <View style={styles.progressRow}>
             <Text style={styles.progressText}>
               {index + 1} / {SLIDES.length}
@@ -974,7 +873,6 @@ export default function TutorialScreen() {
               </TouchableOpacity>
             )}
           </View>
-
           <ScrollView
             style={styles.stageScroll}
             contentContainerStyle={styles.stageContent}
@@ -983,9 +881,7 @@ export default function TutorialScreen() {
             {renderStage()}
             {slide.prompt ? <Text style={styles.promptText}>{slide.prompt}</Text> : null}
           </ScrollView>
-
           <DialogueBox key={slide.id} speaker={slide.speaker} text={text} />
-
           <TouchableOpacity onPress={goNext} activeOpacity={0.9}>
             <ImageBackground source={frame6} resizeMode="stretch" style={styles.nextButton}>
               <Text style={styles.nextText}>{isLast ? "LET'S PLAY!" : 'NEXT'}</Text>
@@ -996,58 +892,44 @@ export default function TutorialScreen() {
     </BookcaseBackground>
   );
 }
-
-/* -------------------------------------------------------------------------- */
-/*  STYLES                                                                    */
-/* -------------------------------------------------------------------------- */
-
 const styles = StyleSheet.create({
   container: { flex: 1, width: '100%' },
   content: { flex: 1, width: '100%', maxWidth: 420, alignSelf: 'center', padding: PADDING, gap: 10 },
   fill: { flex: 1, width: '100%', height: '100%' },
-
   headerRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   backButton: { width: 48, height: 48, borderRadius: CARD_RADIUS, justifyContent: 'center', alignItems: 'center' },
   backArrowImage: { width: 44, height: 30, transform: [{ scale: 1.2 }] },
   headerBanner: { flex: 1, minHeight: 48, paddingVertical: 12, alignItems: 'center', justifyContent: 'center' },
   headerTitle: { color: '#ffffff', fontSize: 18, fontWeight: '800', letterSpacing: 1.5, textAlign: 'center' },
-
   progressRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 4 },
   progressText: { color: '#FBF7F5', fontSize: 12, fontWeight: '800', minWidth: 44 },
   progressTrack: { flex: 1, height: 6, borderRadius: 3, backgroundColor: 'rgba(0,0,0,0.45)', overflow: 'hidden' },
   progressFill: { height: '100%', backgroundColor: '#EAA842' },
   skipText: { color: '#FBF7F5', fontSize: 12, fontWeight: '800', letterSpacing: 1, textDecorationLine: 'underline' },
-
   stageScroll: { flex: 1 },
   stageContent: { flexGrow: 1, justifyContent: 'center', gap: 12, paddingVertical: 4 },
   stack: { gap: PADDING },
   promptText: { color: '#FBF7F5', fontSize: 13, fontWeight: '700', textAlign: 'center', letterSpacing: 0.5, textShadowColor: 'rgba(0,0,0,0.85)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 },
   unselected: { opacity: 0.55 },
-
   introRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'flex-end', gap: 8 },
   introChar: { width: '46%', aspectRatio: 0.9 },
   introCharDim: { opacity: 0.4, transform: [{ scale: 0.9 }] },
-
   levelCard: { height: 96 },
-
   banner: { padding: PADDING, gap: 8 },
   bannerLabel: { color: '#FBF7F5', fontSize: 12, fontWeight: '600', letterSpacing: 1.5, textAlign: 'center' },
   difficultyControls: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   arrowButton: { minWidth: 44, minHeight: 44, paddingHorizontal: 12, alignItems: 'center', justifyContent: 'center' },
   arrowText: { color: '#ffffff', fontSize: 22 },
   difficultyText: { color: '#ffffff', fontSize: 20, fontWeight: '700' },
-
   timerGrid: { flexDirection: 'row', justifyContent: 'space-around', gap: 8 },
   timerChip: { flex: 1, paddingVertical: 10, borderRadius: 10, backgroundColor: 'rgba(55, 58, 66, 0.92)', borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.12)', alignItems: 'center' },
   timerChipSelected: { backgroundColor: '#ffffff', borderColor: '#ffffff' },
   timerChipText: { color: '#FBF7F5', fontSize: 14, fontWeight: '700' },
   timerChipTextSelected: { color: '#0f121c' },
-
   playerOption: { minHeight: 96, paddingVertical: 6 },
   playerOptionBg: { flex: 1, minHeight: 84, paddingVertical: 8, justifyContent: 'center', alignItems: 'center', gap: 4 },
   playerOptionLabel: { color: '#ffffff', fontSize: 20, fontWeight: '800', letterSpacing: 1 },
   playerOptionSubtitle: { color: '#FBF7F5', fontSize: 13, fontWeight: '600' },
-
   customizeCard: { padding: PADDING, minHeight: 110, justifyContent: 'center' },
   customizeRow: { flexDirection: 'row', alignItems: 'center', gap: 16 },
   previewBox: { width: 64, height: 64, alignItems: 'center', justifyContent: 'center' },
@@ -1056,20 +938,17 @@ const styles = StyleSheet.create({
   swatchRow: { flexDirection: 'row', gap: 10 },
   swatch: { width: 32, height: 32, borderRadius: 16, borderWidth: 2, borderColor: 'transparent' },
   swatchSelected: { borderColor: '#ffffff', transform: [{ scale: 1.15 }] },
-
   boardStage: { alignItems: 'center', gap: 12 },
   boardFrame: { borderWidth: 2, borderRadius: 10, borderColor: '#0f0f0fb9', backgroundColor: 'rgba(38, 38, 38, 0.69)', overflow: 'hidden' },
   boardLayer: { position: 'absolute', left: 0, top: 0, width: '100%', height: '100%' },
   token: { position: 'absolute', borderWidth: 2, borderColor: '#0f172a', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.5, shadowRadius: 3, elevation: 5 },
   tokenImage: { width: '82%', height: '82%', resizeMode: 'contain' },
-
   diceDock: { width: 260, height: 84, alignItems: 'center', justifyContent: 'center' },
   diceWoodframe: { position: 'absolute', width: '100%', height: '100%' },
   die: { backgroundColor: '#ffffff', borderWidth: 3, borderColor: '#1f2937', alignItems: 'center', justifyContent: 'center', elevation: 4 },
   dieQuestion: { color: '#111827', fontWeight: '900' },
   pipGrid: { width: '78%', height: '78%', flexDirection: 'row', flexWrap: 'wrap' },
   pipCell: { width: '33.33%', height: '33.33%', alignItems: 'center', justifyContent: 'center' },
-
   quizCard: { width: '100%', backgroundColor: '#1e293b', borderRadius: 16, padding: 16, borderWidth: 2, borderColor: '#475569', elevation: 10 },
   quizHeader: { fontSize: 20, fontWeight: 'bold', color: '#fff', textAlign: 'center', marginBottom: 4 },
   quizSubheader: { fontSize: 13, color: '#cbd5e1', textAlign: 'center', marginBottom: 12 },
@@ -1079,13 +958,11 @@ const styles = StyleSheet.create({
   optionCorrect: { backgroundColor: '#166534', borderColor: '#22c55e' },
   optionWrong: { backgroundColor: '#7f1d1d', borderColor: '#ef4444' },
   optionText: { color: '#fff', fontSize: 14, fontWeight: '600', textAlign: 'center' },
-
   powerGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 12 },
   powerTile: { width: '48%', backgroundColor: '#c2410c', borderRadius: 12, paddingVertical: 14, alignItems: 'center', borderWidth: 2, borderColor: '#ea580c', gap: 6 },
   powerTileSelected: { borderColor: '#ffffff', backgroundColor: '#ea580c' },
   powerIcon: { width: 40, height: 40 },
   powerLabel: { color: '#fff', fontSize: 13, fontWeight: '900' },
-
   dialogueWrap: { position: 'relative', marginTop: 14 },
   badge: { position: 'absolute', top: -14, right: 18, zIndex: 5, backgroundColor: '#EAA842', borderColor: '#7a4b00', borderWidth: 2, paddingHorizontal: 16, paddingVertical: 2, borderRadius: 10 },
   badgeText: { color: '#3b2600', fontWeight: '900', fontSize: 13, letterSpacing: 1 },
@@ -1093,7 +970,6 @@ const styles = StyleSheet.create({
   cardText: { fontSize: 16, fontWeight: '800', color: '#111827', lineHeight: 22 },
   hiddenText: { opacity: 0 },
   avatar: { position: 'absolute', left: -8, bottom: -6, width: 108, height: 120, zIndex: 6 },
-
   nextButton: { paddingVertical: 16, alignItems: 'center' },
   nextText: { color: '#ffffff', fontSize: 18, fontWeight: '800', letterSpacing: 1 },
 });
