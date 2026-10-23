@@ -1,11 +1,22 @@
 {
   "Encounter": [
-    "Placeholder text for LadDialogueScience #1 for function Encounter"
+    "Science is curiosity with a lab coat!",
+    "This experiment is getting a reaction!",
+    "Let's discover what's going on.",
+    "Ready to explore this one?"
   ],
   "CorrectAnswer": [
-    "Placeholder text for LadDialogueScience #1 for function CorrectAnswer"
+    "You've got great chemistry with this question!",
+    "You really know your ions!",
+    "That answer was positively brilliant!",
+    "Exactly right!",
+    "Great discovery!"
   ],
   "IncorrectAnswer": [
-    "Placeholder text for LadDialogueScience #1 for function IncorrectAnswer"
+    "That theory needs a little more testing!",
+    "I think that answer needs more... research!",
+    "Looks like that guess didn't pass the lab test.",
+    "Not quite, but experiments are how we learn!",
+    "Keep thinking like a scientist!"
   ]
 }

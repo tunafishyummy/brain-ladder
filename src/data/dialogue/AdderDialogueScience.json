@@ -1,11 +1,23 @@
 {
   "Encounter": [
-    "Placeholder text for AdderDialogueScience #1 for function Encounter"
+    "I keep my favorite discoveries to myself.",
+    "This science fact is classified. By me.",
+    "Hands off my collection of elements!",
+    "Curiosity is fine. Sharing is optional.",
+    "Let's see what you know.",
+    "Be a good valence electron, leave!"
   ],
   "CorrectAnswer": [
-    "Placeholder text for AdderDialogueScience #1 for function CorrectAnswer"
+    "I suppose you can borrow it.",
+    "You've got good chemistry with facts.",
+    "No!",
+    "Keep it under your hat."
   ],
   "IncorrectAnswer": [
-    "Placeholder text for AdderDialogueScience #1 for function IncorrectAnswer"
+    "Not quite. Back into my lab notes!",
+    "That fact stays in my collection.",
+    "Almost! My experiment notes are secret.",
+    "A little more science, a little less guessing.",
+    "Tricky, no?"
   ]
 }

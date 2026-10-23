@@ -1,12 +1,21 @@
 {
   "Encounter": [
-    "Placeholder text for AdderDialogueLanguage #1 for function Encounter",
-    "a"
+    "I collect interesting words. They're mine!",
+    "This vocabulary stash is top secret.",
+    "I found these words before you did.",
+    "Knowledge is power. I keep both.",
+    "Let's see what words you know."
   ],
   "CorrectAnswer": [
-    "Placeholder text for AdderDialogueLanguage #1 for function CorrectAnswer"
+    "Well phrased, I don't like it!",
+    "Fine, your vocabulary is impressive.",
+    "Stop peeking at my thesaurus!"
   ],
   "IncorrectAnswer": [
-    "Placeholder text for AdderDialogueLanguage #1 for function IncorrectAnswer"
+    "Not quite. That word stays with me!",
+    "Almost! My dictionary is full of secrets.",
+    "A tricky word, even for me.",
+    "No worries. Words can be sneaky.",
+    "Keep guessing. I won't share hints!"
   ]
 }

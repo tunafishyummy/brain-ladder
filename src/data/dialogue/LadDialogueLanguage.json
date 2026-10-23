@@ -1,12 +1,23 @@
 {
   "Encounter": [
-    "Placeholder text for LadDialogueLanguage #1 for function Encounter",
-    "b"
+    "Words are like building blocks for ideas!",
+    "A... a grammar joke.",
+    "A thesaurus walked in. It was a wordy entrance!",
+    "Let's see what this question has to say.",
+    "Ready to find the right words?"
   ],
   "CorrectAnswer": [
-    "Placeholder text for LadDialogueLanguage #1 for function CorrectAnswer"
+    "You've got a way with words!",
+    "That answer was well-spoken!",
+    "You really know how to make a point!",
+    "Exactly right!",
+    "Nicely put!"
   ],
   "IncorrectAnswer": [
-    "rip"
+    "That answer missed the write mark!",
+    "I think that sentence needs a re-write!",
+    "No need to lose your words—we can try again!",
+    "Not quite, but keep reading closely.",
+    "Give it another thought!"
   ]
 }

@@ -1,11 +1,23 @@
 {
   "Encounter": [
-    "Placeholder text for LadDialogueHistory #1 for function Encounter"
+    "This is pretty interesting.",
+    "Guess you could say history is making a comeback!",
+    "These old stories are still in the present tense.",
+    "I tried to make a timeline joke, but it took too long.",
+    "Ready to see what happened next?"
   ],
   "CorrectAnswer": [
-    "Placeholder text for LadDialogueHistory #1 for function CorrectAnswer"
+    "That's one for the history books!",
+    "That answer belongs in the hall of fame!",
+    "You've got a good sense of the past.",
+    "Exactly right!",
+    "Well done, you remembered the details."
   ],
   "IncorrectAnswer": [
-    "Placeholder text for LadDialogueHistory #1 for function IncorrectAnswer"
+    "Oof! Let's keep going!",
+    "The past called, it wants that answer back!",
+    "That theory belongs in the history of bad guesses.",
+    "No need to rewrite historym we can try again!",
+    "Not quite, but keep going."
   ]
 }

@@ -1,11 +1,23 @@
 {
   "Encounter": [
-    "Placeholder text for AdderDialogueHistory #1 for function Encounter"
+    "Careful, I keep the best history facts.",
+    "Another curious mind? How inconvenient.",
+    "I found this old fact first!",
+    "Knowledge is treasure. This one's mine.",
+    "Let's see what you've uncovered."
   ],
   "CorrectAnswer": [
-    "Placeholder text for AdderDialogueHistory #1 for function CorrectAnswer"
+    "Fine, you may keep that fact.",
+    "Well remembered. I suppose.",
+    "You earned one secret, ONE!",
+    "Correct! Don't tell everyone.",
+    "I was saving that one."
   ],
   "IncorrectAnswer": [
-    "Placeholder text for AdderDialogueHistory #1 for function IncorrectAnswer"
+    "Not quite. I'll keep that fact!",
+    "That one's staying in my archive.",
+    "A tricky bit of history, huh?",
+    "Almost! My notes are very convincing.",
+    "No worries. History has many secrets."
   ]
 }
