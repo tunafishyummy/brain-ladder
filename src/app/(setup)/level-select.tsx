@@ -10,13 +10,12 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  type ViewStyle,
   View,
+  type ViewStyle,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useScreenTransition } from '../../TransitionContext';
 import { useWoodKnock } from '../../audio/useWoodKnock';
-import { TutorialTarget, useTutorial, useTutorialScene } from '../../components/TutorialOverlay';
 import { getWoodframeSource } from '../../components/woodframes';
 
 const PADDING = 16;
@@ -130,7 +129,7 @@ function CrossfadeFrame({
               resizeMode="stretch"
               fadeDuration={0}
               onLoad={() => startCrossfade(incomingSource)}
-              pointerEvents="none"
+              {...({ pointerEvents: 'none' } as any)}
               style={[imageFrameStyle, { opacity }]}
             />
           )}
@@ -143,8 +142,6 @@ function CrossfadeFrame({
 
 export default function LevelSelectScreen() {
   const router = useRouter();
-  const tutorial = useTutorial();
-  useTutorialScene('level-select');
   const { setBookcaseLevel } = useScreenTransition();
   const playKnock = useWoodKnock();
   const [selectedLevel, setSelectedLevel] = useState<string | null>(null);
@@ -167,21 +164,17 @@ export default function LevelSelectScreen() {
     playKnock();
     const next = difficultyIndex > 0 ? difficultyIndex - 1 : DIFFICULTIES.length - 1;
     setDifficultyIndex(next);
-    tutorial.notify('difficulty-changed', DIFFICULTIES[next]);
   };
 
   const handleNextDifficulty = () => {
     playKnock();
     const next = difficultyIndex < DIFFICULTIES.length - 1 ? difficultyIndex + 1 : 0;
     setDifficultyIndex(next);
-    tutorial.notify('difficulty-changed', DIFFICULTIES[next]);
   };
 
   const handleContinue = () => {
     if (!selectedLevel) return;
     playKnock();
-
-    tutorial.notify('screen-next');
 
     router.push({
       pathname: '/playerselection',
@@ -227,100 +220,90 @@ export default function LevelSelectScreen() {
               const frameSource = SELECTED_LEVEL_FRAMES[level.id];
 
               return (
-                <TutorialTarget key={level.id} id="map-card">
-                  <Animated.View style={{ opacity: cardOpacities[level.id] }}>
-                    <TouchableOpacity
-                      activeOpacity={0.85}
-                      onPress={() => {
-                        playKnock();
-                        setSelectedLevel(level.id);
-                        setBookcaseLevel(level.id);
-                        tutorial.notify('map-selected');
-                      }}
-                      style={styles.levelCardWrapper}
-                    >
-                    <ImageBackground
-                      source={frameSource}
-                      resizeMode="stretch"
-                      style={styles.background}
-                    />
-                    </TouchableOpacity>
-                  </Animated.View>
-                </TutorialTarget>
+                <Animated.View key={level.id} style={{ opacity: cardOpacities[level.id] }}>
+                  <TouchableOpacity
+                    activeOpacity={0.85}
+                    onPress={() => {
+                      playKnock();
+                      setSelectedLevel(level.id);
+                      setBookcaseLevel(level.id);
+                    }}
+                    style={styles.levelCardWrapper}
+                  >
+                  <ImageBackground
+                    source={frameSource}
+                    resizeMode="stretch"
+                    style={styles.background}
+                  />
+                  </TouchableOpacity>
+                </Animated.View>
               );
             })}
           </View>
 
           {/* Difficulty Controls */}
-          <TutorialTarget id="difficulty">
-            <CrossfadeFrame
-              source={getWoodframeSource(selectedLevel ?? undefined, '4to1')}
-              style={styles.difficultyBanner}
-            >
-              <Text style={styles.difficultyLabel}>DIFFICULTY</Text>
-              <View style={styles.difficultyControls}>
-                <TouchableOpacity onPress={handlePrevDifficulty} style={styles.arrowButton}>
-                  <Text style={styles.arrowText}>‹</Text>
-                </TouchableOpacity>
-                <Text style={styles.difficultyText}>{DIFFICULTIES[difficultyIndex]}</Text>
-                <TouchableOpacity onPress={handleNextDifficulty} style={styles.arrowButton}>
-                  <Text style={styles.arrowText}>›</Text>
-                </TouchableOpacity>
-              </View>
-            </CrossfadeFrame>
-          </TutorialTarget>
+          <CrossfadeFrame
+            source={getWoodframeSource(selectedLevel ?? undefined, '4to1')}
+            style={styles.difficultyBanner}
+          >
+            <Text style={styles.difficultyLabel}>DIFFICULTY</Text>
+            <View style={styles.difficultyControls}>
+              <TouchableOpacity onPress={handlePrevDifficulty} style={styles.arrowButton}>
+                <Text style={styles.arrowText}>‹</Text>
+              </TouchableOpacity>
+              <Text style={styles.difficultyText}>{DIFFICULTIES[difficultyIndex]}</Text>
+              <TouchableOpacity onPress={handleNextDifficulty} style={styles.arrowButton}>
+                <Text style={styles.arrowText}>›</Text>
+              </TouchableOpacity>
+            </View>
+          </CrossfadeFrame>
 
           {/* Question Timer Controls */}
-          <TutorialTarget id="timer">
-            <CrossfadeFrame
-              source={getWoodframeSource(selectedLevel ?? undefined, '4to1')}
-              style={styles.timerBanner}
-            >
-              <Text style={styles.timerLabel}>QUESTION TIMER</Text>
-              <View style={styles.timerGrid}>
-                {TIMERS.map((timer) => {
-                  const isSelected = questionTimer === timer.value;
-                  return (
-                    <TouchableOpacity
-                      key={timer.value}
-                      activeOpacity={0.8}
-                      onPress={() => {
-                        playKnock();
-                        setQuestionTimer(timer.value);
-                        tutorial.notify('timer-selected');
-                      }}
+          <CrossfadeFrame
+            source={getWoodframeSource(selectedLevel ?? undefined, '4to1')}
+            style={styles.timerBanner}
+          >
+            <Text style={styles.timerLabel}>QUESTION TIMER</Text>
+            <View style={styles.timerGrid}>
+              {TIMERS.map((timer) => {
+                const isSelected = questionTimer === timer.value;
+                return (
+                  <TouchableOpacity
+                    key={timer.value}
+                    activeOpacity={0.8}
+                    onPress={() => {
+                      playKnock();
+                      setQuestionTimer(timer.value);
+                    }}
+                    style={[
+                      styles.timerChip,
+                      isSelected && styles.selectedTimerChip,
+                    ]}
+                  >
+                    <Text
                       style={[
-                        styles.timerChip,
-                        isSelected && styles.selectedTimerChip,
+                        styles.timerChipText,
+                        isSelected && styles.selectedTimerText,
                       ]}
                     >
-                      <Text
-                        style={[
-                          styles.timerChipText,
-                          isSelected && styles.selectedTimerText,
-                        ]}
-                      >
-                        {timer.label}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-            </CrossfadeFrame>
-          </TutorialTarget>
+                      {timer.label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </CrossfadeFrame>
 
         </ScrollView>
 
-        <TutorialTarget id="screen-next">
-          <TouchableOpacity onPress={handleContinue} activeOpacity={0.9} disabled={!selectedLevel}>
-            <CrossfadeFrame
-              source={getWoodframeSource(selectedLevel ?? undefined, '6to1')}
-              style={styles.continueButton}
-            >
-              <Text style={styles.continueText}>NEXT</Text>
-            </CrossfadeFrame>
-          </TouchableOpacity>
-        </TutorialTarget>
+        <TouchableOpacity onPress={handleContinue} activeOpacity={0.9} disabled={!selectedLevel}>
+          <CrossfadeFrame
+            source={getWoodframeSource(selectedLevel ?? undefined, '6to1')}
+            style={styles.continueButton}
+          >
+            <Text style={styles.continueText}>NEXT</Text>
+          </CrossfadeFrame>
+        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );

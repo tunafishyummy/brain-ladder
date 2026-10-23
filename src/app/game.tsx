@@ -21,14 +21,6 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useAudio } from '../AudioContext';
 import BookcaseBackground, { getBookcaseSource } from '../components/BookcaseBackground';
 import Dice3D, { type Dice3DHandle } from '../components/Dice3D';
-import {
-  TUTORIAL_POWER_TILE,
-  TUTORIAL_QUESTION,
-  TUTORIAL_ROLLS,
-  TutorialOverlay,
-  TutorialTarget,
-  useTutorial,
-} from '../components/TutorialOverlay';
 import { getWoodframeSource } from '../components/woodframes';
 
 const DICE_ROLL_SOUND = require('../../assets/audio/dice-roll.mp3');
@@ -245,10 +237,6 @@ const getPlaceholderQuestion = (type: EventType): Question => {
 
 export default function GameScreen() {
   const router = useRouter();
-  const tutorial = useTutorial();
-  const tutorialRollIndex = useRef(0);
-  const tutorialQuizRef = useRef<PendingEvent | null>(null);
-  const tutorialPowerRef = useRef<{ mover: Player; newPos: number; moverIndex: number } | null>(null);
 
   const { masterVol, masterMute, sfxVol, sfxMute } = useAudio();
   const params = useLocalSearchParams<{
@@ -334,7 +322,6 @@ export default function GameScreen() {
         tiles.push(rand);
       }
     }
-    if (tutorial.isActive() && !tiles.includes(TUTORIAL_POWER_TILE)) tiles[0] = TUTORIAL_POWER_TILE;
     return tiles;
   });
 
@@ -468,7 +455,6 @@ export default function GameScreen() {
     : ADDER_DIALOGUE_IMG;
 
   const getNextQuestion = (eventType: EventType): Question => {
-    if (tutorial.isActive()) return { ...TUTORIAL_QUESTION };
     const rawQuestions = QUESTION_BANKS[dialogueSubject];
     if (!rawQuestions?.length) return getPlaceholderQuestion(eventType);
     if (questionDeck.current.length === 0) {
@@ -587,15 +573,13 @@ export default function GameScreen() {
 
   const rollDice = () => {
     if (!isDiceReady || isRolling || movementLocked.current || winner || isModalVisible || showExitModal || rouletteModalVisible) return;
-    tutorial.notify('dice-rolled');
     setIsRolling(true);
     totalRollsRef.current += 1;
     void rollSoundPlayer.seekTo(0).then(() => rollSoundPlayer.play()).catch((error: unknown) => {
       console.error('Failed to play the dice rolling sound.', error);
     });
 
-    const scriptedRoll = tutorial.isActive() ? TUTORIAL_ROLLS[tutorialRollIndex.current++] : undefined;
-    const finalRoll = scriptedRoll ?? Math.floor(Math.random() * 6) + 1;
+    const finalRoll = Math.floor(Math.random() * 6) + 1;
     if (!diceRef.current?.roll(finalRoll)) {
       setIsRolling(false);
       return;
@@ -603,7 +587,6 @@ export default function GameScreen() {
   };
 
   const passTurn = (fromIndex = turnIndex) => {
-    if (tutorial.isActive()) return;
     setTurnIndex((fromIndex + 1) % players.length);
   };
 
@@ -631,7 +614,6 @@ export default function GameScreen() {
           );
           if (newPos === 100) setWinner(mover);
           else passTurn(moverIndex);
-          tutorial.notify('roulette-done');
         }, 800);
       }
     }, 100);
@@ -707,7 +689,7 @@ export default function GameScreen() {
     setIsAnswerCorrect(null);
     setHintMessage(null);
     setChallengeSeconds(challengeTimeLimit);
-    setIsChallengeActive(!tutorial.isActive());
+    setIsChallengeActive(true);
   };
 
   const resolvePlayerLanding = (mover: Player, moverIndex: number, newPos: number) => {
@@ -715,24 +697,6 @@ export default function GameScreen() {
     setPlayers((currentPlayers) => currentPlayers.map((player) =>
       player.id === mover.id ? updatedPlayer : player,
     ));
-
-    if (tutorial.isActive() && newPos !== 100) {
-      if (powerUpTiles.includes(newPos)) {
-        tutorialPowerRef.current = { mover: updatedPlayer, newPos, moverIndex };
-        tutorial.notify('landed-power');
-        return;
-      }
-      if (LADDERS[newPos]) {
-        tutorialQuizRef.current = { type: 'ladder', landedPos: newPos, target: LADDERS[newPos] };
-        tutorial.notify('landed-ladder');
-        return;
-      }
-      if (SNAKES[newPos]) {
-        tutorialQuizRef.current = { type: 'snake', landedPos: newPos, target: SNAKES[newPos] };
-        tutorial.notify('landed-snake');
-        return;
-      }
-    }
 
     if (newPos === 100) {
       setWinner(updatedPlayer);
@@ -798,7 +762,6 @@ export default function GameScreen() {
 
   const resolveQuiz = () => {
     if (!pendingEvent || isAnswerCorrect === null) return;
-    tutorial.notify('quiz-resolved');
     const mover = players[turnIndex];
     const startPosition = pendingEvent.landedPos;
     const target = pendingEvent.type === 'ladder'
@@ -825,57 +788,10 @@ export default function GameScreen() {
       ));
       if (pendingEvent.type === 'ladder' && isAnswerCorrect) {ladderClimbsRef.current += 1;}
       else if (pendingEvent.type === 'snake' && !isAnswerCorrect) {snakeBitesRef.current += 1;}
-      tutorial.notify('quiz-moved');
       if (target === 100) setWinner(updatedPlayer);
       else passTurn();
     });
   };
-
-  useEffect(() => {
-    tutorial.setScene('game');
-    return () => tutorial.setScene('setup');
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    tutorial.setInModal(isModalVisible);
-    return () => tutorial.setInModal(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isModalVisible]);
-
-  const tutorialActionRef = useRef<() => void>(() => {});
-  tutorialActionRef.current = () => {
-    const id = tutorial.stepId;
-    if ((id === 'ladder-q1' || id === 'snake-q') && tutorialQuizRef.current) {
-      const event = tutorialQuizRef.current;
-      tutorialQuizRef.current = null;
-      openQuiz(event);
-    } else if (id === 'wait-roulette' && tutorialPowerRef.current) {
-      const power = tutorialPowerRef.current;
-      tutorialPowerRef.current = null;
-      triggerPowerUpRoulette(power.mover, power.newPos, power.moverIndex);
-    }
-  };
-  useEffect(() => {
-    tutorialActionRef.current();
-  }, [tutorial.stepId]);
-
-  const resolveQuizRef = useRef<() => void>(() => {});
-  resolveQuizRef.current = resolveQuiz;
-  useEffect(() => {
-    if (tutorial.stepId !== 'ladder-help' || !currentQuestion) return undefined;
-    const timers = [
-      setTimeout(() => setSelectedIndex(currentQuestion.correctIndex), 1600),
-      setTimeout(() => {
-        questionsAnsweredRef.current += 1;
-        setIsAnswerCorrect(true);
-        setDialogueText(getRandomDialogueLine('ladder', dialogueSubject, 'CorrectAnswer'));
-      }, 2600),
-      setTimeout(() => resolveQuizRef.current(), 4200),
-    ];
-    return () => timers.forEach(clearTimeout);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tutorial.stepId, currentQuestion]);
 
   const handleVictoryTap = () => {
     const elapsedMs = Date.now() - startTimeRef.current;
@@ -1022,7 +938,7 @@ export default function GameScreen() {
                     },
                   ]}
                   resizeMode="cover"
-                  pointerEvents="none"
+                  {...({ pointerEvents: 'none' } as any)}
                 />
                 
                 {powerUpTiles.map((tileNum) => {
@@ -1105,37 +1021,35 @@ export default function GameScreen() {
               <ImageBackground
                 source={getWoodframeSource(params.level, '4to1')}
                 resizeMode="stretch"
-                pointerEvents="none"
+                {...({ pointerEvents: 'none' } as any)}
                 style={[styles.diceWoodframe, { width: diceSize * 5.6, height: diceSize * 1.4 }]}
               />
-              <TutorialTarget id="dice">
-                <TouchableOpacity
-                  style={styles.diceButton}
-                  onPress={rollDice}
-                  disabled={!isDiceReady || isRolling || !!winner || isModalVisible || showExitModal || rouletteModalVisible}
-                  activeOpacity={0.7}
-                >
-                  <Dice3D
-                    ref={diceRef}
-                    size={diceSize}
-                    onReady={() => setIsDiceReady(true)}
-                    onRollComplete={(value) => {
-                      setIsRolling(false);
-                      void resultSoundPlayer.seekTo(0).then(() => resultSoundPlayer.play()).catch((error: unknown) => {
-                        console.error('Failed to play the dice result sound.', error);
-                      });
-                      movePlayer(value);
-                    }}
-                    onError={() => {
-                      setIsDiceReady(false);
-                      Alert.alert(
-                        '3D die unavailable',
-                        'The die renderer could not start. Please restart the game and try again.',
-                      );
-                    }}
-                  />
-                </TouchableOpacity>
-              </TutorialTarget>
+              <TouchableOpacity
+                style={styles.diceButton}
+                onPress={rollDice}
+                disabled={!isDiceReady || isRolling || !!winner || isModalVisible || showExitModal || rouletteModalVisible}
+                activeOpacity={0.7}
+              >
+                <Dice3D
+                  ref={diceRef}
+                  size={diceSize}
+                  onReady={() => setIsDiceReady(true)}
+                  onRollComplete={(value) => {
+                    setIsRolling(false);
+                    void resultSoundPlayer.seekTo(0).then(() => resultSoundPlayer.play()).catch((error: unknown) => {
+                      console.error('Failed to play the dice result sound.', error);
+                    });
+                    movePlayer(value);
+                  }}
+                  onError={() => {
+                    setIsDiceReady(false);
+                    Alert.alert(
+                      '3D die unavailable',
+                      'The die renderer could not start. Please restart the game and try again.',
+                    );
+                  }}
+                />
+              </TouchableOpacity>
             </View>
             <View style={[styles.diceSide, styles.diceActionSide]}>
               <TouchableOpacity
@@ -1440,7 +1354,6 @@ export default function GameScreen() {
 
               </View>
             </ScrollView>
-            <TutorialOverlay embedded />
           </View>
         </Modal>
 

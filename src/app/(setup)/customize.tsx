@@ -11,7 +11,6 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useWoodKnock } from '../../audio/useWoodKnock';
-import { TutorialTarget, useTutorial, useTutorialScene } from '../../components/TutorialOverlay';
 import { getWoodframeSource } from '../../components/woodframes';
 
 const PADDING = 16;
@@ -46,8 +45,6 @@ export default function CustomizeScreen() {
     timer?: string;
     players?: string;
   }>();
-  const tutorial = useTutorial();
-  useTutorialScene('customize');
   const playKnock = useWoodKnock();
 
   const totalPlayers = Math.min(3, Math.max(1, Number(params.players || 3)));
@@ -96,14 +93,12 @@ export default function CustomizeScreen() {
         return player;
       });
     });
-    tutorial.notify('color-changed', colorHex);
   };
 
   const handleStartGame = () => {
     if (!allPlayersHaveColors) return;
 
     playKnock();
-    tutorial.notify('screen-next');
     router.push({
       pathname: '/game',
       params: {
@@ -154,34 +149,32 @@ export default function CustomizeScreen() {
 
                   <View style={styles.controlsSection}>
                     <Text style={styles.playerName}>{player.name}</Text>
-                    <TutorialTarget id="color-picker">
-                      <View style={styles.colorPalette}>
-                        {COLOR_OPTIONS.map((c) => {
-                          const isSelected = player.color === c.hex;
-                          const isSelectedByAnotherPlayer = players.some(
-                            (otherPlayer) => otherPlayer.id !== player.id && otherPlayer.color === c.hex,
-                          );
-                          return (
-                            <TouchableOpacity
-                              key={c.id}
-                              style={[
-                                styles.colorSwatch,
-                                { backgroundColor: c.hex },
-                                isSelected && styles.colorSwatchSelected,
-                                isSelectedByAnotherPlayer && styles.colorSwatchUnavailable,
-                              ]}
-                              onPress={() => handleSelectColor(player.id, c.hex)}
-                              activeOpacity={0.8}
-                              accessibilityRole="button"
-                              accessibilityLabel={`${c.label}${isSelectedByAnotherPlayer ? ', selected by another player' : ''}`}
-                              accessibilityHint={isSelectedByAnotherPlayer
-                                ? 'Selecting this color moves its current player to the next available color.'
-                                : undefined}
-                            />
-                          );
-                        })}
-                      </View>
-                    </TutorialTarget>
+                    <View style={styles.colorPalette}>
+                      {COLOR_OPTIONS.map((c) => {
+                        const isSelected = player.color === c.hex;
+                        const isSelectedByAnotherPlayer = players.some(
+                          (otherPlayer) => otherPlayer.id !== player.id && otherPlayer.color === c.hex,
+                        );
+                        return (
+                          <TouchableOpacity
+                            key={c.id}
+                            style={[
+                              styles.colorSwatch,
+                              { backgroundColor: c.hex },
+                              isSelected && styles.colorSwatchSelected,
+                              isSelectedByAnotherPlayer && styles.colorSwatchUnavailable,
+                            ]}
+                            onPress={() => handleSelectColor(player.id, c.hex)}
+                            activeOpacity={0.8}
+                            accessibilityRole="button"
+                            accessibilityLabel={`${c.label}${isSelectedByAnotherPlayer ? ', selected by another player' : ''}`}
+                            accessibilityHint={isSelectedByAnotherPlayer
+                              ? 'Selecting this color moves its current player to the next available color.'
+                              : undefined}
+                          />
+                        );
+                      })}
+                    </View>
                   </View>
                 </View>
               </ImageBackground>
@@ -189,22 +182,20 @@ export default function CustomizeScreen() {
           })}
         </ScrollView>
 
-        <TutorialTarget id="screen-next">
-          <TouchableOpacity
-            onPress={handleStartGame}
-            activeOpacity={0.9}
-            disabled={!allPlayersHaveColors}
-            accessibilityState={{ disabled: !allPlayersHaveColors }}
+        <TouchableOpacity
+          onPress={handleStartGame}
+          activeOpacity={0.9}
+          disabled={!allPlayersHaveColors}
+          accessibilityState={{ disabled: !allPlayersHaveColors }}
+        >
+          <ImageBackground
+            source={getWoodframeSource(params.level, '6to1')}
+            resizeMode="stretch"
+            style={[styles.startButton, !allPlayersHaveColors && styles.startButtonDisabled]}
           >
-            <ImageBackground
-              source={getWoodframeSource(params.level, '6to1')}
-              resizeMode="stretch"
-              style={[styles.startButton, !allPlayersHaveColors && styles.startButtonDisabled]}
-            >
-              <Text style={styles.startText}>START GAME</Text>
-            </ImageBackground>
-          </TouchableOpacity>
-        </TutorialTarget>
+            <Text style={styles.startText}>START GAME</Text>
+          </ImageBackground>
+        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );

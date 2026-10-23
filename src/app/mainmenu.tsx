@@ -18,7 +18,6 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAudio } from '../AudioContext';
 import MainMenuArtwork from '../components/MainMenuArtwork';
-import { useTutorial } from '../components/TutorialOverlay';
 import { useScreenTransition } from '../TransitionContext';
 // @ts-ignore SettingsScreen is maintained as JSX.
 import SettingsScreen from '../components/SettingsScreen';
@@ -29,7 +28,6 @@ const PLAY_GLOW_IMG = require('../../assets/images/play-glow.png');
 
 export default function MainMenuScreen() {
   const router = useRouter();
-  const tutorial = useTutorial();
   const crumblyPlayer = useAudioPlayer(CRUMBLY_WOOD_SOUND);
   const { masterVol, masterMute, sfxVol, sfxMute } = useAudio();
   const { width, height } = useWindowDimensions();
@@ -80,11 +78,17 @@ export default function MainMenuScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      if (transitionStarted.current) {
-        zoomProgress.setValue(0);
-        transitionStarted.current = false;
-        setIsTransitioning(false);
-      }
+      // Always reset the zoom whenever the menu gets focus. It used to reset only while
+      // transitionStarted was true, so a reset that fired while the screen was hidden
+      // (the brief focus when the tutorial screen is replaced) used up the flag without
+      // actually moving the native-driven zoom, and the menu came back stuck zoomed in.
+      zoomProgress.stopAnimation();
+      zoomProgress.setValue(0);
+      transitionStarted.current = false;
+      setIsTransitioning(false);
+      // apply it once more after the screen has settled
+      const frame = requestAnimationFrame(() => zoomProgress.setValue(0));
+      return () => cancelAnimationFrame(frame);
     }, [zoomProgress]),
   );
 
@@ -95,9 +99,13 @@ export default function MainMenuScreen() {
     transitionStarted.current = true;
     setIsTransitioning(true);
 
-    const hasSeenTutorial = await AsyncStorage.getItem('@has_seen_game_tutorial');
-    if (hasSeenTutorial !== 'true') {
-      tutorial.start();
+    // First time playing: show the slideshow tutorial before level select.
+    let hasSeenTutorial = false;
+    try {
+      hasSeenTutorial = (await AsyncStorage.getItem('@has_seen_game_tutorial')) === 'true';
+    } catch (e) {
+      // If storage can't be read, just go straight to the game.
+      hasSeenTutorial = true;
     }
 
     Animated.timing(zoomProgress, {
@@ -107,7 +115,7 @@ export default function MainMenuScreen() {
       useNativeDriver: true,
     }).start(({ finished }) => {
       if (finished) {
-        fadeThroughBlack(() => router.push('/level-select'));
+        fadeThroughBlack(() => router.push(hasSeenTutorial ? '/level-select' : '/tutorial'));
       } else {
         transitionStarted.current = false;
         zoomProgress.setValue(0);

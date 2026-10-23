@@ -11,7 +11,6 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useWoodKnock } from '../../audio/useWoodKnock';
-import { TutorialTarget, useTutorial, useTutorialScene } from '../../components/TutorialOverlay';
 import { getWoodframeSource } from '../../components/woodframes';
 
 const PADDING = 16;
@@ -25,8 +24,6 @@ const PLAYER_OPTIONS = [
 
 export default function PlayerSelectionScreen() {
   const router = useRouter();
-  const tutorial = useTutorial();
-  useTutorialScene('player-select');
   const playKnock = useWoodKnock();
 
   const params = useLocalSearchParams<{
@@ -40,12 +37,10 @@ export default function PlayerSelectionScreen() {
   const handleSelectCount = (count: number) => {
     playKnock();
     setSelectedCount(count);
-    tutorial.notify('player-count-selected', String(count));
   };
 
   const handleNext = () => {
     playKnock();
-    tutorial.notify('screen-next');
     router.push({
       pathname: '/customize',
       params: {
@@ -80,40 +75,37 @@ export default function PlayerSelectionScreen() {
             {PLAYER_OPTIONS.map((option) => {
               const isSelected = selectedCount === option.count;
               return (
-                <TutorialTarget key={option.count} id="player-card">
-                  <TouchableOpacity
-                    activeOpacity={0.85}
-                    onPress={() => handleSelectCount(option.count)}
-                    style={[styles.cardWrapper, !isSelected && styles.unselectedCard]}
+                <TouchableOpacity
+                  key={option.count}
+                  activeOpacity={0.85}
+                  onPress={() => handleSelectCount(option.count)}
+                  style={[styles.cardWrapper, !isSelected && styles.unselectedCard]}
+                >
+                  <ImageBackground
+                    source={getWoodframeSource(params.level, '4to1')}
+                    resizeMode="stretch"
+                    style={styles.cardBackground}
                   >
-                    <ImageBackground
-                      source={getWoodframeSource(params.level, '4to1')}
-                      resizeMode="stretch"
-                      style={styles.cardBackground}
-                    >
-                      <View style={styles.cardInner}>
-                        <Text style={styles.cardLabel}>{option.label}</Text>
-                        <Text style={styles.cardSubtitle}>{option.subtitle}</Text>
-                      </View>
-                    </ImageBackground>
-                  </TouchableOpacity>
-                </TutorialTarget>
+                    <View style={styles.cardInner}>
+                      <Text style={styles.cardLabel}>{option.label}</Text>
+                      <Text style={styles.cardSubtitle}>{option.subtitle}</Text>
+                    </View>
+                  </ImageBackground>
+                </TouchableOpacity>
               );
             })}
           </View>
         </ScrollView>
 
-        <TutorialTarget id="screen-next">
-          <TouchableOpacity onPress={handleNext} activeOpacity={0.9}>
-            <ImageBackground
-              source={getWoodframeSource(params.level, '6to1')}
-              resizeMode="stretch"
-              style={styles.nextButton}
-            >
-              <Text style={styles.nextText}>NEXT</Text>
-            </ImageBackground>
-          </TouchableOpacity>
-        </TutorialTarget>
+        <TouchableOpacity onPress={handleNext} activeOpacity={0.9}>
+          <ImageBackground
+            source={getWoodframeSource(params.level, '6to1')}
+            resizeMode="stretch"
+            style={styles.nextButton}
+          >
+            <Text style={styles.nextText}>NEXT</Text>
+          </ImageBackground>
+        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
