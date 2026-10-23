@@ -1182,11 +1182,15 @@ export default function GameScreen() {
           navigationBarTranslucent
         >
           <View style={styles.modalOverlayContainer}>
-            <View style={styles.rouletteCard}>
+            <ImageBackground
+              source={getWoodframeSource(params.level, '4to3')}
+              resizeMode="stretch"
+              style={[styles.rouletteCard, { width: Math.min(screenWidth * 0.82, 340), aspectRatio: 4 / 3 }]}
+            >
               <Text style={styles.rouletteTitle}>🎁 Power-Up Acquired!</Text>
               <Image source={POWER_UP_IMAGES[rouletteDisplayItem]} style={styles.rouletteImage} resizeMode="contain" />
               <Text style={styles.rouletteSubtitle}>Spinning...</Text>
-            </View>
+            </ImageBackground>
           </View>
         </Modal>
 
@@ -1519,7 +1523,7 @@ const styles = StyleSheet.create({
   indicatorActive: { height: 95, borderTopWidth: 4, borderTopColor: '#fff' },
   indicatorInactive: { height: 25, opacity: 0.7 },
   modalOverlayContainer: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.75)', justifyContent: 'center', alignItems: 'center' },
-  rouletteCard: { width: 260, backgroundColor: '#1e293b', borderRadius: 20, padding: 20, alignItems: 'center', borderWidth: 3, borderColor: '#facc15' },
+  rouletteCard: { justifyContent: 'center', padding: 20, alignItems: 'center' },
   rouletteTitle: { fontSize: 16, fontWeight: 'bold', color: '#fff', marginBottom: 12 },
   rouletteImage: { width: 80, height: 80, marginBottom: 12 },
   rouletteSubtitle: { fontSize: 14, color: '#facc15', fontWeight: '700' },
