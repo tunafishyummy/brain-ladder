@@ -1,7 +1,7 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Image, ImageBackground, ScrollView, StyleSheet, TouchableOpacity, View, useWindowDimensions } from 'react-native';
-import Text from '../components/AdaptiveText';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Text from '../components/AdaptiveText';
 import BookcaseBackground from '../components/BookcaseBackground';
 import { getWoodframeSource } from '../components/woodframes';
 
@@ -67,11 +67,10 @@ export default function StatsScreen() {
       <SafeAreaView style={styles.safeArea}>
         <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
           
-          {/* HEADER DECORATIONS & GAME SUMMARY TITLE IMAGE */}
           <View style={styles.headerContainer}>
             <Image
               source={require('../../assets/images/AdderDialogue.png')}
-              style={styles.snakeHeaderImage}
+              style={[styles.snakeHeaderImage, styles.headerCharacterUnderFrame]}
               resizeMode="contain"
             />
             <Image
@@ -81,19 +80,17 @@ export default function StatsScreen() {
             />
             <Image
               source={require('../../assets/images/LadDialogue.png')}
-              style={styles.ladderHeaderImage}
+              style={[styles.ladderHeaderImage, styles.headerCharacterUnderFrame]}
               resizeMode="contain"
             />
           </View>
 
-          {/* PODIUM CARD */}
           <ImageBackground
             source={getWoodframeSource(params.level, '4to3')}
             resizeMode="stretch"
-            style={[styles.frameCard, { width: frameWidth, aspectRatio: 4 / 3 }]}
+            style={[styles.frameCard, styles.podiumFrame, { width: frameWidth, aspectRatio: 4 / 3 }]}
           >
             <View style={styles.podiumContainer}>
-              
               {/* 2ND PLACE (LEFT) */}
               <View style={styles.podiumColumn}>
                 {secondPlace && (
@@ -136,7 +133,6 @@ export default function StatsScreen() {
                   </>
                 )}
               </View>
-
             </View>
           </ImageBackground>
 
@@ -200,23 +196,34 @@ const styles = StyleSheet.create({
   headerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     width: '100%',
     maxWidth: 380,
     marginBottom: 16,
+    position: 'relative',
   },
-  // Each decoration scales with the available header width.
   snakeHeaderImage: {
-    width: '20%',
+    width: '50%',
     aspectRatio: 1,
+    left: 0,
+    zIndex: 0,
   },
   ladderHeaderImage: {
-    width: '20%',
+    width: '50%',
     aspectRatio: 1,
+    right: 0,
+    zIndex: 0,
+  },
+  headerCharacterUnderFrame: {
+    position: 'absolute',
+    top: -350,
   },
   gameSummaryTitleImage: {
     width: '60%',
     aspectRatio: 3,
+  },
+  podiumFrame: {
+    zIndex: 1,
   },
   frameCard: { justifyContent: 'center', paddingHorizontal: '9%', paddingVertical: '8%', marginBottom: 12, overflow: 'hidden' },
   statsFrame: { paddingHorizontal: '12%', paddingVertical: '11%' },
@@ -226,6 +233,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     flex: 1,
     paddingHorizontal: 2,
+    transform: [{ scale: 0.92 }, { translateY: -20 }],
   },
   podiumColumn: {
     alignItems: 'center',
@@ -241,8 +249,8 @@ const styles = StyleSheet.create({
     fontSize: 18,
     marginBottom: 2,
   },
-  avatarImage: { width: 38, height: 38, resizeMode: 'contain', marginBottom: 4 },
-  avatarImageFirst: { width: 44, height: 44, resizeMode: 'contain', marginBottom: 4 },
+  avatarImage: { width: 60, height: 60, resizeMode: 'contain', marginBottom: 4 },
+  avatarImageFirst: { width: 72, height: 72, resizeMode: 'contain', marginBottom: 4 },
   pillar: {
     width: '100%',
     alignItems: 'center',
