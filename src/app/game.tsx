@@ -38,6 +38,15 @@ const ADDER_DIALOGUE_IMG = require('../../assets/images/AdderDialogue.png');
 const LAD_DIALOGUE_IMG = require('../../assets/images/LadDialogue.png');
 const LAD_DIALOGUE_CHEER_IMG = require('../../assets/images/LadDialogueCheer.png');
 const LAD_DIALOGUE_SHOCK_IMG = require('../../assets/images/LadDialogueShock.png');
+const TURN_IMAGES: Record<string, number> = {
+  '#fed330': require('../../assets/images/yellowturn.png'),
+  '#dc2626': require('../../assets/images/redturn.png'),
+  '#ff5252': require('../../assets/images/redturn.png'),
+  '#16a34a': require('../../assets/images/greenturn.png'),
+  '#26de81': require('../../assets/images/greenturn.png'),
+  '#2563eb': require('../../assets/images/blueturn.png'),
+  '#4b7bec': require('../../assets/images/blueturn.png'),
+};
 
 const POWER_UP_TYPES = ['hint', 'skip', 'add-time', 'refresh'] as const;
 type PowerUpType = typeof POWER_UP_TYPES[number];
@@ -255,6 +264,8 @@ export default function GameScreen() {
   const tickingSoundPlayer = useAudioPlayer(TICKING_SOUND);
 
   const frameWidth = screenWidth - BOARD_FRAME_SIDE_INSET * 2;
+  const turnBannerWidth = frameWidth - 58;
+  const turnBannerHeight = turnBannerWidth / 6;
   const frameHeight = Math.min(frameWidth * BOARD_FRAME_HEIGHT_RATIO, screenHeight * 0.52);
   const boardAreaWidth = frameWidth - BOARD_FRAME_BORDER_WIDTH * 2;
   const boardAreaHeight = frameHeight - BOARD_FRAME_BORDER_WIDTH * 2;
@@ -888,9 +899,17 @@ export default function GameScreen() {
             <ImageBackground
               source={getWoodframeSource(params.level, '6to1')}
               resizeMode="stretch"
-              style={styles.turnBanner}
+              style={[styles.turnBanner, { width: turnBannerWidth, height: turnBannerHeight }]}
             >
-              <Text style={styles.turnText}>{activePlayer.name}'s Turn</Text>
+              {TURN_IMAGES[activePlayer.color.toLowerCase()] ? (
+                <Image
+                  source={TURN_IMAGES[activePlayer.color.toLowerCase()]}
+                  style={{ width: turnBannerWidth * 0.9, height: turnBannerHeight * 0.9 }}
+                  resizeMode="contain"
+                />
+              ) : (
+                <Text style={styles.turnText}>{activePlayer.name}'s Turn</Text>
+              )}
             </ImageBackground>
           </View>
 
@@ -1398,7 +1417,7 @@ const styles = StyleSheet.create({
   headerRow: { flexDirection: 'row', alignItems: 'center', gap: 10, zIndex: 20 },
   exitButton: { width: 48, height: 48, justifyContent: 'center', alignItems: 'center', zIndex: 30 },
   exitButtonImage: { width: 44, height: 30, transform: [{ scale: 1.2 }] },
-  turnBanner: { flex: 1, aspectRatio: 6, paddingVertical: 10, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 4, elevation: 6 },
+  turnBanner: { justifyContent: 'center', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 4, elevation: 6 },
   turnText: { color: '#fff', fontSize: 18, fontWeight: 'bold', letterSpacing: 1 },
   boardFrame: { ...BOARD_FRAME, overflow: 'hidden', alignSelf: 'center', alignItems: 'center', justifyContent: 'center' },
   boardFrameBackground: { position: 'absolute' },
