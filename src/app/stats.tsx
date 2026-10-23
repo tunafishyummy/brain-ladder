@@ -254,25 +254,25 @@ const styles = StyleSheet.create({
   pillar: {
     width: '100%',
     alignItems: 'center',
-    paddingVertical: 6,
+    paddingVertical: 3,
   },
   pillarSecond: {
-    height: 72,
+    height: 80,
     backgroundColor: '#cbd5e1',
   },
   pillarFirst: {
-    height: 88,
+    height: 96,
     backgroundColor: '#fbbf24',
   },
   pillarThird: {
-    height: 60,
+    height: 70,
     backgroundColor: '#c2410c',
   },
   podiumRankText: {
     fontSize: 18,
     fontWeight: '900',
     color: '#0f172a',
-    marginBottom: 4,
+    marginBottom: 2,
   },
   podiumTileLabel: {
     fontSize: 12,
