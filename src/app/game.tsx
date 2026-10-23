@@ -109,7 +109,6 @@ const LADDERS: { [key: number]: number } = {
 const SNAKES: { [key: number]: number } = {
   29: 9,
   38: 15,
-  47: 5,
   53: 33,
   62: 37,
   86: 54,
