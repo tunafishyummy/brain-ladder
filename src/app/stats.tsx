@@ -1,7 +1,8 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Image, ImageBackground, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image, ImageBackground, ScrollView, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import BookcaseBackground from '../components/BookcaseBackground';
+import { getWoodframeSource } from '../components/woodframes';
 
 type LeaderboardEntry = {
   rank: number;
@@ -39,7 +40,9 @@ const getCharacterAssetForColor = (color: string) => {
 
 export default function StatsScreen() {
   const router = useRouter();
+  const { width: screenWidth } = useWindowDimensions();
   const params = useLocalSearchParams<{ gameData?: string; difficulty?: string; level?: string }>();
+  const frameWidth = Math.min(screenWidth - 32, 400);
 
   const stats: GameStats = params.gameData
     ? JSON.parse(params.gameData)
@@ -66,7 +69,7 @@ export default function StatsScreen() {
           {/* HEADER DECORATIONS & GAME SUMMARY TITLE IMAGE */}
           <View style={styles.headerContainer}>
             <Image
-              source={require('../../assets/images/LogoKnowItAdder.png')}
+              source={require('../../assets/images/AdderDialogue.png')}
               style={styles.snakeHeaderImage}
               resizeMode="contain"
             />
@@ -76,26 +79,25 @@ export default function StatsScreen() {
               resizeMode="contain"
             />
             <Image
-              source={require('../../assets/images/LogoLad.png')}
+              source={require('../../assets/images/LadDialogue.png')}
               style={styles.ladderHeaderImage}
               resizeMode="contain"
             />
           </View>
 
           {/* PODIUM CARD */}
-          <View style={styles.podiumCard}>
+          <ImageBackground
+            source={getWoodframeSource(params.level, '4to3')}
+            resizeMode="stretch"
+            style={[styles.frameCard, { width: frameWidth, aspectRatio: 4 / 3 }]}
+          >
             <View style={styles.podiumContainer}>
               
               {/* 2ND PLACE (LEFT) */}
               <View style={styles.podiumColumn}>
                 {secondPlace && (
                   <>
-                    <View style={styles.avatarWrapper}>
-                      <Image
-                        source={getCharacterAssetForColor(secondPlace.avatar)}
-                        style={[styles.avatarImage, { backgroundColor: secondPlace.avatar }]}
-                      />
-                    </View>
+                    <Image source={getCharacterAssetForColor(secondPlace.avatar)} style={styles.avatarImage} />
                     <View style={[styles.pillar, styles.pillarSecond]}>
                       <Text style={styles.podiumRankText}>2nd</Text>
                       <Text style={styles.podiumTileLabel}>Tile</Text>
@@ -110,12 +112,7 @@ export default function StatsScreen() {
                 {firstPlace && (
                   <>
                     <Text style={styles.crownEmoji}>👑</Text>
-                    <View style={styles.avatarWrapperFirst}>
-                      <Image
-                        source={getCharacterAssetForColor(firstPlace.avatar)}
-                        style={[styles.avatarImage, { backgroundColor: firstPlace.avatar }]}
-                      />
-                    </View>
+                    <Image source={getCharacterAssetForColor(firstPlace.avatar)} style={styles.avatarImageFirst} />
                     <View style={[styles.pillar, styles.pillarFirst]}>
                       <Text style={styles.podiumRankText}>1st</Text>
                       <Text style={styles.podiumTileLabelFirst}>Tile</Text>
@@ -129,12 +126,7 @@ export default function StatsScreen() {
               <View style={styles.podiumColumn}>
                 {thirdPlace && (
                   <>
-                    <View style={styles.avatarWrapper}>
-                      <Image
-                        source={getCharacterAssetForColor(thirdPlace.avatar)}
-                        style={[styles.avatarImage, { backgroundColor: thirdPlace.avatar }]}
-                      />
-                    </View>
+                    <Image source={getCharacterAssetForColor(thirdPlace.avatar)} style={styles.avatarImage} />
                     <View style={[styles.pillar, styles.pillarThird]}>
                       <Text style={styles.podiumRankText}>3rd</Text>
                       <Text style={styles.podiumTileLabel}>Tile</Text>
@@ -145,10 +137,14 @@ export default function StatsScreen() {
               </View>
 
             </View>
-          </View>
+          </ImageBackground>
 
           {/* STATS BREAKDOWN CARD */}
-          <View style={styles.statsCard}>
+          <ImageBackground
+            source={getWoodframeSource(params.level, '4to3')}
+            resizeMode="stretch"
+            style={[styles.frameCard, styles.statsFrame, { width: frameWidth, aspectRatio: 4 / 3 }]}
+          >
             <View style={styles.statRow}>
               <Text style={styles.statLabel}>Time:</Text>
               <Text style={styles.statValue}>{stats.time}</Text>
@@ -173,18 +169,15 @@ export default function StatsScreen() {
               <Text style={styles.statLabel}>Powers used:</Text>
               <Text style={styles.statValue}>{stats.powersUsed}</Text>
             </View>
-          </View>
+          </ImageBackground>
 
-          {/* RETURN BUTTON IMAGE */}
+          {/* BACK BUTTON IMAGE */}
           <TouchableOpacity
             onPress={() => router.replace('/mainmenu')}
             activeOpacity={0.8}
+            style={styles.backButton}
           >
-            <ImageBackground
-              source={require('../../assets/images/return-button.png')}
-              style={styles.returnButtonImage}
-              resizeMode="contain"
-            />
+            <Image source={require('../../assets/images/Backbutton.png')} style={styles.backButtonImage} resizeMode="contain" />
           </TouchableOpacity>
 
         </ScrollView>
@@ -198,7 +191,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   container: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     paddingTop: 20,
     paddingBottom: 40,
     alignItems: 'center',
@@ -224,32 +217,19 @@ const styles = StyleSheet.create({
     width: '60%',
     aspectRatio: 3,
   },
-  podiumCard: {
-    width: '100%',
-    maxWidth: 380,
-    backgroundColor: '#657448',
-    borderRadius: 24,
-    borderWidth: 3,
-    borderColor: '#1e293b',
-    padding: 16,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.4,
-    shadowRadius: 10,
-    elevation: 8,
-  },
+  frameCard: { justifyContent: 'center', paddingHorizontal: '9%', paddingVertical: '8%', marginBottom: 12, overflow: 'hidden' },
+  statsFrame: { paddingHorizontal: '12%', paddingVertical: '11%' },
   podiumContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-end',
-    height: 210,
-    paddingHorizontal: 10,
+    flex: 1,
+    paddingHorizontal: 2,
   },
   podiumColumn: {
     alignItems: 'center',
     width: '30%',
-    height: '100%',
+    flex: 1,
     justifyContent: 'flex-end',
   },
   podiumColumnFirst: {
@@ -257,56 +237,26 @@ const styles = StyleSheet.create({
     zIndex: 3,
   },
   crownEmoji: {
-    fontSize: 22,
+    fontSize: 18,
     marginBottom: 2,
   },
-  avatarWrapper: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    borderWidth: 2,
-    borderColor: '#ffffff',
-    overflow: 'hidden',
-    marginBottom: 6,
-    backgroundColor: '#cbd5e1',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarWrapperFirst: {
-    width: 62,
-    height: 62,
-    borderRadius: 31,
-    borderWidth: 3,
-    borderColor: '#facc15',
-    overflow: 'hidden',
-    marginBottom: 6,
-    backgroundColor: '#cbd5e1',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarImage: {
-    width: '100%',
-    height: '100%',
-    resizeMode: 'contain',
-  },
+  avatarImage: { width: 38, height: 38, resizeMode: 'contain', marginBottom: 4 },
+  avatarImageFirst: { width: 44, height: 44, resizeMode: 'contain', marginBottom: 4 },
   pillar: {
     width: '100%',
-    borderRadius: 8,
     alignItems: 'center',
-    paddingVertical: 10,
-    borderWidth: 1.5,
-    borderColor: 'rgba(0,0,0,0.2)',
+    paddingVertical: 6,
   },
   pillarSecond: {
-    height: 120,
+    height: 72,
     backgroundColor: '#cbd5e1',
   },
   pillarFirst: {
-    height: 150,
+    height: 88,
     backgroundColor: '#fbbf24',
   },
   pillarThird: {
-    height: 100,
+    height: 60,
     backgroundColor: '#c2410c',
   },
   podiumRankText: {
@@ -335,42 +285,26 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     color: '#78350f',
   },
-  statsCard: {
-    width: '100%',
-    maxWidth: 380,
-    backgroundColor: '#657448',
-    borderRadius: 24,
-    borderWidth: 3,
-    borderColor: '#1e293b',
-    paddingVertical: 18,
-    paddingHorizontal: 22,
-    marginBottom: 20,
-    gap: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.4,
-    shadowRadius: 10,
-    elevation: 8,
-  },
   statRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 3,
+    paddingVertical: 1,
   },
   statLabel: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#f8fafc',
     fontWeight: '800',
   },
   statValue: {
-    fontSize: 18,
+    fontSize: 16,
     color: '#f8fafc',
     fontWeight: '900',
   },
-  returnButtonImage: {
-    width: 220,
-    height: 70,
+  backButton: { width: 72, height: 54, justifyContent: 'center', alignItems: 'center' },
+  backButtonImage: {
+    width: 60,
+    height: 44,
     justifyContent: 'center',
     alignItems: 'center',
   },
