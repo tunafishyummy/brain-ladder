@@ -84,8 +84,8 @@ const PLAYER_MOVEMENT_WARMUP_MS = 650;
 const PLAYER_MOVEMENT_COOLDOWN_MS = 500;
 const PLAYER_TILE_MOVE_MS = 150;
 const TYPEWRITER_CHARACTER_INTERVAL_MS = 18;
-const DIALOGUE_LINE_HEIGHT = 25;
-const DIALOGUE_MAX_LINES = 3;
+const DIALOGUE_LINE_HEIGHT = 22;
+const DIALOGUE_MAX_LINES = 5;
 const QUIZ_DIALOGUE_BOX_HEIGHT = DIALOGUE_LINE_HEIGHT * DIALOGUE_MAX_LINES + 26;
 const QUIZ_SCENE_HEIGHT = QUIZ_DIALOGUE_BOX_HEIGHT + 36;
 const BOARD_FRAME = {
@@ -1568,8 +1568,8 @@ const styles = StyleSheet.create({
   quizCharacterWrapper: { position: 'absolute', right: '4%', top: '-15%', width: '46%', aspectRatio: 1, zIndex: 3, elevation: 3 },
   quizCharacterImage: { width: '100%', height: '100%' },
   adderEffectParticle: { position: 'absolute', zIndex: 4, elevation: 4 },
-  quizDialogueBox: { width: '45%', height: QUIZ_DIALOGUE_BOX_HEIGHT, justifyContent: 'center', padding: 12, backgroundColor: 'transparent', zIndex: 2 },
-  quizDialogueText: { color: '#fff', fontSize: 18, lineHeight: DIALOGUE_LINE_HEIGHT, fontWeight: '700', textShadowColor: '#000', textShadowOffset: { width: 1, height: 1 }, textShadowRadius: 3 },
+  quizDialogueBox: { width: '50%', height: QUIZ_DIALOGUE_BOX_HEIGHT, justifyContent: 'center', padding: 12, backgroundColor: 'transparent', zIndex: 2 },
+  quizDialogueText: { color: '#fff', fontSize: 16, lineHeight: DIALOGUE_LINE_HEIGHT, fontWeight: '700', textShadowColor: '#000', textShadowOffset: { width: 1, height: 1 }, textShadowRadius: 3 },
   timerDisplayLow: { color: '#ef4444' },
   timerDisplay: { alignSelf: 'stretch', paddingHorizontal: 20, fontSize: 30, lineHeight: 36, fontWeight: '900', color: '#facc15', textAlign: 'left', marginVertical: 4, textShadowColor: 'rgba(0,0,0,0.8)', textShadowOffset: { width: 1, height: 1 }, textShadowRadius: 2 },
   quizCard: { zIndex: 5, overflow: 'visible' },
@@ -1579,8 +1579,8 @@ const styles = StyleSheet.create({
   quizPrompt: { fontSize: 15, color: '#f8fafc', textAlign: 'center', marginBottom: 16, fontWeight: '600' },
   hintBanner: { backgroundColor: '#334155', borderWidth: 1.5, borderColor: '#facc15', borderRadius: 10, padding: 10, marginBottom: 14 },
   hintBannerText: { color: '#fef08a', fontSize: 13, fontWeight: '700', textAlign: 'center' },
-  optionsGrid: { flexDirection: 'column', rowGap: 10 },
-  optionButton: { width: '100%', backgroundColor: '#334155', paddingVertical: 14, paddingHorizontal: 8, borderRadius: 10, alignItems: 'center', borderWidth: 2, borderColor: 'transparent' },
+  optionsGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 10 },
+  optionButton: { width: '48%', backgroundColor: '#334155', paddingVertical: 14, paddingHorizontal: 8, borderRadius: 10, alignItems: 'center', borderWidth: 2, borderColor: 'transparent' },
   optionCorrect: { backgroundColor: '#166534', borderColor: '#22c55e' },
   optionSelected: { backgroundColor: '#475569', borderColor: '#facc15' },
   optionWrong: { backgroundColor: '#7f1d1d', borderColor: '#ef4444' },
@@ -1592,7 +1592,7 @@ const styles = StyleSheet.create({
   answerIncorrectButton: { backgroundColor: '#dc2626' },
   continueButtonText: { color: '#1e293b', fontWeight: 'bold', fontSize: 14 },
   answerResultButtonText: { color: '#fff' },
-  powerUpsBar: { width: '72%', alignSelf: 'center', flexDirection: 'row', justifyContent: 'space-between', gap: 8, paddingVertical: 8 },
+  powerUpsBar: { width: '72%', alignSelf: 'center', flexDirection: 'row', justifyContent: 'space-between', gap: 8, paddingVertical: 8, marginBottom: 80 },
   powerUpButton: { flex: 1, backgroundColor: 'transparent', paddingVertical: 10, alignItems: 'center', justifyContent: 'center' },
   powerUpDisabled: { opacity: 0.4 },
   powerUpIcon: { width: 28, height: 28, marginBottom: 4 },
